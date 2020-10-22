@@ -11,6 +11,7 @@ class Pacman:
         self.clock = pygame.time.Clock()
         self.running = True
         self.state = 'title'
+        self.load()
         
     def run(self):
         while self.running:
@@ -28,7 +29,11 @@ class Pacman:
         pygame.quit()
         sys.exit()
 
-# -- -- -- HELP FUNCTIONS -- -- -- #
+# -- -- -- GENERAL FUNCTIONS -- -- -- #
+    def load(self):
+        self.level = pygame.image.load('level.png')
+        self.level = pygame.transform.scale(self.level, (WIDTH, HEIGHT))
+
     def write(self, to_write, screen, pos, size, color, font_name):
         font = pygame.font.Font(font_name, size)
         text = font.render(to_write, False, color)
@@ -55,15 +60,18 @@ class Pacman:
     
     def title_draw(self):
         self.screen.fill(BLACK)
-        self.write('HIGH SCORE', self.screen, [62, 15], TITLE_TEXT_SIZE, WHITE, TITLE_FONT)
+        self.write('HIGH SCORE', self.screen, [115, 15], TITLE_TEXT_SIZE, WHITE, TITLE_FONT)
         self.write_center('PUSH SPACE TO START', self.screen, [WIDTH//2, HEIGHT//2], TITLE_TEXT_SIZE, GOLD, TITLE_FONT)
         self.write_center('1 PLAYER ONLY', self.screen, [WIDTH // 2, HEIGHT // 2 + 50], TITLE_TEXT_SIZE, CERU, TITLE_FONT)
         pygame.display.update()
 
-# -- -- -- TITLE FUNCTIONS -- -- -- #
+# -- -- -- GAME FUNCTIONS -- -- -- #
     def game_events(self):
-        pass
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                self.running = False
     def game_update(self):
         pass
     def game_draw(self):
-        self.screen.fill(BLACK)
+        self.screen.blit(self.level, (0,0))
+        pygame.display.update()
