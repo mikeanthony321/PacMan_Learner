@@ -47,6 +47,12 @@ class Pacman:
         pos[1] = pos[1] - text_size[1] // 2
         screen.blit(text, pos)
 
+    def grid(self):
+        for x in range(28):
+            pygame.draw.line(self.screen, GOLD, (x*WIDTH//28, 0), (x*WIDTH//28, HEIGHT))
+        for x in range(30):
+            pygame.draw.line(self.screen, CERU, (0, x*HEIGHT//30), (WIDTH, x*HEIGHT//30))
+
 # -- -- -- TITLE FUNCTIONS -- -- -- #
     def title_events(self):
         for event in pygame.event.get():
@@ -74,4 +80,5 @@ class Pacman:
         pass
     def game_draw(self):
         self.screen.blit(self.level, (0,0))
+        self.grid()
         pygame.display.update()
