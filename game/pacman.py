@@ -76,7 +76,7 @@ class Pacman:
         pass
     def game_draw(self):
         self.screen.fill(BLACK)
-        self.write('HIGH SCORE', self.screen, [5, 5], 13, WHITE, TITLE_FONT)
+        self.write(HIGH_SCORE, self.screen, [5, 5], 13, WHITE, TITLE_FONT)
         self.screen.blit(self.level, (0, PAD_TOP))
         self.grid()
         pygame.display.update()
