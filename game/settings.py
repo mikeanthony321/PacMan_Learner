@@ -6,6 +6,9 @@ GRID_W, GRID_H = 28, 32
 CELL_W, CELL_H = WIDTH//GRID_W, GRID_PIXEL_H//GRID_H
 FPS = 60
 
+# db
+HIGH_SCORE = ("HIGH SCORE " + open("db/hs.txt", "r").read())
+
 # color settings
 BLACK = (0,0,0,)
 WHITE = (255,255,255)
