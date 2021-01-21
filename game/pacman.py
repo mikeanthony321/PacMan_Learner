@@ -8,10 +8,10 @@ vec = pygame.math.Vector2
 class Pacman:
     def __init__(self):
         self.screen = pygame.display.set_mode((WIDTH, HEIGHT))
+        self.level = pygame.image.load('lev_og.png')
         self.clock = pygame.time.Clock()
         self.running = True
         self.state = 'title'
-        self.load()
         
     def run(self):
         while self.running:
@@ -30,10 +30,6 @@ class Pacman:
         sys.exit()
 
 # -- -- -- GENERAL FUNCTIONS -- -- -- #
-    def load(self):
-        self.level = pygame.image.load('level.png')
-        self.level = pygame.transform.scale(self.level, (WIDTH, HEIGHT))
-
     def write(self, to_write, screen, pos, size, color, font_name):
         font = pygame.font.Font(font_name, size)
         text = font.render(to_write, False, color)
@@ -48,10 +44,10 @@ class Pacman:
         screen.blit(text, pos)
 
     def grid(self):
-        for x in range(28):
-            pygame.draw.line(self.screen, GOLD, (x*WIDTH//28, 0), (x*WIDTH//28, HEIGHT))
-        for x in range(30):
-            pygame.draw.line(self.screen, CERU, (0, x*HEIGHT//30), (WIDTH, x*HEIGHT//30))
+        for x in range(GRID_W):
+            pygame.draw.line(self.level, GOLD, (x*CELL_W, 0), (x*CELL_W, GRID_PIXEL_H))
+        for y in range(GRID_H):
+            pygame.draw.line(self.level, GOLD, (0, y*CELL_H), (WIDTH, y*CELL_H))
 
 # -- -- -- TITLE FUNCTIONS -- -- -- #
     def title_events(self):
@@ -79,6 +75,8 @@ class Pacman:
     def game_update(self):
         pass
     def game_draw(self):
-        self.screen.blit(self.level, (0,0))
+        self.screen.fill(BLACK)
+        self.write('HIGH SCORE', self.screen, [5, 5], 13, WHITE, TITLE_FONT)
+        self.screen.blit(self.level, (0, PAD_TOP))
         self.grid()
         pygame.display.update()
