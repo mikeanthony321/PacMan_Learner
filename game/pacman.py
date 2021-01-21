@@ -62,7 +62,7 @@ class Pacman:
     
     def title_draw(self):
         self.screen.fill(BLACK)
-        self.write('HIGH SCORE', self.screen, [115, 15], TITLE_TEXT_SIZE, WHITE, TITLE_FONT)
+        self.write(HIGH_SCORE, self.screen, [115, 15], TITLE_TEXT_SIZE, WHITE, TITLE_FONT)
         self.write_center('PUSH SPACE TO START', self.screen, [WIDTH//2, HEIGHT//2], TITLE_TEXT_SIZE, GOLD, TITLE_FONT)
         self.write_center('1 PLAYER ONLY', self.screen, [WIDTH // 2, HEIGHT // 2 + 50], TITLE_TEXT_SIZE, CERU, TITLE_FONT)
         pygame.display.update()
