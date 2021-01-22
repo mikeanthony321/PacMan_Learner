@@ -7,7 +7,7 @@ CELL_W, CELL_H = WIDTH//GRID_W, GRID_PIXEL_H//GRID_H
 FPS = 60
 
 # color settings
-BLACK = (0,0,0,)
+BLACK = (0,0,0)
 WHITE = (255,255,255)
 GOLD = (255,189,51)
 CERU = (51,199,255)
