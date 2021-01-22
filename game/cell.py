@@ -13,7 +13,7 @@ class CellMap:
         walls = open("db/walls.txt", "r")
 
         for line in walls:
-            if (lineCount == 28):
+            if lineCount == 28:
                 lineCount = 0
                 rowCount += 1
             if "row" not in line:
@@ -27,7 +27,14 @@ class CellMap:
     def getCell(self, pos):
         return self.map[pos]
 
+    def detectCollision(self, pos):
+        if self.getCell(pos).leftWall == True:
+            return True
+        else:
+            return False
+
 class Cell:
+    # todo: simplify the cells, they really don't need four walls, just one collision switch
     def __init__(self, cellData):
         self.leftWall = self.toBool(cellData[0])
         self.rightWall = self.toBool(cellData[1])

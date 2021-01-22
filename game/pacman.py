@@ -109,6 +109,6 @@ class Pacman:
 
         # spawn
         self.player.draw()
-
-        self.grid()
+        if SHOW_GRID:
+            self.grid()
         pygame.display.update()
