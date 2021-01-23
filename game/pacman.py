@@ -56,6 +56,11 @@ class Pacman:
         for y in range(GRID_H):
             pygame.draw.line(self.level, GOLD, (0, y*CELL_H), (WIDTH, y*CELL_H))
 
+    def spawn_coins(self):
+        for cell in self.cells.map:
+            if cell.hasCoin:
+                pygame.draw.circle(self.level, WHITE, (cell.pos[0] * CELL_W + CELL_W//2, cell.pos[1] * CELL_H + CELL_H//2), 4)
+
 # -- -- -- TITLE FUNCTIONS -- -- -- #
     def title_events(self):
         for event in pygame.event.get():
@@ -106,6 +111,7 @@ class Pacman:
 
         # level
         self.screen.blit(self.level, (0, PAD_TOP))
+        self.spawn_coins()
 
         # spawn
         self.player.draw()

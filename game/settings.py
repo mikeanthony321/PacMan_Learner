@@ -1,4 +1,5 @@
-from pygame.math import Vector2 as vec
+import pygame
+vec = pygame.math.Vector2
 
 # interface settings
 WIDTH, HEIGHT = 560, 715
