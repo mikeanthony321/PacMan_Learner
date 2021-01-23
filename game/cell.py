@@ -6,11 +6,9 @@ class CellMap:
         self.map: Cell = self.getCells()
 
     def getCells(self):
-        # cells = np.empty(shape=(28, 32), dtype=object)
         cells: Cell = []
         lineCount = 0
         rowCount = 0
-
         walls = open("db/walls.txt", "r")
 
         for line in walls:
@@ -24,7 +22,6 @@ class CellMap:
                 for cell in row:
                     cells.append(Cell(cell, (lineCount, rowCount)))
                     lineCount += 1
-                # cells[lineCount - 1, rowCount] = Cell(line.split(", ", 4), (lineCount, rowCount))
         return cells
 
     def getCell(self, pos):
