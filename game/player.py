@@ -54,6 +54,19 @@ class Player:
             pygame.draw.rect(self.game.screen, WHITE,
                              ((self.grid_pos[0] + self.direction.x) * CELL_W,
                               (self.grid_pos[1] + self.direction.y) * CELL_H + PAD_TOP, CELL_W, CELL_H), 2)
-
+            
     def move(self, direction):
         self.memory_direction = direction
+
+    # for ai
+    def moveLeft(self):
+        self.move(vec(1, 0))
+
+    def moveRight(self):
+        self.move(vec(-1, 0))
+
+    def moveUp(self):
+        self.move(vec(0, -1))
+
+    def moveDown(self):
+        self.move(vec(0, 1))
