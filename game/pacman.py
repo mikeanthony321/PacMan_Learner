@@ -1,6 +1,6 @@
-import pygame
 import sys
-from settings import *
+from player import *
+from cell import *
 
 pygame.init()
 vec = pygame.math.Vector2
@@ -12,6 +12,8 @@ class Pacman:
         self.clock = pygame.time.Clock()
         self.running = True
         self.state = 'title'
+        self.cells = CellMap()
+        self.player = Player(self, PLAYER_START_POS)
         
     def run(self):
         while self.running:
@@ -26,6 +28,11 @@ class Pacman:
             else:
                 self.running = False
             self.clock.tick(FPS)
+
+        # exit routine
+        if "score" >= HIGH_SCORE:
+            open("db/hs.txt", "w").write(str(int(HIGH_SCORE) + 1))
+        # todo: this ^ is just a mock high score counter, it adds 1 to the high score in db on each exit
         pygame.quit()
         sys.exit()
 
@@ -62,7 +69,7 @@ class Pacman:
     
     def title_draw(self):
         self.screen.fill(BLACK)
-        self.write(HIGH_SCORE, self.screen, [115, 15], TITLE_TEXT_SIZE, WHITE, TITLE_FONT)
+        self.write("HIGH SCORE " + HIGH_SCORE, self.screen, [115, 15], TITLE_TEXT_SIZE, WHITE, TITLE_FONT)
         self.write_center('PUSH SPACE TO START', self.screen, [WIDTH//2, HEIGHT//2], TITLE_TEXT_SIZE, GOLD, TITLE_FONT)
         self.write_center('1 PLAYER ONLY', self.screen, [WIDTH // 2, HEIGHT // 2 + 50], TITLE_TEXT_SIZE, CERU, TITLE_FONT)
         pygame.display.update()
@@ -72,11 +79,36 @@ class Pacman:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self.running = False
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_LEFT:
+                    self.player.move(vec(-1, 0))
+                if event.key == pygame.K_RIGHT:
+                    self.player.move(vec(1, 0))
+                if event.key == pygame.K_UP:
+                    self.player.move(vec(0, -1))
+                if event.key == pygame.K_DOWN:
+                    self.player.move(vec(0, 1))
+
     def game_update(self):
-        pass
+        self.player.update()
+
     def game_draw(self):
+        score = 100
+        deaths = 1
+        # todo: score counts like its supposed to
+        # todo: score writes to file if higher than high score (this is kinda set up)
         self.screen.fill(BLACK)
-        self.write(HIGH_SCORE, self.screen, [5, 5], 13, WHITE, TITLE_FONT)
+
+        # top bar
+        self.write("HIGH " + HIGH_SCORE, self.screen, [5, 5], 13, WHITE, TITLE_FONT)
+        self.write("SCORE " + str(score), self.screen, [200, 5], 13, WHITE, TITLE_FONT)
+        self.write("DEATHS " + str(deaths), self.screen, [395, 5], 13, WHITE, TITLE_FONT)
+
+        # level
         self.screen.blit(self.level, (0, PAD_TOP))
-        self.grid()
+
+        # spawn
+        self.player.draw()
+        if SHOW_GRID:
+            self.grid()
         pygame.display.update()
