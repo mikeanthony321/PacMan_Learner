@@ -1,8 +1,4 @@
-import numpy as np
-from settings import *
-
-
-# from coin import *
+from coin import *
 
 
 class CellMap:
@@ -42,12 +38,20 @@ class CellMap:
         else:
             return False
 
+    def collectCoin(self, pos):
+        cell = self.getCell(pos)
+        if cell.hasCoin:
+            cell.hasCoin = False
+            return cell.coin.score
+        else:
+            return 0
 
 class Cell:
     def __init__(self, hasWall, pos):
         self.hasWall = self.toBool(hasWall)
         self.pos = pos
         self.hasCoin = not self.hasWall  # essentially, if no collision, spawn coin
+        self.coin = Coin()
 
     def toBool(self, s):
         if s == '1':

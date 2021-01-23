@@ -30,8 +30,8 @@ class Pacman:
             self.clock.tick(FPS)
 
         # exit routine
-        if "score" >= HIGH_SCORE:
-            open("db/hs.txt", "w").write(str(int(HIGH_SCORE) + 1))
+        if self.player.score >= int(HIGH_SCORE):
+            open("db/hs.txt", "w").write(str(self.player.score))
         # todo: this ^ is just a mock high score counter, it adds 1 to the high score in db on each exit
         pygame.quit()
         sys.exit()
@@ -59,7 +59,7 @@ class Pacman:
     def spawn_coins(self):
         for cell in self.cells.map:
             if cell.hasCoin:
-                pygame.draw.circle(self.level, WHITE, (cell.pos[0] * CELL_W + CELL_W//2, cell.pos[1] * CELL_H + CELL_H//2), 4)
+                pygame.draw.circle(self.screen, WHITE, (cell.pos[0] * CELL_W + CELL_W//2, cell.pos[1] * CELL_H + CELL_H//2 + PAD_TOP), 4)
 
 # -- -- -- TITLE FUNCTIONS -- -- -- #
     def title_events(self):
@@ -98,16 +98,12 @@ class Pacman:
         self.player.update()
 
     def game_draw(self):
-        score = 100
-        deaths = 1
-        # todo: score counts like its supposed to
-        # todo: score writes to file if higher than high score (this is kinda set up)
         self.screen.fill(BLACK)
 
         # top bar
         self.write("HIGH " + HIGH_SCORE, self.screen, [5, 5], 13, WHITE, TITLE_FONT)
-        self.write("SCORE " + str(score), self.screen, [200, 5], 13, WHITE, TITLE_FONT)
-        self.write("DEATHS " + str(deaths), self.screen, [395, 5], 13, WHITE, TITLE_FONT)
+        self.write("SCORE " + str(self.player.score), self.screen, [200, 5], 13, WHITE, TITLE_FONT)
+        self.write("DEATHS " + str(self.player.deaths), self.screen, [395, 5], 13, WHITE, TITLE_FONT)
 
         # level
         self.screen.blit(self.level, (0, PAD_TOP))
