@@ -1,4 +1,5 @@
-from pygame.math import Vector2 as vec
+import pygame
+vec = pygame.math.Vector2
 
 # interface settings
 WIDTH, HEIGHT = 560, 715
@@ -10,7 +11,7 @@ FPS = 60
 SHOW_GRID = False
 
 # db
-HIGH_SCORE: str = open("db/hs.txt", "r").readline()
+HIGH_SCORE: int = open("db/hs.txt", "r").readline()
 
 # color settings
 BLACK = (0,0,0,)
@@ -25,3 +26,4 @@ TITLE_FONT = "barcade.ttf"
 
 # player settings
 PLAYER_START_POS = vec(1, 1)
+PLAYER_DEATHS = open("db/deaths.txt", "r").readline()

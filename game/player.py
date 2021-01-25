@@ -1,4 +1,3 @@
-import pygame
 from settings import *
 
 vec = pygame.math.Vector2
@@ -12,6 +11,8 @@ class Player:
                              self.grid_pos.y * CELL_H + (CELL_H // 2) + PAD_TOP)
         self.direction = vec(1, 0) # pacman must spawn in already moving
         self.memory_direction = None
+        self.score = 0
+        self.deaths = PLAYER_DEATHS
 
     def update(self):
         # collision detection
@@ -35,6 +36,9 @@ class Player:
             if self.direction.y != 0:
                 if self.memory_direction is not None:
                     self.direction = self.memory_direction
+
+        # coin mgmt
+        self.score += self.game.cells.collectCoin(coords)
 
     def draw(self):
         # pacman
