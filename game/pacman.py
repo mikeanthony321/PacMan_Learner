@@ -56,6 +56,11 @@ class Pacman:
         for y in range(GRID_H):
             pygame.draw.line(self.level, GOLD, (0, y*CELL_H), (WIDTH, y*CELL_H))
 
+    def reset_level(self):
+        self.cells = CellMap()
+        self.player = None
+        self.player = Player(self, PLAYER_START_POS)
+
     def spawn_coins(self):
         for cell in self.cells.map:
             if cell.hasCoin:
@@ -76,7 +81,7 @@ class Pacman:
         self.screen.fill(BLACK)
         self.write("HIGH SCORE " + HIGH_SCORE, self.screen, [115, 15], TITLE_TEXT_SIZE, WHITE, TITLE_FONT)
         self.write_center('PUSH SPACE TO START', self.screen, [WIDTH//2, HEIGHT//2], TITLE_TEXT_SIZE, GOLD, TITLE_FONT)
-        self.write_center('1 PLAYER ONLY', self.screen, [WIDTH // 2, HEIGHT // 2 + 50], TITLE_TEXT_SIZE, CERU, TITLE_FONT)
+        self.write_center('1 PLAYER ONLY', self.screen, [WIDTH // 2, HEIGHT // 2 + 50], TITLE_TEXT_SIZE, BLUE, TITLE_FONT)
         pygame.display.update()
 
 # -- -- -- GAME FUNCTIONS -- -- -- #
@@ -93,6 +98,8 @@ class Pacman:
                     self.player.move(vec(0, -1))
                 if event.key == pygame.K_DOWN:
                     self.player.move(vec(0, 1))
+                if event.key == pygame.K_t:
+                    self.reset_level()
 
     def game_update(self):
         self.player.update()

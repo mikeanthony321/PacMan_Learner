@@ -30,18 +30,14 @@ class CellMap:
                 return cell
 
     def detectCollision(self, pos):
-        if self.getCell(pos).hasWall == True:
-            return True
-        else:
-            return False
+        return self.getCell(pos).hasWall
 
     def collectCoin(self, pos):
         cell = self.getCell(pos)
         if cell.hasCoin:
             cell.hasCoin = False
             return cell.coin.score
-        else:
-            return 0
+        return 0
 
 class Cell:
     def __init__(self, hasWall, pos):
@@ -50,7 +46,8 @@ class Cell:
         self.hasCoin = not self.hasWall  # essentially, if no collision, spawn coin
         self.coin = Coin()
 
-    def toBool(self, s):
+    @staticmethod
+    def toBool(s):
         if s == '1':
             return True
         elif s == '0':
