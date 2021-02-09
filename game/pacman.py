@@ -58,8 +58,7 @@ class Pacman:
 
     def reset_level(self):
         self.cells = CellMap()
-        self.player = None
-        self.player = Player(self, PLAYER_START_POS)
+        self.player.reset()
 
     def spawn_coins(self):
         for cell in self.cells.map:

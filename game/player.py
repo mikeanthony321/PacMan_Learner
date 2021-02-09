@@ -58,7 +58,6 @@ class Player:
 
         # stop movement if next block causes collision
         if self.game.cells.detectCollision(next_coords):
-            # self.direction = vec(0, 0) # this may stop you at a weird pixel pos
             self.hitWall()
 
         next_pixel = self.pixel_pos + self.direction
@@ -74,7 +73,6 @@ class Player:
                 self.score += self.game.cells.collectCoin(self.grid_pos)
 
     def draw(self):
-        pygame.draw.circle(self.game.screen, WHITE, (int(self.pixel_pos.x), int(self.pixel_pos.y)), 2)
         # pacman
         pygame.draw.circle(self.game.screen,
                            YELLOW,
@@ -93,25 +91,19 @@ class Player:
                              ((self.grid_pos[0] + self.direction.x) * CELL_W,
                               (self.grid_pos[1] + self.direction.y) * CELL_H + PAD_TOP, CELL_W, CELL_H), 2)
 
-            # requested cell
-            if self.requested_direction is not None:
-                pygame.draw.rect(self.game.screen, RED,
-                                 ((self.grid_pos[0] + self.requested_direction.x) * CELL_W,
-                                  (self.grid_pos[1] + self.requested_direction.y) * CELL_H + PAD_TOP, CELL_W, CELL_H),
-                                 2)
-
     def reset(self):
-        self.direction = vec(0, 0)
+        self.stop()
+        self.teleport(vec(1, 1))
+        self.direction = vec(1, 0)
 
-    def teleport(self):
-        self.reset()
-        self.grid_pos = vec(1, 1)
+    def teleport(self, pos):
+        self.stop()
+        self.grid_pos = pos
         self.pixel_pos = vec(self.grid_pos.x * CELL_W + (CELL_W // 2),
                              self.grid_pos.y * CELL_H + (CELL_H // 2) + PAD_TOP)
-        self.direction = vec(1, 0)
-        # if direction != None:
-        #    self.move(direction)
-        print("you should be teleporting!")
+
+    def stop(self):
+        self.direction = vec(0, 0)
 
     def isValidPos(self, pos):
         # return not pos[0] < 0 or pos[0] > 27 or pos[1] < 0 or pos[1] > 30
