@@ -2,6 +2,7 @@ import sys
 from player import *
 from cell import *
 from analytics import *
+from ghost import *
 
 pygame.init()
 vec = pygame.math.Vector2
@@ -11,12 +12,14 @@ class Pacman:
     def __init__(self, monitor_size):
         self.screen = pygame.display.set_mode((WIDTH, HEIGHT))
         self.analytics = Analytics(monitor_size)
-        self.level = pygame.image.load('lev_og.png')
+        self.level = pygame.image.load('res/lev_og.png')
+        self.sprites = pygame.image.load('res/blinky.png')
         self.clock = pygame.time.Clock()
         self.running = True
         self.state = 'title'
         self.cells = CellMap()
         self.player = Player(self, PLAYER_START_POS)
+        self.blinky = Ghost(self.screen, False, "Blinky", BLINKY_START_POS, self.sprites)
 
     def run(self):
         while self.running:
@@ -31,8 +34,6 @@ class Pacman:
             else:
                 self.running = False
 
-            #This is a temporary section meant to test interaction (albeit a simple interaction)
-            #self.analytics.updateScreen()
             if self.analytics.running:
                 self.state = 'game'
 
@@ -133,4 +134,8 @@ class Pacman:
         self.player.draw()
         if SHOW_GRID:
             self.grid()
+
+        # ghosts
+        self.blinky.draw()
+
         pygame.display.update()
