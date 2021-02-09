@@ -3,6 +3,10 @@ from settings import *
 vec = pygame.math.Vector2
 
 
+def isAligned(pixel):
+    return isAlignedX(pixel) and isAlignedY(pixel)
+
+
 def isAlignedX(pixel):
     return (pixel.x - 30) % CELL_W == 0
 
@@ -29,7 +33,6 @@ class Player:
         # To prevent cell clipping, movement is only enabled during certain pixel positions.
         # Inputs are stored in this variable until direction change is allowed.
         self.requested_direction = vec(0, 0)  # initializes on first movement request
-        self.canMove = True
 
         self.score = 0
         self.deaths = PLAYER_DEATHS
@@ -66,8 +69,9 @@ class Player:
             self.grid_pos[1] = (next_pixel.y - PAD_TOP) // CELL_H
             self.pixel_pos = next_pixel
 
-            # coin mgmt
-            self.score += self.game.cells.collectCoin(next_coords)
+            if isAligned(self.pixel_pos):
+                # coin mgmt
+                self.score += self.game.cells.collectCoin(self.grid_pos)
 
     def draw(self):
         pygame.draw.circle(self.game.screen, WHITE, (int(self.pixel_pos.x), int(self.pixel_pos.y)), 2)
@@ -92,8 +96,9 @@ class Player:
             # requested cell
             if self.requested_direction is not None:
                 pygame.draw.rect(self.game.screen, RED,
-                    ((self.grid_pos[0] + self.requested_direction.x) * CELL_W,
-                    (self.grid_pos[1] + self.requested_direction.y) * CELL_H + PAD_TOP, CELL_W, CELL_H), 2)
+                                 ((self.grid_pos[0] + self.requested_direction.x) * CELL_W,
+                                  (self.grid_pos[1] + self.requested_direction.y) * CELL_H + PAD_TOP, CELL_W, CELL_H),
+                                 2)
 
     def reset(self):
         self.direction = vec(0, 0)
@@ -115,16 +120,8 @@ class Player:
     def isAlignedAndMoving(self, pixel):
         # clipping prevention, this checks a pixel position alignment with the maze
         # could be simplified
-        switch = False
-        if (pixel.x - 30) % CELL_W == 0:
-            # if x axis is aligned ^
-            if self.requested_direction.y != 0:
-                # if player requested x movement ^
-                switch = True
-        if (pixel.y - 55) % CELL_H == 0:
-            if self.requested_direction.x != 0:
-                switch = True
-        return switch
+        return ((pixel.x - 30) % CELL_W == 0 and self.requested_direction.y != 0) or (
+                    (pixel.y - 55) % CELL_H == 0 and self.requested_direction.x != 0)
 
     def hitWall(self):
         if self.direction.x != 0:
@@ -136,13 +133,3 @@ class Player:
 
     def move(self, direction):
         self.requested_direction = direction
-
-        if not self.canMove:
-            self.direction = direction
-
-    def getGridPos(self, pos):
-        pos -= vec(10, 35)
-        # from x = 10 to x = 29, formula should output 0
-        # from x = 30 to x = 49, formular should output 1
-
-        return grid
