@@ -111,17 +111,13 @@ class Player:
 
     def isAlignedAndMoving(self, pixel):
         # clipping prevention, this checks a pixel position alignment with the maze
-        # could be simplified
         return ((pixel.x - 30) % CELL_W == 0 and self.requested_direction.y != 0) or (
-                    (pixel.y - 55) % CELL_H == 0 and self.requested_direction.x != 0)
+                (pixel.y - 55) % CELL_H == 0 and self.requested_direction.x != 0)
 
     def hitWall(self):
-        if self.direction.x != 0:
-            if isAlignedX(self.pixel_pos):
-                self.direction = vec(0, 0)
-        if self.direction.y != 0:
-            if isAlignedY(self.pixel_pos):
-                self.direction = vec(0, 0)
+        if (self.direction.x != 0 and isAlignedX(self.pixel_pos)) or (
+                self.direction.y != 0 and isAlignedY(self.pixel_pos)):
+            self.direction = vec(0, 0)
 
     def move(self, direction):
         self.requested_direction = direction
