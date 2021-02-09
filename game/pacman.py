@@ -40,8 +40,6 @@ class Pacman:
         # exit routine
         if self.player.score >= int(HIGH_SCORE):
             open("db/hs.txt", "w").write(str(self.player.score))
-        # todo: this ^ is just a mock high score counter, it adds 1 to the high score in db on each exit
-
         if self.player.score >= int(self.analytics.tar_high_score):
             print("Target High Score Achieved!")
         pygame.quit()
