@@ -1,4 +1,5 @@
 import os
+from PyQt5.QtWidgets import QApplication
 from pacman import *
 
 def main():
