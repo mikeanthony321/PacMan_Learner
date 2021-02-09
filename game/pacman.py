@@ -1,6 +1,7 @@
 import sys
 from player import *
 from cell import *
+from analytics import *
 
 pygame.init()
 vec = pygame.math.Vector2
@@ -8,6 +9,7 @@ vec = pygame.math.Vector2
 class Pacman:
     def __init__(self, monitor_size):
         self.screen = pygame.display.set_mode((WIDTH, HEIGHT))
+        self.analytics = Analytics(monitor_size)
         self.level = pygame.image.load('lev_og.png')
         self.clock = pygame.time.Clock()
         self.running = True
