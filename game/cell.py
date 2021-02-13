@@ -1,15 +1,14 @@
-import numpy as np
+from coin import *
 
 
 class CellMap:
     def __init__(self):
-        self.map = self.getCells()
+        self.map: Cell = self.getCells()
 
     def getCells(self):
-        cells = np.empty(shape=(28, 32), dtype=object)
+        cells: Cell = []
         lineCount = 0
         rowCount = 0
-
         walls = open("db/walls.txt", "r")
 
         for line in walls:
@@ -17,31 +16,45 @@ class CellMap:
                 lineCount = 0
                 rowCount += 1
             if "row" not in line:
-                lineCount += 1
                 # remove \n off end of string
                 line = line.strip()
-                # cellmap entry format: "bool, bool, bool, bool"
-                cells[lineCount - 1, rowCount] = Cell(line.split(", ", 4))
+                row = line.split(", ")
+                for cell in row:
+                    cells.append(Cell(cell, (lineCount, rowCount)))
+                    lineCount += 1
         return cells
 
     def getCell(self, pos):
-        return self.map[pos]
+        for cell in self.map:
+            if cell.pos == pos:
+                return cell
 
     def detectCollision(self, pos):
-        if self.getCell(pos).leftWall == True:
-            return True
-        else:
-            return False
+        return self.getCell(pos).hasWall
+
+    def collectCoin(self, pos):
+        cell = self.getCell(pos)
+        if cell.hasCoin:
+            if cell.coin.isSuperCoin:
+                pass
+                # todo: ghost logic when super pellet is collected
+            cell.hasCoin = False
+            return cell.coin.score
+        return 0
 
 class Cell:
-    # todo: simplify the cells, they really don't need four walls, just one collision switch
-    def __init__(self, cellData):
-        self.leftWall = self.toBool(cellData[0])
-        self.rightWall = self.toBool(cellData[1])
-        self.topWall = self.toBool(cellData[2])
-        self.bottomWall = self.toBool(cellData[3])
+    def __init__(self, hasWall, pos):
+        self.hasWall = self.toBool(hasWall)
+        self.pos = pos
+        self.hasCoin = not self.hasWall  # essentially, if no collision, spawn coin
 
-    def toBool(self, s):
+        if self.hasCoin:
+            self.coin = Coin()
+            if pos == (6, 8) or pos == (21, 8) or pos == (6, 20) or pos == (21, 20):
+                self.coin = SuperCoin()
+
+    @staticmethod
+    def toBool(s):
         if s == '1':
             return True
         elif s == '0':
