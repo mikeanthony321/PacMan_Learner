@@ -91,7 +91,6 @@ class Player:
                              ((self.grid_pos[0] + self.direction.x) * CELL_W,
                               (self.grid_pos[1] + self.direction.y) * CELL_H + PAD_TOP, CELL_W, CELL_H), 2)
 
-    # for ai
     def moveLeft(self):
         self.move(vec(1, 0))
 
