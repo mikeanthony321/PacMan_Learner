@@ -13,14 +13,17 @@ class Pacman:
         self.screen = pygame.display.set_mode((WIDTH, HEIGHT))
         self.analytics = Analytics(monitor_size)
         self.level = pygame.image.load('res/lev_og.png')
-        self.sprites = pygame.image.load('res/blinky.png')
+        self.sprites = pygame.image.load('res/pacmanspritesheet.png')
         self.clock = pygame.time.Clock()
         self.running = True
         self.state = 'title'
         self.cells = CellMap()
-        self.player = Player(self, PLAYER_START_POS)
-        self.blinky = Ghost(self.screen, False, "Blinky", BLINKY_START_POS, self.sprites)
+        self.player = Player(self, self.screen, PLAYER_START_POS, self.sprites)
 
+        self.blinky = Ghost(self, self.screen, False, "Blinky", BLINKY_START_POS, BLINKY_SPRITE_POS, self.sprites)
+        self.inky = Ghost(self, self.screen, False, "Inky", INKY_START_POS, INKY_SPRITE_POS, self.sprites)
+        self.pinky = Ghost(self, self.screen, False, "Pinky", PINKY_START_POS, PINKY_SPRITE_POS, self.sprites)
+        self.clyde = Ghost(self, self.screen, False, "Clyde", CLYDE_START_POS, CLYDE_SPRITE_POS, self.sprites)
     def run(self):
         while self.running:
             if self.state == 'title':
@@ -118,6 +121,11 @@ class Pacman:
     def game_update(self):
         self.player.update()
 
+        self.blinky.update()
+        self.pinky.update()
+        self.inky.update()
+        self.clyde.update()
+
     def game_draw(self):
         self.screen.fill(BLACK)
 
@@ -137,5 +145,8 @@ class Pacman:
 
         # ghosts
         self.blinky.draw()
+        self.pinky.draw()
+        self.inky.draw()
+        self.clyde.draw()
 
         pygame.display.update()

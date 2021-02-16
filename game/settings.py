@@ -30,7 +30,20 @@ PLAYER_START_POS = vec(1, 1)
 PLAYER_DEATHS = open("db/deaths.txt", "r").readline()
 
 # ghost settings
-INKY_START_POS = vec(12, 13)
-BLINKY_START_POS = vec(15, 13)
-PINKY_START_POS = vec(12, 15)
-CLYDE_START_POS = vec(15, 15)
+INKY_START_POS = vec(12, 11)
+BLINKY_START_POS = vec(15, 11)
+PINKY_START_POS = vec(12, 17)
+CLYDE_START_POS = vec(15, 17)
+
+# spritesheet settings
+SPRITE_SIZE = 16
+
+MOVE_RIGHT = 1
+MOVE_LEFT = 2
+MOVE_UP = 3
+MOVE_DOWN = 4
+
+BLINKY_SPRITE_POS = 2
+PINKY_SPRITE_POS = 3
+INKY_SPRITE_POS = 4
+CLYDE_SPRITE_POS = 5
