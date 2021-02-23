@@ -1,31 +1,40 @@
 from settings import *
-
 vec = pygame.math.Vector2
-
 
 class Player:
     def __init__(self, game, screen, pos, sprite_sheet):
         self.game = game
         self.screen = screen
         self.grid_pos = pos
+
+        # pixel position of center of Pac-Man
         self.pixel_pos = vec(self.grid_pos.x * CELL_W + (CELL_W // 2),
                              self.grid_pos.y * CELL_H + (CELL_H // 2) + PAD_TOP)
+
+        # pixel position for top left corner of image surface
         self.sprite_pos = vec(self.grid_pos.x * CELL_W,
                               self.grid_pos.y * CELL_H + PAD_TOP)
         self.direction = vec(1, 0) # pacman must spawn in already moving
         self.memory_direction = None
+
+        # player metrics
         self.score = 0
         self.deaths = PLAYER_DEATHS
 
+        # Game status
+        self.alive = True
+        self.game_over = False
+
+        # Sprite Sheet information
         self.sprite_sheet = sprite_sheet
         self.frames = []
         self.death_frames = []
-        self.get_frames()
+        self.getFrames()
         self.frame = self.frames[0]
         self.frame_count = 0
         self.frame_changes = 0
 
-    def get_frames(self):
+    def getFrames(self):
         # Full Pac-Man frame
         image = pygame.Surface([SPRITE_SIZE, SPRITE_SIZE])
         image.blit(self.sprite_sheet,
@@ -56,6 +65,35 @@ class Player:
             image = pygame.transform.scale(image, (CELL_W, CELL_H))
             self.death_frames.append(image)
 
+    def updateFrame(self, frames):
+        # update frames for Pac-Man while alive
+        if self.alive:
+            self.frame_changes += 1
+            if self.direction.x == 1:
+                frame_number = 5 % self.frame_changes
+                self.frame = frames[frame_number]
+            elif self.direction.x == -1:
+                frame_number = (5 % self.frame_changes)
+                if frame_number != 0:
+                    frame_number += 2
+                self.frame = frames[frame_number]
+            elif self.direction.y == 1:
+                frame_number = (5 % self.frame_changes)
+                if frame_number != 0:
+                    frame_number += 4
+                self.frame = frames[frame_number]
+            elif self.direction.y == -1:
+                frame_number = (5 % self.frame_changes)
+                if frame_number != 0:
+                    frame_number += 6
+                self.frame = frames[frame_number]
+            if self.frame_changes == 5:
+                self.frame_changes = 1
+
+        # run through death frames list to animate Pac-Man death
+        if not self.alive and self.frame_changes < len(self.death_frames):
+            self.frame = self.death_frames[self.frame_changes]
+            self.frame_changes += 1
 
     def update(self):
         self.frame_count += 1
@@ -63,27 +101,10 @@ class Player:
         if self.direction.x == 0 and self.direction.y == 0:
             self.frame = self.frames[0]
         if self.frame_count % 6 == 0:
-            self.frame_changes += 1
-            if self.direction.x == 1:
-                frame_number = 5 % self.frame_changes
-                self.frame = self.frames[frame_number]
-            elif self.direction.x == -1:
-                frame_number = (5 % self.frame_changes)
-                if frame_number != 0:
-                    frame_number += 2
-                self.frame = self.frames[frame_number]
-            elif self.direction.y == 1:
-                frame_number = (5 % self.frame_changes)
-                if frame_number != 0:
-                    frame_number += 4
-                self.frame = self.frames[frame_number]
-            elif self.direction.y == -1:
-                frame_number = (5 % self.frame_changes)
-                if frame_number != 0:
-                    frame_number += 6
-                self.frame = self.frames[frame_number]
-            if self.frame_changes == 5:
-                self.frame_changes = 1
+            if self.alive:
+                self.updateFrame(self.frames)
+            else:
+                self.updateFrame(self.death_frames)
 
         # collision detection
         coords = (int(self.grid_pos[0] + self.direction.x), int(self.grid_pos[1] + self.direction.y))
@@ -91,8 +112,9 @@ class Player:
             self.direction = self.direction * -1
 
         # player movement
-        self.pixel_pos += self.direction
-        self.sprite_pos += self.direction
+        if self.alive:
+            self.pixel_pos += self.direction
+            self.sprite_pos += self.direction
         if (self.pixel_pos.x - 30) % CELL_W == 0:
             self.grid_pos[0] = (self.pixel_pos.x - CELL_W // 2) // CELL_W
 
@@ -133,3 +155,13 @@ class Player:
 
     def move(self, direction):
         self.memory_direction = direction
+
+    def getPixelPos(self):
+        return self.pixel_pos
+
+    def getAliveStatus(self):
+        return self.alive
+
+    def setAliveStatus(self, status):
+        self.alive = status
+        self.frame_changes = 0

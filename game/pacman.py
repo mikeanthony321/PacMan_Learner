@@ -20,10 +20,11 @@ class Pacman:
         self.cells = CellMap()
         self.player = Player(self, self.screen, PLAYER_START_POS, self.sprites)
 
-        self.blinky = Ghost(self, self.screen, False, "Blinky", BLINKY_START_POS, BLINKY_SPRITE_POS, self.sprites)
+        self.blinky = Ghost(self, self.screen, True, "Blinky", BLINKY_START_POS, BLINKY_SPRITE_POS, self.sprites)
         self.inky = Ghost(self, self.screen, False, "Inky", INKY_START_POS, INKY_SPRITE_POS, self.sprites)
         self.pinky = Ghost(self, self.screen, False, "Pinky", PINKY_START_POS, PINKY_SPRITE_POS, self.sprites)
         self.clyde = Ghost(self, self.screen, False, "Clyde", CLYDE_START_POS, CLYDE_SPRITE_POS, self.sprites)
+
     def run(self):
         while self.running:
             if self.state == 'title':
@@ -126,6 +127,8 @@ class Pacman:
         self.inky.update()
         self.clyde.update()
 
+        self.checkGhostPacCollision()
+
     def game_draw(self):
         self.screen.fill(BLACK)
 
@@ -138,15 +141,50 @@ class Pacman:
         self.screen.blit(self.level, (0, PAD_TOP))
         self.spawn_coins()
 
-        # spawn
-        self.player.draw()
+        # This if/else renders alters the order of drawing such that a ghost will appear over Pac-Man normally,
+        # but render below when Pac-Man is defeated. Might be a waste to do this, we can just render Pac-Man last at
+        # all times if preferred.
+        if self.player.alive:
+            # spawn
+            self.player.draw()
+
+            # ghosts
+            self.blinky.draw()
+            self.pinky.draw()
+            self.inky.draw()
+            self.clyde.draw()
+        else:
+            # ghosts
+            self.blinky.draw()
+            self.pinky.draw()
+            self.inky.draw()
+            self.clyde.draw()
+
+            # spawn
+            self.player.draw()
+
         if SHOW_GRID:
             self.grid()
 
-        # ghosts
-        self.blinky.draw()
-        self.pinky.draw()
-        self.inky.draw()
-        self.clyde.draw()
-
         pygame.display.update()
+
+    def checkGhostPacCollision(self):
+        # todo: this could be much better
+        if self.blinky.getPixelPos() == self.player.getPixelPos() and self.player.getAliveStatus():
+            self.player.setAliveStatus(False)
+            self.blinky.setDisplayStatus(False)
+        if self.pinky.getPixelPos() == self.player.getPixelPos() and self.player.getAliveStatus():
+            self.player.setAliveStatus(False)
+            self.pinky.setDisplayStatus(False)
+        if self.inky.getPixelPos() == self.player.getPixelPos() and self.player.getAliveStatus():
+            self.player.setAliveStatus(False)
+            self.inky.setDisplayStatus(False)
+        if self.clyde.getPixelPos() == self.player.getPixelPos() and self.player.getAliveStatus():
+            self.player.setAliveStatus(False)
+            self.clyde.setDisplayStatus(False)
+
+        if not self.player.getAliveStatus():
+            self.blinky.setActiveStatus(False)
+            self.pinky.setActiveStatus(False)
+            self.inky.setActiveStatus(False)
+            self.clyde.setActiveStatus(False)
