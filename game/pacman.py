@@ -1,4 +1,5 @@
 import sys
+from api.game_agent import GameAgentAPI
 from player import *
 from cell import *
 from analytics_frame_2 import *
@@ -7,7 +8,7 @@ from network_visualizer_test import get_network_diagram
 pygame.init()
 vec = pygame.math.Vector2
 
-class Pacman:
+class Pacman(GameAgentAPI):
     def __init__(self, monitor_size):
         self.screen = pygame.display.set_mode((WIDTH, HEIGHT))
         self.analytics = Analytics(monitor_size, get_network_diagram())
@@ -106,13 +107,13 @@ class Pacman:
                 self.running = False
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_LEFT:
-                    self.player.move(vec(-1, 0))
+                    self.moveLeft()
                 if event.key == pygame.K_RIGHT:
-                    self.player.move(vec(1, 0))
+                    self.moveRight()
                 if event.key == pygame.K_UP:
-                    self.player.move(vec(0, -1))
+                    self.moveUp()
                 if event.key == pygame.K_DOWN:
-                    self.player.move(vec(0, 1))
+                    self.moveDown()
 
     def game_update(self):
         self.player.update()
@@ -134,3 +135,40 @@ class Pacman:
         if SHOW_GRID:
             self.grid()
         pygame.display.update()
+
+# -- -- -- AGENT API FUNCTIONS -- -- -- #
+    def getUpdateState(self):
+        # Implement me!
+        pass
+
+    def moveUp(self):
+        self.player.move(vec(0, -1))
+
+    def moveDown(self):
+        self.player.move(vec(0, 1))
+
+    def moveLeft(self):
+        self.player.move(vec(-1, 0))
+
+    def moveRight(self):
+        self.player.move(vec(1, 0))
+
+    def getPlayerGridCoords(self):
+        # Implement me!
+        pass
+
+    def getNearestGhostGridCoords(self):
+        # Implement me!
+        pass
+
+    def getNearestPelletGridCoords(self):
+        # Implement me!
+        pass
+
+    def getNearestPowerPelletGridCoords(self):
+        # Implement me!
+        pass
+
+    def isPowerPelletActive(self):
+        # Implement me!
+        pass
