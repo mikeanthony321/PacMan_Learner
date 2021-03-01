@@ -118,6 +118,15 @@ class Pacman:
                     self.player.move(vec(0, -1))
                 if event.key == pygame.K_DOWN:
                     self.player.move(vec(0, 1))
+                if event.key == pygame.K_SPACE:
+                    self.blinky.set_alive_status(False)
+                    self.inky.set_alive_status(False)
+                    self.pinky.set_alive_status(False)
+                    self.clyde.set_alive_status(False)
+            if event.type == pygame.KEYUP:
+                self.player.move(vec(0,0))
+
+
 
     def game_update(self):
         self.player.update()
@@ -127,7 +136,9 @@ class Pacman:
         self.inky.update()
         self.clyde.update()
 
-        self.checkGhostPacCollision()
+        self.blinky.set_pacman_pos(self.player.get_presence())
+
+        self.check_ghost_pac_collision()
 
     def game_draw(self):
         self.screen.fill(BLACK)
@@ -141,7 +152,7 @@ class Pacman:
         self.screen.blit(self.level, (0, PAD_TOP))
         self.spawn_coins()
 
-        # This if/else renders alters the order of drawing such that a ghost will appear over Pac-Man normally,
+        # This if/else alters the order of drawing such that a ghost will appear over Pac-Man normally,
         # but render below when Pac-Man is defeated. Might be a waste to do this, we can just render Pac-Man last at
         # all times if preferred.
         if self.player.alive:
@@ -168,23 +179,23 @@ class Pacman:
 
         pygame.display.update()
 
-    def checkGhostPacCollision(self):
+    def check_ghost_pac_collision(self):
         # todo: this could be much better
-        if self.blinky.getPixelPos() == self.player.getPixelPos() and self.player.getAliveStatus():
-            self.player.setAliveStatus(False)
-            self.blinky.setDisplayStatus(False)
-        if self.pinky.getPixelPos() == self.player.getPixelPos() and self.player.getAliveStatus():
-            self.player.setAliveStatus(False)
-            self.pinky.setDisplayStatus(False)
-        if self.inky.getPixelPos() == self.player.getPixelPos() and self.player.getAliveStatus():
-            self.player.setAliveStatus(False)
-            self.inky.setDisplayStatus(False)
-        if self.clyde.getPixelPos() == self.player.getPixelPos() and self.player.getAliveStatus():
-            self.player.setAliveStatus(False)
-            self.clyde.setDisplayStatus(False)
+        if self.blinky.get_pixel_pos() == self.player.get_pixel_pos() and self.player.get_alive_status():
+            self.player.set_alive_status(False)
+            self.blinky.set_display_status(False)
+        if self.pinky.get_pixel_pos() == self.player.get_pixel_pos() and self.player.get_alive_status():
+            self.player.set_alive_status(False)
+            self.pinky.set_display_status(False)
+        if self.inky.get_pixel_pos() == self.player.get_pixel_pos() and self.player.get_alive_status():
+            self.player.set_alive_status(False)
+            self.inky.set_display_status(False)
+        if self.clyde.get_pixel_pos() == self.player.get_pixel_pos() and self.player.get_alive_status():
+            self.player.set_alive_status(False)
+            self.clyde.set_display_status(False)
 
-        if not self.player.getAliveStatus():
-            self.blinky.setActiveStatus(False)
-            self.pinky.setActiveStatus(False)
-            self.inky.setActiveStatus(False)
-            self.clyde.setActiveStatus(False)
+        if not self.player.get_alive_status():
+            self.blinky.set_alive_status(False)
+            self.pinky.set_alive_status(False)
+            self.inky.set_alive_status(False)
+            self.clyde.set_alive_status(False)
