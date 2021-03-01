@@ -1,7 +1,8 @@
 import sys
 from player import *
 from cell import *
-from analytics import *
+from analytics_frame_2 import *
+from network_visualizer_test import get_network_diagram
 
 pygame.init()
 vec = pygame.math.Vector2
@@ -9,7 +10,7 @@ vec = pygame.math.Vector2
 class Pacman:
     def __init__(self, monitor_size):
         self.screen = pygame.display.set_mode((WIDTH, HEIGHT))
-        self.analytics = Analytics(monitor_size)
+        self.analytics = Analytics(monitor_size, get_network_diagram())
         self.level = pygame.image.load('lev_og.png')
         self.clock = pygame.time.Clock()
         self.running = True
