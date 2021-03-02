@@ -90,9 +90,9 @@ class Ghost(pygame.sprite.Sprite):
                 self.frame = self.frames[self.frame_changes + GHOST_LEFT]
             elif self.direction.x == 1:
                 self.frame = self.frames[self.frame_changes + GHOST_RIGHT]
-            elif self.direction.y == 1:
-                self.frame = self.frames[self.frame_changes + GHOST_UP]
             elif self.direction.y == -1:
+                self.frame = self.frames[self.frame_changes + GHOST_UP]
+            elif self.direction.y == 1:
                 self.frame = self.frames[self.frame_changes + GHOST_DOWN]
             self.frame_changes += 1
             if self.frame_changes == 2:
@@ -104,18 +104,17 @@ class Ghost(pygame.sprite.Sprite):
             self.frame_changes += 1
             if self.frame_changes == 4:
                 self.frame_changes = 0
+
         # todo: implement animation frames for ghosts consumed by Pac-Man
         if not self.ghost_alive:
             if self.direction.x == 1:
                 self.frame = self.ghost_death_frames[0]
             elif self.direction.x == -1:
                 self.frame = self.ghost_death_frames[1]
-            elif self.direction.y == 1:
-                self.frame = self.ghost_death_frames[2]
             elif self.direction.y == -1:
+                self.frame = self.ghost_death_frames[2]
+            elif self.direction.y == 1:
                 self.frame = self.ghost_death_frames[3]
-
-
 
     def check_tile(self):
         # initialize an array to hold possible direction changes
@@ -174,11 +173,14 @@ class Ghost(pygame.sprite.Sprite):
 
         else:
             self.path = self.a_search(self.grid_pos, vec(14, 14))
-            if self.grid_pos != self.path[0]:
-                self.direction = self.path[0] - self.grid_pos
-            if self.grid_pos == self.path[0]:
-                if len(self.path) > 0:
-                    self.path.pop(0)
+            if len(self.path) > 0:
+                if self.grid_pos != self.path[0]:
+                    self.direction = self.path[0] - self.grid_pos
+                if self.grid_pos == self.path[0]:
+                    if len(self.path) > 0:
+                        self.path.pop(0)
+            else:
+                self.ghost_alive = True
 
         self.pixel_pos += (self.direction * self.speed)
         self.image_pos += (self.direction * self.speed)
