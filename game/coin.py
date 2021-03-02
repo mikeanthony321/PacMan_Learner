@@ -1,10 +1,12 @@
+from settings import *
+
 class Coin:
     def __init__(self):
-        self.score = 10
+        self.score = COIN_SCORE
         self.isSuperCoin = False
 
 
 class SuperCoin(Coin):
     def __init__(self):
-        self.score = 15
+        self.score = SUPERCOIN_SCORE
         self.isSuperCoin = True

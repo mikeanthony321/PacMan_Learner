@@ -24,6 +24,7 @@ class Pacman:
         self.inky = Ghost(self, self.screen, False, "Inky", INKY_START_POS, INKY_SPRITE_POS, self.sprites)
         self.pinky = Ghost(self, self.screen, False, "Pinky", PINKY_START_POS, PINKY_SPRITE_POS, self.sprites)
         self.clyde = Ghost(self, self.screen, False, "Clyde", CLYDE_START_POS, CLYDE_SPRITE_POS, self.sprites)
+        self.power_pellet_timer = POWER_PELLET_TIMER
 
     def run(self):
         while self.running:
@@ -46,7 +47,6 @@ class Pacman:
         # exit routine
         if self.player.score >= int(HIGH_SCORE):
             open("db/hs.txt", "w").write(str(self.player.score))
-        # todo: this ^ is just a mock high score counter, it adds 1 to the high score in db on each exit
 
         if self.player.score >= int(self.analytics.tar_high_score):
             print("Target High Score Achieved!")
@@ -124,12 +124,24 @@ class Pacman:
                     self.pinky.set_alive_status(False)
                     self.clyde.set_alive_status(False)
             if event.type == pygame.KEYUP:
-                self.player.move(vec(0,0))
-
-
+                self.player.move(vec(0, 0))
 
     def game_update(self):
         self.player.update()
+
+        # When Pacman hits a Super Coin, the player pow pel status
+        # flips to true and back to false upon collecting the next coin.
+        # This is managed during coin collection in player.py
+
+        if self.player.power_pellet_active:
+            if self.power_pellet_timer > 0:
+                self.set_ghost_power_pellet_status(True)
+                self.power_pellet_timer -= 1
+            else:
+                self.player.set_power_pellet_status(False)
+                self.set_ghost_power_pellet_status(False)
+        else:
+            self.power_pellet_timer = POWER_PELLET_TIMER
 
         self.blinky.update()
         self.pinky.update()
@@ -182,20 +194,38 @@ class Pacman:
     def check_ghost_pac_collision(self):
         # todo: this could be much better
         if self.blinky.get_pixel_pos() == self.player.get_pixel_pos() and self.player.get_alive_status():
-            self.player.set_alive_status(False)
-            self.blinky.set_display_status(False)
+            if not self.player.power_pellet_active:
+                self.player.set_alive_status(False)
+                self.blinky.set_display_status(False)
+            else:
+                self.blinky.set_alive_status(False)
         if self.pinky.get_pixel_pos() == self.player.get_pixel_pos() and self.player.get_alive_status():
-            self.player.set_alive_status(False)
-            self.pinky.set_display_status(False)
+            if not self.player.power_pellet_active:
+                self.player.set_alive_status(False)
+                self.pinky.set_display_status(False)
+            else:
+                self.pinky.set_alive_status(False)
         if self.inky.get_pixel_pos() == self.player.get_pixel_pos() and self.player.get_alive_status():
-            self.player.set_alive_status(False)
-            self.inky.set_display_status(False)
+            if not self.player.power_pellet_active:
+                self.player.set_alive_status(False)
+                self.inky.set_display_status(False)
+            else:
+                self.inky.set_alive_status(False)
         if self.clyde.get_pixel_pos() == self.player.get_pixel_pos() and self.player.get_alive_status():
-            self.player.set_alive_status(False)
-            self.clyde.set_display_status(False)
+            if not self.player.power_pellet_active:
+                self.player.set_alive_status(False)
+                self.clyde.set_display_status(False)
+            else:
+                self.clyde.set_alive_status(False)
 
         if not self.player.get_alive_status():
             self.blinky.set_alive_status(False)
             self.pinky.set_alive_status(False)
             self.inky.set_alive_status(False)
             self.clyde.set_alive_status(False)
+
+    def set_ghost_power_pellet_status(self, status):
+        self.blinky.set_power_pellet_status(status)
+        self.inky.set_power_pellet_status(status)
+        self.pinky.set_power_pellet_status(status)
+        self.clyde.set_power_pellet_status(status)

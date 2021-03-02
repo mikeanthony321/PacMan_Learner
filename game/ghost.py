@@ -91,20 +91,21 @@ class Ghost(pygame.sprite.Sprite):
             elif self.direction.x == 1:
                 self.frame = self.frames[self.frame_changes + GHOST_RIGHT]
             elif self.direction.y == 1:
-                self.frame = self.frames[self.frame_changes + GHOST_UP]
-            elif self.direction.y == -1:
                 self.frame = self.frames[self.frame_changes + GHOST_DOWN]
+            elif self.direction.y == -1:
+                self.frame = self.frames[self.frame_changes + GHOST_UP]
             self.frame_changes += 1
             if self.frame_changes == 2:
                 self.frame_changes = 0
 
         # todo: implement animation frames for ghosts during Power pellet
         if self.power_pellet_active and self.ghost_alive:
+            self.frame_changes = 0
             self.frame = self.power_pellet_frames[self.frame_changes]
             self.frame_changes += 1
-            if self.frame_changes == 4:
+            if self.frame_changes == 3:
                 self.frame_changes = 0
-        # todo: implement animation frames for ghosts consumed by Pac-Man
+                # todo: implement animation frames for ghosts consumed by Pac-Man
         if not self.ghost_alive:
             if self.direction.x == 1:
                 self.frame = self.ghost_death_frames[0]
@@ -174,11 +175,12 @@ class Ghost(pygame.sprite.Sprite):
 
         else:
             self.path = self.a_search(self.grid_pos, vec(14, 14))
-            if self.grid_pos != self.path[0]:
-                self.direction = self.path[0] - self.grid_pos
-            if self.grid_pos == self.path[0]:
-                if len(self.path) > 0:
-                    self.path.pop(0)
+            if len(self.path) > 0:
+                if self.grid_pos != self.path[0]:
+                    self.direction = self.path[0] - self.grid_pos
+                if self.grid_pos == self.path[0]:
+                    if len(self.path) > 0:
+                        self.path.pop(0)
 
         self.pixel_pos += (self.direction * self.speed)
         self.image_pos += (self.direction * self.speed)

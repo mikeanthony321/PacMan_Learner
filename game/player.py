@@ -46,6 +46,7 @@ class Player:
         # Game status
         self.alive = True
         self.game_over = False
+        self.power_pellet_active = False
 
         # Sprite Sheet information
         self.sprite_sheet = sprite_sheet
@@ -160,7 +161,11 @@ class Player:
 
             if isAligned(self.pixel_pos):
                 # coin mgmt
-                self.score += self.game.cells.collectCoin(self.grid_pos)
+                score_up = self.game.cells.collectCoin(self.grid_pos)
+                # supercoin mgmt
+                if score_up == SUPERCOIN_SCORE:
+                    self.power_pellet_active = True
+                self.score += score_up
 
         if abs(self.grid_pos.x - self.presence_pos.y) > 2 or abs(self.grid_pos.y - self.presence_pos.y) > 2:
             self.presence_pos = self.grid_pos
@@ -226,3 +231,6 @@ class Player:
 
     def get_presence(self):
         return self.presence_pos
+
+    def set_power_pellet_status(self, status):
+        self.power_pellet_active = status

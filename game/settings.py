@@ -12,6 +12,8 @@ SHOW_GRID = True
 
 # db
 HIGH_SCORE: int = open("db/hs.txt", "r").readline()
+COIN_SCORE: int = 10
+SUPERCOIN_SCORE: int = 20
 
 # color settings
 BLACK = (0,0,0,)
@@ -52,6 +54,8 @@ BLINKY_SPRITE_POS = 2
 PINKY_SPRITE_POS = 3
 INKY_SPRITE_POS = 4
 CLYDE_SPRITE_POS = 5
+
+POWER_PELLET_TIMER = 300
 
 GRID = [
     [ 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
