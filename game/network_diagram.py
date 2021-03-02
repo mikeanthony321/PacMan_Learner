@@ -13,9 +13,9 @@ import sys, time, random
 # Represents a connection between two nodes in the diagram
 # self.link is a backward link to a node in the previous layer
 class Connection():
-    def __init__(self, node, weight):
+    def __init__(self, node):
         self.link = node
-        self.weight = weight
+        self.weight = None
 
     def get_weight(self):
         return self.weight
@@ -43,8 +43,8 @@ class Node():
         self.x = x
         self.y = y
 
-    def set_connection(self, node, weight):
-        c = Connection(node, weight)
+    def set_connection(self, node):
+        c = Connection(node)
         self.connections.append(c)
 
 

@@ -1,5 +1,5 @@
-import sys, math
-from network_visualizer_test import get_network_diagram
+import sys, math, time
+from network_visualizer_test import get_network_diagram, network_update
 from settings import *
 from PyQt5.QtWidgets import QVBoxLayout, QMainWindow, QLineEdit, QPushButton, QTableWidget, QDesktopWidget, QTableWidgetItem, QWidget, QHBoxLayout, QLabel, QApplication
 from PyQt5.QtCore import QTimer, Qt, QSize
@@ -18,7 +18,7 @@ class Visualizer(QWidget):
         self.node_size = 35
         self.color_var_param = 250
         self.base_color_param = 100
-        self.thickness_param = 3
+        self.thickness_param = 4
         self.base_line_thickness_param = 1
         self.network = network_diagram
 
@@ -72,8 +72,9 @@ class Visualizer(QWidget):
     def sizeHint(self):
         return QSize(400, 400)
 
-    def update_diagram(self):
-        self.update()
+    def update_diagram(self, network_diagram):
+        self.network = network_diagram
+        self.repaint()
 
 
 class Analytics(QMainWindow):
@@ -107,6 +108,7 @@ class Analytics(QMainWindow):
                 self.timer_min += 1
                 self.timer_sec = 0
 
+            self.update_visualization()
             self.formatTime()
 
     def formatTime(self):
@@ -120,6 +122,8 @@ class Analytics(QMainWindow):
         self.timer.start(1000)
         self.sim_screen()
         self.running = True
+
+
 
     def highScoreButton(self):
         if not self.running:
@@ -143,6 +147,11 @@ class Analytics(QMainWindow):
         else:
             print("You must stop the sim to enter a new learning rate")
             self.learning_rate_input.setText("")
+
+    def update_visualization(self):
+       if self.running:
+            network_update(self.network_diagram)
+            self.visualizer.update_diagram(self.network_diagram)
 
 
 # -- -- -- START MENU FUNCTIONS -- -- -- #
@@ -185,9 +194,10 @@ class Analytics(QMainWindow):
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.showTime)
         self.timer_label = QLabel('Execution timer: 0:00', self.window)
-        self.timer_label.resize(150,50)
+        self.timer_label.resize(150, 50)
         self.timer_label.setFont(QFont('Arial', 12))
         layout.addWidget(self.timer_label)
+
         layout.setSpacing(0)
         self.center_widget.setLayout(layout)
         self.window.setCentralWidget(self.center_widget)
@@ -206,7 +216,6 @@ class Analytics(QMainWindow):
         self.createTable()
         self.q_value_table.move(20, 60)
         self.q_value_table.size()
-
         self.window.show()
 
 
