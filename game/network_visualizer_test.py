@@ -1,7 +1,7 @@
 import random, time
 from network_diagram import NeuralNetwork, Layer
 
-
+# generates a random nn structure
 def create_random_nn():
     network = NeuralNetwork()
     for i in range(random.randrange(2, 6)):
@@ -11,25 +11,18 @@ def create_random_nn():
         network.add_layer(layer)
     return network
 
-def create_set_nn():
+# generates a nn based on a structure array
+# structure_array: list of values where each item in the list represents a layer containing n nodes [9, 5, 5, 4]
+def create_set_nn(structure_array):
     network = NeuralNetwork()
-    layer0 = Layer(0)
-    layer1 = Layer(1)
-    layer2 = Layer(2)
-    layer3 = Layer(3)
-    for i in range(9):
-        layer0.add_node(None)
-    for j in range(5):
-        layer1.add_node(None)
-        layer2.add_node(None)
-    for k in range(4):
-        layer3.add_node(None)
-    network.add_layer(layer0)
-    network.add_layer(layer1)
-    network.add_layer(layer2)
-    network.add_layer(layer3)
-
+    for i in range(len(structure_array)):
+        layer = Layer(i)
+        for j in range(structure_array[i]):
+            layer.add_node(None)
+        network.add_layer(layer)
     return network
+
+
 
 # this would be replaced with a function that accesses the weight of a connection of the neural network
 def get_weight(layer1_index, node1_index, layer2_index, node2_index, previous_weight):
@@ -72,8 +65,9 @@ def network_update(network):
             qval = get_qvalue(i, j, previous_qval)
             network.layers[i].nodes[j].set_activation_value(qval)
 
+# used in testing the analytics frame
 def get_network_diagram():
-    p = create_set_nn()
+    p = create_set_nn([9, 5, 5, 4])
     p.list_structure()
     initialize(p)
     network_update(p)

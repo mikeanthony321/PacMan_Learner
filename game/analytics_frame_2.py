@@ -2,8 +2,8 @@ import sys, math, time
 from network_visualizer_test import get_network_diagram, network_update
 from settings import *
 from PyQt5.QtWidgets import QVBoxLayout, QMainWindow, QLineEdit, QPushButton, QTableWidget, QDesktopWidget, QTableWidgetItem, QWidget, QHBoxLayout, QLabel, QApplication
-from PyQt5.QtCore import QTimer, Qt, QSize
-from PyQt5.QtGui import QFont,QPixmap, QPainter, QBrush, QPen, QColor
+from PyQt5.QtCore import QTimer, Qt, QSize, QPoint
+from PyQt5.QtGui import QFont,QPixmap, QPainter, QBrush, QPen, QColor, QRadialGradient
 
 
 class Visualizer(QWidget):
@@ -11,14 +11,12 @@ class Visualizer(QWidget):
     def __init__(self, network_diagram):
         super().__init__()
         self.title = "Visualizer"
-        self.top = 2
-        self.left = 2
         self.width = 400
         self.height = 400
         self.node_size = 35
         self.color_var_param = 250
-        self.base_color_param = 100
-        self.thickness_param = 4
+        self.base_color_param = 80
+        self.thickness_param = 3
         self.base_line_thickness_param = 1
         self.network = network_diagram
 
@@ -27,7 +25,6 @@ class Visualizer(QWidget):
 
     def initUI(self):
 
-        self.setGeometry(self.top, self.left, self.width, self.height)
         layout = QVBoxLayout()
         self.setLayout(layout)
 
@@ -44,25 +41,44 @@ class Visualizer(QWidget):
     def paintEvent(self, event):
         painter = QPainter(self)
         painter.setPen(QPen(Qt.blue, 2, Qt.SolidLine))
+        # draw connections
         for i in range(len(self.network.layers)):
             for j in range(len(self.network.layers[i].nodes)):
                 if i > 0:
                     for k in range(len(self.network.layers[i - 1].nodes)):
                         thickness = (self.thickness_param) * (
                             self.network.layers[i].nodes[j].connections[k].weight) + self.base_line_thickness_param
-                        painter.setPen(QPen(QColor(60, 60, 60), thickness))
+                        painter.setPen(QPen(QColor(90, 90, 90), thickness))
                         painter.drawLine((self.network.layers[i].nodes[j].x + math.floor((self.node_size / 2))),
                                          (self.network.layers[i].nodes[j].y + math.floor((self.node_size / 2))),
                                          (self.network.layers[i - 1].nodes[k].x + math.floor((self.node_size / 2))),
                                          (self.network.layers[i - 1].nodes[k].y + math.floor((self.node_size / 2))))
-        painter.setPen(QPen(QColor(0, 0, 0), 2))
+        # draw nodes
+        painter.setPen(QPen(QColor(80, 100, 150), 1))
         for a in range(len(self.network.layers)):
             for b in range(len(self.network.layers[a].nodes)):
-                painter.setBrush(QBrush(QColor(min(math.floor(self.base_color_param + self.network.layers[a].nodes[
-                    b].get_activation_value() * self.color_var_param), 255),
-                                               min(math.floor(self.base_color_param + self.network.layers[a].nodes[
-                                                   b].get_activation_value() * self.color_var_param), 255),
-                                               255), Qt.SolidPattern))
+                radialGradient = QRadialGradient(
+                    QPoint((self.network.layers[a].nodes[b].x + math.floor(self.node_size / 2)),
+                           self.network.layers[a].nodes[b].y + math.floor(self.node_size / 2)), 40)
+
+
+                node_color_1 = QColor(min(math.floor(self.base_color_param + self.network.layers[a].nodes[
+                    b].get_activation_value() * (self.color_var_param * 1.5)), 255), min(math.floor(
+                    self.base_color_param + self.network.layers[a].nodes[
+                        b].get_activation_value() * (self.color_var_param * 1.3)), 255), 255)
+                node_color_2 = QColor(min(math.floor(self.base_color_param + self.network.layers[a].nodes[
+                    b].get_activation_value() * (self.color_var_param * 1)), 255), min(math.floor(
+                    self.base_color_param + self.network.layers[a].nodes[
+                        b].get_activation_value() * (self.color_var_param * 0.9)), 255), 255)
+                node_color_3 = QColor(min(math.floor(self.base_color_param + self.network.layers[a].nodes[
+                    b].get_activation_value() * (self.color_var_param * 0.8)), 255), min(math.floor(
+                    self.base_color_param + self.network.layers[a].nodes[
+                        b].get_activation_value() * (self.color_var_param * 0.6)), 255), 255)
+
+                radialGradient.setColorAt(0.1, node_color_1)
+                radialGradient.setColorAt(0.5, node_color_2)
+                radialGradient.setColorAt(1.0, node_color_3)
+                painter.setBrush(QBrush(radialGradient))
                 painter.drawEllipse(self.network.layers[a].nodes[b].x, self.network.layers[a].nodes[b].y,
                                     self.node_size, self.node_size)
 
