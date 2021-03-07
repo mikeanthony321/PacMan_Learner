@@ -91,6 +91,8 @@ class Player:
     def update_frame(self, frames):
         # update frames for Pac-Man while alive
         if self.alive:
+            if self.direction.x == 0 and self.direction.y == 0:
+                self.frame = self.frames[0]
             self.frame_changes += 1
             if self.direction.x == 1:
                 frame_number = 5 % self.frame_changes
@@ -121,8 +123,6 @@ class Player:
     def update(self):
         self.frame_count += 1
 
-        if self.direction.x == 0 and self.direction.y == 0:
-            self.frame = self.frames[0]
         if self.frame_count % 6 == 0:
             if self.alive:
                 self.update_frame(self.frames)

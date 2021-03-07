@@ -118,13 +118,12 @@ class Pacman:
                     self.player.move(vec(0, -1))
                 if event.key == pygame.K_DOWN:
                     self.player.move(vec(0, 1))
+                # Temporary to test death of ghost
                 if event.key == pygame.K_SPACE:
                     self.blinky.set_alive_status(False)
                     self.inky.set_alive_status(False)
                     self.pinky.set_alive_status(False)
                     self.clyde.set_alive_status(False)
-            if event.type == pygame.KEYUP:
-                self.player.move(vec(0, 0))
 
     def game_update(self):
         self.player.update()
@@ -134,8 +133,9 @@ class Pacman:
         # This is managed during coin collection in player.py
 
         if self.player.power_pellet_active:
-            if self.power_pellet_timer > 0:
+            if self.power_pellet_timer == POWER_PELLET_TIMER:
                 self.set_ghost_power_pellet_status(True)
+            if self.power_pellet_timer > 0:
                 self.power_pellet_timer -= 1
             else:
                 self.player.set_power_pellet_status(False)
@@ -148,7 +148,7 @@ class Pacman:
         self.inky.update()
         self.clyde.update()
 
-        self.blinky.set_pacman_pos(self.player.get_presence())
+        self.set_pac_pos()
 
         self.check_ghost_pac_collision()
 
@@ -190,6 +190,12 @@ class Pacman:
             self.grid()
 
         pygame.display.update()
+
+    def set_pac_pos(self):
+        self.blinky.set_pacman_pos(self.player.get_presence())
+        self.inky.set_pacman_pos(self.player.get_presence())
+        self.pinky.set_pacman_pos(self.player.get_presence())
+        self.clyde.set_pacman_pos(self.player.get_presence())
 
     def check_ghost_pac_collision(self):
         # todo: this could be much better
