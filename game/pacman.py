@@ -1,9 +1,9 @@
 import sys
-from api.game_agent import GameAgentAPI
-from player import *
-from cell import *
-from analytics import *
-from ghost import *
+from game.api.game_agent import GameAgentAPI
+from game.player import *
+from game.cell import *
+from game.analytics import *
+from game.ghost import *
 
 pygame.init()
 vec = pygame.math.Vector2

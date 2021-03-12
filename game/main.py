@@ -1,6 +1,10 @@
 import os
+import sys
 from PyQt5.QtWidgets import QApplication
-from pacman import *
+
+from game.pacman import Pacman
+from game.agent import LearnerAgent
+from game.settings import WIDTH, HEIGHT
 
 def main():
     app = QApplication(sys.argv)
@@ -10,6 +14,7 @@ def main():
     game = Pacman(monitor_size)
     agent = LearnerAgent(game)
     game.run()
+    agent.fire()
 
     sys.exit(app.exec_())
 

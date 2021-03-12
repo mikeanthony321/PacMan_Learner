@@ -15,23 +15,23 @@ class LearnerAgent(nn.Module):
         self.input = nn.Linear(9, HIDDEN_LAYER_WIDTH)
         self.hidden = nn.Linear(HIDDEN_LAYER_WIDTH, HIDDEN_LAYER_WIDTH)
         self.output = nn.Linear(HIDDEN_LAYER_WIDTH, 4)
-        self.squishifier =  nn.ReLU()
+        self.squishifier = nn.ReLU()
         self.api = pacmanInst
 
-    def fire():
+    def fire(self):
         # make thread
-        thread = threading.Thread(target=listen)
+        thread = threading.Thread(target=self.listen, args=(1,))
         thread.start()
     
-    def listen():
+    def listen(self):
         # TODO: potentially change to flag
-        #  while True:
+        # while True:
         print("new thread")    
             # gameState = api.getUpdateState()
             # if gameState == 1:
 
                 
-    def get_game_vals():
+    def get_game_vals(self):
         print("AHH")
 
     def forward(self, x):
@@ -44,9 +44,6 @@ class LearnerAgent(nn.Module):
             
         return x
 
-print("Hi")
-test_NN = LearnerAgent()
-test_NN.fire()
 # random_data = torch.rand(9)
 # result = test_NN(random_data)
 # print(result)

@@ -1,4 +1,4 @@
-from settings import *
+from game.settings import *
 vec = pygame.math.Vector2
 
 def isAligned(pixel):
