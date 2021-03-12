@@ -44,9 +44,9 @@ class LearnerAgent(nn.Module):
             
         return x
 
-print("Hi")
-test_NN = LearnerAgent()
-test_NN.fire()
+# print("Hi")
+# test_NN = LearnerAgent()
+# test_NN.fire()
 # random_data = torch.rand(9)
 # result = test_NN(random_data)
 # print(result)

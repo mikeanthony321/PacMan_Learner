@@ -1,6 +1,7 @@
 import os
 from PyQt5.QtWidgets import QApplication
 from pacman import *
+from agent import LearnerAgent
 
 def main():
     app = QApplication(sys.argv)
