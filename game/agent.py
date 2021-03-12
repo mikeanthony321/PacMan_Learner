@@ -20,19 +20,34 @@ class LearnerAgent(nn.Module):
 
     def fire(self):
         # make thread
-        thread = threading.Thread(target=self.listen, args=(1,))
+        thread = threading.Thread(target=self.listen)
         thread.start()
     
     def listen(self):
         # TODO: potentially change to flag
-        # while True:
-        print("new thread")    
-            # gameState = api.getUpdateState()
-            # if gameState == 1:
+        has_run = False
+        while not has_run: 
+            gameState = self.api.getUpdateState()
+            if gameState == 1:
+                state = self.get_game_vals()
+                output = self.forward(state)
+                print(output)
+            has_run = True
 
                 
     def get_game_vals(self):
-        print("AHH")
+        player_tuple = self.api.getPlayerGridCoords()
+        ghost_tuple = self.api.getNearestGhostGridCoords()
+        pellet_tuple = self.api.getNearestPelletGridCoords()
+        power_tuple = self.api.getNearestPowerPelletGridCoords()
+        power_active = self.api.isPowerPelletActive()
+
+        tensor = [player_tuple[0], player_tuple[1], ghost_tuple[0], ghost_tuple[1], 
+        pellet_tuple[0], pellet_tuple[1], power_tuple[0], power_tuple[1], 
+        1 if power_active else 0]
+
+        tensor = torch.Tensor(tensor)
+        return tensor
 
     def forward(self, x):
         x = self.input(x)
