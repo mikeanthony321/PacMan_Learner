@@ -12,28 +12,28 @@ def isAlignedX(pixel):
 def isAlignedY(pixel):
     return (pixel.y - 55) % CELL_H == 0
 
-
 class Player:
     def __init__(self, game, screen, pos, sprite_sheet):
-        # Game isntance
+        # Game instance
         self.game = game
-        
+
         # Game Window
         self.screen = screen
-        
-        # 2D vector (x, y) | Pacman's current cell
+
+        # 2D vector (x, y) | Pacman's current cell | Pacman's presence cell
         self.grid_pos = pos
+        self.presence_pos = self.grid_pos
 
         # 2D vector (x, y) | Pacman's current pixel position (center)
         self.pixel_pos = vec(self.grid_pos.x * CELL_W + (CELL_W // 2),
                              self.grid_pos.y * CELL_H + (CELL_H // 2) + PAD_TOP)
-        
+
         # 2D vector (x, y) | Pacman's current sprite position (top left corner)
         self.sprite_pos = vec(self.grid_pos.x * CELL_W,
                               self.grid_pos.y * CELL_H + PAD_TOP)
 
         # The current xy direction pacman is moving
-        self.direction = vec(1, 0)  # pacman must spawn in already moving
+        self.direction = vec(1, 0) # pacman must spawn in already moving
 
         # To prevent cell clipping, movement is only enabled during certain pixel positions.
         # Inputs are stored in this variable until direction change is allowed.
@@ -46,6 +46,7 @@ class Player:
         # Game status
         self.alive = True
         self.game_over = False
+        self.power_pellet_active = False
 
         # Sprite Sheet information
         self.sprite_sheet = sprite_sheet
@@ -87,9 +88,11 @@ class Player:
             image = pygame.transform.scale(image, (CELL_W, CELL_H))
             self.death_frames.append(image)
 
-    def updateFrame(self, frames):
+    def update_frame(self, frames):
         # update frames for Pac-Man while alive
         if self.alive:
+            if self.direction.x == 0 and self.direction.y == 0:
+                self.frame = self.frames[0]
             self.frame_changes += 1
             if self.direction.x == 1:
                 frame_number = 5 % self.frame_changes
@@ -99,12 +102,12 @@ class Player:
                 if frame_number != 0:
                     frame_number += 2
                 self.frame = frames[frame_number]
-            elif self.direction.y == 1:
+            elif self.direction.y == -1:
                 frame_number = (5 % self.frame_changes)
                 if frame_number != 0:
                     frame_number += 4
                 self.frame = frames[frame_number]
-            elif self.direction.y == -1:
+            elif self.direction.y == 1:
                 frame_number = (5 % self.frame_changes)
                 if frame_number != 0:
                     frame_number += 6
@@ -120,13 +123,11 @@ class Player:
     def update(self):
         self.frame_count += 1
 
-        if self.direction.x == 0 and self.direction.y == 0:
-            self.frame = self.frames[0]
         if self.frame_count % 6 == 0:
             if self.alive:
-                self.updateFrame(self.frames)
+                self.update_frame(self.frames)
             else:
-                self.updateFrame(self.death_frames)
+                self.update_frame(self.death_frames)
 
         # collision detection
         # direction change request detection
@@ -156,22 +157,23 @@ class Player:
             self.grid_pos[0] = next_pixel.x // CELL_W
             self.grid_pos[1] = (next_pixel.y - PAD_TOP) // CELL_H
             self.pixel_pos = next_pixel
+            self.sprite_pos += self.direction
 
             if isAligned(self.pixel_pos):
                 # coin mgmt
-                self.score += self.game.cells.collectCoin(self.grid_pos)
+                score_up = self.game.cells.collectCoin(self.grid_pos)
+                # supercoin mgmt
+                if score_up == SUPERCOIN_SCORE:
+                    self.power_pellet_active = True
+                self.score += score_up
+
+        if abs(self.grid_pos.x - self.presence_pos.y) > 2 or abs(self.grid_pos.y - self.presence_pos.y) > 2:
+            self.presence_pos = self.grid_pos
 
     def draw(self):
-        self.screen.blit(self.frame, self.sprite_pos)
         # pacman
-        #pygame.draw.circle(self.game.screen,
-        #                   YELLOW,
-        #                   (int(self.pixel_pos.x), int(self.pixel_pos.y)),
-        #                   CELL_W // 2 - 2)
-        #pygame.draw.circle(self.game.screen,
-        #                   BLACK,
-        #                   (int(self.pixel_pos.x) + 5, int(self.pixel_pos.y)),
-        #                   2)
+        self.screen.blit(self.frame, self.sprite_pos)
+
         if SHOW_GRID:
             # hit box
             pygame.draw.rect(self.game.screen, BLUE,
@@ -210,15 +212,23 @@ class Player:
             self.direction = vec(0, 0)
 
     def move(self, direction):
-
         self.requested_direction = direction
 
-    def getPixelPos(self):
+    def get_pixel_pos(self):
         return self.pixel_pos
 
-    def getAliveStatus(self):
+    def get_grid_pos(self):
+        return self.grid_pos
+
+    def get_alive_status(self):
         return self.alive
 
-    def setAliveStatus(self, status):
+    def set_alive_status(self, status):
         self.alive = status
         self.frame_changes = 0
+
+    def get_presence(self):
+        return self.presence_pos
+
+    def set_power_pellet_status(self, status):
+        self.power_pellet_active = status

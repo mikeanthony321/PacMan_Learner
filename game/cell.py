@@ -1,6 +1,5 @@
 from coin import *
 
-
 class CellMap:
     def __init__(self):
         self.map: Cell = self.getCells()
@@ -35,9 +34,6 @@ class CellMap:
     def collectCoin(self, pos):
         cell = self.getCell(pos)
         if cell.hasCoin:
-            if cell.coin.isSuperCoin:
-                pass
-                # todo: ghost logic when super pellet is collected
             cell.hasCoin = False
             return cell.coin.score
         return 0
