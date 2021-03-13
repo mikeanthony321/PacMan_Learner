@@ -18,12 +18,12 @@ class Actions(Enum):
 class LearnerAgent():
 
     def __init__(self, pacmanInst):
+        self.api = pacmanInst
         state = self.get_game_vals()
         self.policy_net = Network(pacmanInst)
         self.target_net = Network(pacmanInst)
-        self.api = pacmanInst
 
-    def fire(self):
+    def run(self):
         # make thread
         thread = threading.Thread(target=self.listen)
         thread.start()
@@ -31,19 +31,16 @@ class LearnerAgent():
 
     def listen(self):
         # TODO: potentially change to flag
-        print("listen")
-        has_run = False
-        while not has_run: 
-            gameState = self.api.getUpdateState()
-            if gameState == 1:
+        while True:
+            game_state = self.api.getUpdateState()
+            if game_state == 1:
                 state = self.get_game_vals()
+                output = self.policy_net.forward(state)
+                print(str(output))
 
                 criterion = torch.nn.MSELoss()
                 self.policy_net.train()
-                self.target_net.eval()
-
-                print("yay")
-            has_run = True    
+                self.target_net.eval() 
 
     def choose_action(self, state):
         state = torch.from_numpy(state).float().unsqueeze(0).to(DEVICE)
@@ -59,19 +56,21 @@ class LearnerAgent():
             return random.choice(np.arange(self.action_size))
     
     def get_game_vals(self):
-        # TODO: replce dummy tensor with actual data
-        # player_tuple = self.api.getPlayerGridCoords()
-        # ghost_tuple = self.api.getNearestGhostGridCoords()
-        # pellet_tuple = self.api.getNearestPelletGridCoords()
-        # power_tuple = self.api.getNearestPowerPelletGridCoords()
-        # power_active = self.api.isPowerPelletActive()
+        player_tuple = self.api.getPlayerGridCoords()
+        ghost_tuple = self.api.getNearestGhostGridCoords()
+        pellet_tuple = self.api.getNearestPelletGridCoords()
+        power_tuple = self.api.getNearestPowerPelletGridCoords()
+        power_active = self.api.isPowerPelletActive()
 
-        # tensor = [player_tuple[0], player_tuple[1], ghost_tuple[0], ghost_tuple[1], 
-        # pellet_tuple[0], pellet_tuple[1], power_tuple[0], power_tuple[1], 
-        # 1 if power_active else 0]
+        print('Player: {}'.format(player_tuple))
+        print('Ghost: {}'.format(ghost_tuple))
+        print('Pellet: {}'.format(pellet_tuple))
+        print('Power: {}'.format(power_tuple))
+        print('Active: {}'.format(power_active))
 
-        # tensor = torch.Tensor(tensor)
-        tensor = torch.rand(9)
+        tensor = [player_tuple[0], player_tuple[1], ghost_tuple[0], ghost_tuple[1], 
+        pellet_tuple[0], pellet_tuple[1], power_tuple[0], power_tuple[1], 
+        1 if power_active else 0]
         return tensor
 
 class Network(nn.Module):
@@ -84,12 +83,6 @@ class Network(nn.Module):
         self.squishifier = nn.ReLU()
         self.api = pacmanInst
 
-
-    def fire(self):
-        # make thread
-        thread = threading.Thread(target=self.listen)
-        thread.start()
-
     def forward(self, x):
         x = self.input(x)
         x = self.squishifier(x)
@@ -97,8 +90,8 @@ class Network(nn.Module):
         x = self.squishifier(x)
         x = self.output(x)
         x = self.squishifier(x)
-
         return x
+
 class ReplayMemory():
     def __init__(self, action_size, buffer_size, seed):
         self.action_size = action_size
