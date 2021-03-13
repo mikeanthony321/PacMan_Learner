@@ -1,4 +1,5 @@
 import sys
+from api.game_agent import GameAgentAPI
 from player import *
 from cell import *
 from analytics import *
@@ -7,8 +8,7 @@ from ghost import *
 pygame.init()
 vec = pygame.math.Vector2
 
-
-class Pacman:
+class Pacman(GameAgentAPI):
     def __init__(self, monitor_size):
         self.screen = pygame.display.set_mode((WIDTH, HEIGHT))
         self.analytics = Analytics(monitor_size)
@@ -18,6 +18,7 @@ class Pacman:
         self.running = True
         self.state = 'title'
         self.cells = CellMap()
+
         self.player = Player(self, self.screen, PLAYER_START_POS, self.sprites)
 
         self.blinky = Ghost(self, self.screen, True, "Blinky", BLINKY_START_POS, BLINKY_SPRITE_POS, self.sprites)
@@ -53,7 +54,7 @@ class Pacman:
         pygame.quit()
         sys.exit()
 
-    # -- -- -- GENERAL FUNCTIONS -- -- -- #
+# -- -- -- GENERAL FUNCTIONS -- -- -- #
     def write(self, to_write, screen, pos, size, color, font_name):
         font = pygame.font.Font(font_name, size)
         text = font.render(to_write, False, color)
@@ -73,6 +74,10 @@ class Pacman:
         for y in range(GRID_H):
             pygame.draw.line(self.level, GOLD, (0, y * CELL_H), (WIDTH, y * CELL_H))
 
+    def reset_level(self):
+        self.cells = CellMap()
+        self.player.reset()
+
     def spawn_coins(self):
         for cell in self.cells.map:
             if cell.hasCoin:
@@ -84,40 +89,38 @@ class Pacman:
                                        (cell.pos[0] * CELL_W + CELL_W // 2,
                                         cell.pos[1] * CELL_H + CELL_H // 2 + PAD_TOP), 3)
 
-    # -- -- -- TITLE FUNCTIONS -- -- -- #
+# -- -- -- TITLE FUNCTIONS -- -- -- #
     def title_events(self):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self.running = False
             if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
                 self.state = 'game'
-
+                
     def title_update(self):
         pass
-
+    
     def title_draw(self):
         self.screen.fill(BLACK)
         self.write("HIGH SCORE " + HIGH_SCORE, self.screen, [115, 15], TITLE_TEXT_SIZE, WHITE, TITLE_FONT)
-        self.write_center('PUSH SPACE TO START', self.screen, [WIDTH // 2, HEIGHT // 2], TITLE_TEXT_SIZE, GOLD,
-                          TITLE_FONT)
-        self.write_center('1 PLAYER ONLY', self.screen, [WIDTH // 2, HEIGHT // 2 + 50], TITLE_TEXT_SIZE, CERU,
-                          TITLE_FONT)
+        self.write_center('PUSH SPACE TO START', self.screen, [WIDTH//2, HEIGHT//2], TITLE_TEXT_SIZE, GOLD, TITLE_FONT)
+        self.write_center('1 PLAYER ONLY', self.screen, [WIDTH // 2, HEIGHT // 2 + 50], TITLE_TEXT_SIZE, BLUE, TITLE_FONT)
         pygame.display.update()
 
-    # -- -- -- GAME FUNCTIONS -- -- -- #
+# -- -- -- GAME FUNCTIONS -- -- -- #
     def game_events(self):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self.running = False
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_LEFT:
-                    self.player.move(vec(-1, 0))
+                    self.moveLeft()
                 if event.key == pygame.K_RIGHT:
-                    self.player.move(vec(1, 0))
+                    self.moveRight()
                 if event.key == pygame.K_UP:
-                    self.player.move(vec(0, -1))
+                    self.moveUp()
                 if event.key == pygame.K_DOWN:
-                    self.player.move(vec(0, 1))
+                    self.moveDown()
                 # Temporary to test death of ghost
                 if event.key == pygame.K_SPACE:
                     self.blinky.set_alive_status(False)
@@ -235,3 +238,40 @@ class Pacman:
         self.inky.set_power_pellet_status(status)
         self.pinky.set_power_pellet_status(status)
         self.clyde.set_power_pellet_status(status)
+
+# -- -- -- AGENT API FUNCTIONS -- -- -- #
+    def getUpdateState(self):
+        # Implement me!
+        pass
+
+    def moveUp(self):
+        self.player.move(vec(0, -1))
+
+    def moveDown(self):
+        self.player.move(vec(0, 1))
+
+    def moveLeft(self):
+        self.player.move(vec(-1, 0))
+
+    def moveRight(self):
+        self.player.move(vec(1, 0))
+
+    def getPlayerGridCoords(self):
+        # Implement me!
+        pass
+
+    def getNearestGhostGridCoords(self):
+        # Implement me!
+        pass
+
+    def getNearestPelletGridCoords(self):
+        # Implement me!
+        pass
+
+    def getNearestPowerPelletGridCoords(self):
+        # Implement me!
+        pass
+
+    def isPowerPelletActive(self):
+        # Implement me!
+        pass

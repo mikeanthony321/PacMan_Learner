@@ -170,15 +170,13 @@ class Player:
         if abs(self.grid_pos.x - self.presence_pos.y) > 2 or abs(self.grid_pos.y - self.presence_pos.y) > 2:
             self.presence_pos = self.grid_pos
 
-
-
     def draw(self):
         # pacman
         self.screen.blit(self.frame, self.sprite_pos)
 
         if SHOW_GRID:
             # hit box
-            pygame.draw.rect(self.game.screen, CERU,
+            pygame.draw.rect(self.game.screen, BLUE,
                              (self.grid_pos[0] * CELL_W, self.grid_pos[1] * CELL_H + PAD_TOP, CELL_W, CELL_H), 2)
             # tested cell
             pygame.draw.rect(self.game.screen, WHITE,
