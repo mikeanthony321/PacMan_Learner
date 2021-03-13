@@ -25,6 +25,7 @@ class Pacman(GameAgentAPI):
         self.inky = Ghost(self, self.screen, False, "Inky", INKY_START_POS, INKY_SPRITE_POS, self.sprites)
         self.pinky = Ghost(self, self.screen, False, "Pinky", PINKY_START_POS, PINKY_SPRITE_POS, self.sprites)
         self.clyde = Ghost(self, self.screen, False, "Clyde", CLYDE_START_POS, CLYDE_SPRITE_POS, self.sprites)
+        self.power_pellet_timer = POWER_PELLET_TIMER
 
     def run(self):
         while self.running:
@@ -47,6 +48,7 @@ class Pacman(GameAgentAPI):
         # exit routine
         if self.player.score >= int(HIGH_SCORE):
             open("db/hs.txt", "w").write(str(self.player.score))
+
         if self.player.score >= int(self.analytics.tar_high_score):
             print("Target High Score Achieved!")
         pygame.quit()
@@ -119,16 +121,39 @@ class Pacman(GameAgentAPI):
                     self.moveUp()
                 if event.key == pygame.K_DOWN:
                     self.moveDown()
+                # Temporary to test death of ghost
+                if event.key == pygame.K_SPACE:
+                    self.blinky.set_alive_status(False)
+                    self.inky.set_alive_status(False)
+                    self.pinky.set_alive_status(False)
+                    self.clyde.set_alive_status(False)
 
     def game_update(self):
         self.player.update()
+
+        # When Pacman hits a Super Coin, the player pow pel status
+        # flips to true and back to false upon collecting the next coin.
+        # This is managed during coin collection in player.py
+
+        if self.player.power_pellet_active:
+            if self.power_pellet_timer == POWER_PELLET_TIMER:
+                self.set_ghost_power_pellet_status(True)
+            if self.power_pellet_timer > 0:
+                self.power_pellet_timer -= 1
+            else:
+                self.player.set_power_pellet_status(False)
+                self.set_ghost_power_pellet_status(False)
+        else:
+            self.power_pellet_timer = POWER_PELLET_TIMER
 
         self.blinky.update()
         self.pinky.update()
         self.inky.update()
         self.clyde.update()
 
-        self.checkGhostPacCollision()
+        self.set_pac_pos()
+
+        self.check_ghost_pac_collision()
 
     def game_draw(self):
         self.screen.fill(BLACK)
@@ -142,7 +167,7 @@ class Pacman(GameAgentAPI):
         self.screen.blit(self.level, (0, PAD_TOP))
         self.spawn_coins()
 
-        # This if/else renders alters the order of drawing such that a ghost will appear over Pac-Man normally,
+        # This if/else alters the order of drawing such that a ghost will appear over Pac-Man normally,
         # but render below when Pac-Man is defeated. Might be a waste to do this, we can just render Pac-Man last at
         # all times if preferred.
         if self.player.alive:
@@ -169,27 +194,50 @@ class Pacman(GameAgentAPI):
 
         pygame.display.update()
 
+    def set_pac_pos(self):
+        self.blinky.set_pacman_pos(self.player.get_presence())
+        self.inky.set_pacman_pos(self.player.get_presence())
+        self.pinky.set_pacman_pos(self.player.get_presence())
+        self.clyde.set_pacman_pos(self.player.get_presence())
 
-    def checkGhostPacCollision(self):
+    def check_ghost_pac_collision(self):
         # todo: this could be much better
-        if self.blinky.getPixelPos() == self.player.getPixelPos() and self.player.getAliveStatus():
-            self.player.setAliveStatus(False)
-            self.blinky.setDisplayStatus(False)
-        if self.pinky.getPixelPos() == self.player.getPixelPos() and self.player.getAliveStatus():
-            self.player.setAliveStatus(False)
-            self.pinky.setDisplayStatus(False)
-        if self.inky.getPixelPos() == self.player.getPixelPos() and self.player.getAliveStatus():
-            self.player.setAliveStatus(False)
-            self.inky.setDisplayStatus(False)
-        if self.clyde.getPixelPos() == self.player.getPixelPos() and self.player.getAliveStatus():
-            self.player.setAliveStatus(False)
-            self.clyde.setDisplayStatus(False)
+        if self.blinky.get_pixel_pos() == self.player.get_pixel_pos() and self.player.get_alive_status():
+            if not self.player.power_pellet_active:
+                self.player.set_alive_status(False)
+                self.blinky.set_display_status(False)
+            else:
+                self.blinky.set_alive_status(False)
+        if self.pinky.get_pixel_pos() == self.player.get_pixel_pos() and self.player.get_alive_status():
+            if not self.player.power_pellet_active:
+                self.player.set_alive_status(False)
+                self.pinky.set_display_status(False)
+            else:
+                self.pinky.set_alive_status(False)
+        if self.inky.get_pixel_pos() == self.player.get_pixel_pos() and self.player.get_alive_status():
+            if not self.player.power_pellet_active:
+                self.player.set_alive_status(False)
+                self.inky.set_display_status(False)
+            else:
+                self.inky.set_alive_status(False)
+        if self.clyde.get_pixel_pos() == self.player.get_pixel_pos() and self.player.get_alive_status():
+            if not self.player.power_pellet_active:
+                self.player.set_alive_status(False)
+                self.clyde.set_display_status(False)
+            else:
+                self.clyde.set_alive_status(False)
 
-        if not self.player.getAliveStatus():
-            self.blinky.setActiveStatus(False)
-            self.pinky.setActiveStatus(False)
-            self.inky.setActiveStatus(False)
-            self.clyde.setActiveStatus(False)
+        if not self.player.get_alive_status():
+            self.blinky.set_alive_status(False)
+            self.pinky.set_alive_status(False)
+            self.inky.set_alive_status(False)
+            self.clyde.set_alive_status(False)
+
+    def set_ghost_power_pellet_status(self, status):
+        self.blinky.set_power_pellet_status(status)
+        self.inky.set_power_pellet_status(status)
+        self.pinky.set_power_pellet_status(status)
+        self.clyde.set_power_pellet_status(status)
 
 # -- -- -- AGENT API FUNCTIONS -- -- -- #
     def getUpdateState(self):
@@ -227,4 +275,3 @@ class Pacman(GameAgentAPI):
     def isPowerPelletActive(self):
         # Implement me!
         pass
-
