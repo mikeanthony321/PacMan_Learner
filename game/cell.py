@@ -1,4 +1,4 @@
-from game.coin import *
+from coin import *
 
 class CellMap:
     def __init__(self):

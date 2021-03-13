@@ -1,6 +1,6 @@
 import random
 import numpy as np
-from game.settings import *
+from settings import *
 vec = pygame.math.Vector2
 
 class Ghost(pygame.sprite.Sprite):

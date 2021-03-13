@@ -2,9 +2,9 @@ import os
 import sys
 from PyQt5.QtWidgets import QApplication
 
-from game.pacman import Pacman
-from game.agent import LearnerAgent
-from game.settings import WIDTH, HEIGHT
+from pacman import Pacman
+from agent import LearnerAgent
+from settings import WIDTH, HEIGHT
 
 def main():
     app = QApplication(sys.argv)

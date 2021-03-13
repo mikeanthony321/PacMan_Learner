@@ -1,4 +1,4 @@
-from game.settings import *
+from settings import *
 
 class Coin:
     def __init__(self):
