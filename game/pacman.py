@@ -1,4 +1,5 @@
 import sys
+import copy
 from game.api.game_agent import GameAgentAPI
 from game.player import *
 from game.cell import *
@@ -16,7 +17,11 @@ class Pacman(GameAgentAPI):
         self.sprites = pygame.image.load('res/pacmanspritesheet.png')
         self.clock = pygame.time.Clock()
         self.running = True
-        self.state = 'title'
+        self.app_state = 'title'
+
+        # This int value is for the AI. Refer to game_agent.py for details.
+        self.game_state = 0
+
         self.cells = CellMap()
 
         self.player = Player(self, self.screen, PLAYER_START_POS, self.sprites)
@@ -29,11 +34,11 @@ class Pacman(GameAgentAPI):
 
     def run(self):
         while self.running:
-            if self.state == 'title':
+            if self.app_state == 'title':
                 self.title_events()
                 self.title_update()
                 self.title_draw()
-            elif self.state == 'game':
+            elif self.app_state == 'game':
                 self.game_events()
                 self.game_update()
                 self.game_draw()
@@ -41,7 +46,7 @@ class Pacman(GameAgentAPI):
                 self.running = False
 
             if self.analytics.running:
-                self.state = 'game'
+                self.app_state = 'game'
 
             self.clock.tick(FPS)
 
@@ -95,7 +100,7 @@ class Pacman(GameAgentAPI):
             if event.type == pygame.QUIT:
                 self.running = False
             if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
-                self.state = 'game'
+                self.app_state = 'game'
                 
     def title_update(self):
         pass
@@ -129,7 +134,10 @@ class Pacman(GameAgentAPI):
                     self.clyde.set_alive_status(False)
 
     def game_update(self):
+        # Alert the AI if a new grid square has been entered
+        player_pos = copy.deepcopy(self.player.get_grid_pos())
         self.player.update()
+        self.game_state = 1 if self.player.get_grid_pos() != player_pos else 0
 
         # When Pacman hits a Super Coin, the player pow pel status
         # flips to true and back to false upon collecting the next coin.
@@ -241,8 +249,7 @@ class Pacman(GameAgentAPI):
 
 # -- -- -- AGENT API FUNCTIONS -- -- -- #
     def getUpdateState(self):
-        # Implement me!
-        pass
+        return self.game_state
 
     def moveUp(self):
         self.player.move(vec(0, -1))
@@ -257,21 +264,40 @@ class Pacman(GameAgentAPI):
         self.player.move(vec(1, 0))
 
     def getPlayerGridCoords(self):
-        # Implement me!
-        pass
+        return self.player.get_grid_pos()
 
     def getNearestGhostGridCoords(self):
-        # Implement me!
-        pass
+        player_coords = self.player.get_grid_pos()
+        min_coords = [100, 100]
+        for ghost in [self.blinky, self.pinky, self.inky, self.clyde]:
+            ghost_coords = ghost.get_grid_pos()
+            distances = [sum([abs(c) for c in min_coords - player_coords]),
+                         sum([abs(c) for c in ghost_coords - player_coords])]
+            if distances[1] < distances[0]:
+                min_coords = ghost_coords
+        return min_coords
 
     def getNearestPelletGridCoords(self):
-        # Implement me!
-        pass
+        player_coords = self.player.get_grid_pos()
+        min_coords = [100, 100]
+        for cell in [c for c in self.cells.map if c.hasCoin]:
+            cell_coords = cell.pos
+            distances = [sum([abs(c) for c in min_coords - player_coords]),
+                         sum([abs(c) for c in cell_coords - player_coords])]
+            if distances[1] < distances[0]:
+                min_coords = cell_coords
+        return min_coords
 
     def getNearestPowerPelletGridCoords(self):
-        # Implement me!
-        pass
+        player_coords = self.player.get_grid_pos()
+        min_coords = [100, 100]
+        for cell in [c for c in self.cells.map if (c.hasCoin and c.coin.isSuperCoin)]:
+            cell_coords = cell.pos
+            distances = [sum([abs(c) for c in min_coords - player_coords]),
+                         sum([abs(c) for c in cell_coords - player_coords])]
+            if distances[1] < distances[0]:
+                min_coords = cell_coords
+        return min_coords
 
     def isPowerPelletActive(self):
-        # Implement me!
-        pass
+        return self.player.power_pellet_active

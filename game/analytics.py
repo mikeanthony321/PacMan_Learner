@@ -1,4 +1,4 @@
-from settings import *
+from game.settings import *
 from PyQt5.QtWidgets import QApplication, QMainWindow, QLineEdit, QPushButton, QLabel, QTableWidget, QTableWidgetItem
 from PyQt5.QtCore import QTimer
 from PyQt5.QtGui import QFont

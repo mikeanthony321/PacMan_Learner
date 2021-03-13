@@ -1,6 +1,6 @@
 import random
 import numpy as np
-from settings import *
+from game.settings import *
 vec = pygame.math.Vector2
 
 class Ghost(pygame.sprite.Sprite):
@@ -261,6 +261,9 @@ class Ghost(pygame.sprite.Sprite):
 
     def get_pixel_pos(self):
         return self.pixel_pos
+
+    def get_grid_pos(self):
+        return self.grid_pos
 
     def set_alive_status(self, status):
         self.ghost_alive = status

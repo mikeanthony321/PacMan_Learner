@@ -18,21 +18,19 @@ class LearnerAgent(nn.Module):
         self.squishifier = nn.ReLU()
         self.api = pacmanInst
 
-    def fire(self):
+    def run(self):
         # make thread
         thread = threading.Thread(target=self.listen)
         thread.start()
     
     def listen(self):
         # TODO: potentially change to flag
-        has_run = False
-        while not has_run: 
-            gameState = self.api.getUpdateState()
-            if gameState == 1:
+        while True:
+            game_state = self.api.getUpdateState()
+            if game_state == 1:
                 state = self.get_game_vals()
                 output = self.forward(state)
-                print(output)
-            has_run = True
+                print(str(output))
 
                 
     def get_game_vals(self):
@@ -41,6 +39,12 @@ class LearnerAgent(nn.Module):
         pellet_tuple = self.api.getNearestPelletGridCoords()
         power_tuple = self.api.getNearestPowerPelletGridCoords()
         power_active = self.api.isPowerPelletActive()
+
+        # print('Player: {}'.format(player_tuple))
+        # print('Ghost: {}'.format(ghost_tuple))
+        # print('Pellet: {}'.format(pellet_tuple))
+        # print('Power: {}'.format(power_tuple))
+        # print('Active: {}'.format(power_active))
 
         tensor = [player_tuple[0], player_tuple[1], ghost_tuple[0], ghost_tuple[1], 
         pellet_tuple[0], pellet_tuple[1], power_tuple[0], power_tuple[1], 
