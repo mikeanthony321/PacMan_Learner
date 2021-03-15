@@ -1,5 +1,7 @@
 import sys
 import copy
+
+from game.agent import LearnerAgent
 from game.api.game_agent import GameAgentAPI
 from game.player import *
 from game.cell import *
@@ -137,7 +139,8 @@ class Pacman(GameAgentAPI):
         # Alert the AI if a new grid square has been entered
         player_pos = copy.deepcopy(self.player.get_grid_pos())
         self.player.update()
-        self.game_state = 1 if self.player.get_grid_pos() != player_pos else 0
+        if self.player.get_grid_pos() != player_pos:
+            LearnerAgent.run_decision()
 
         # When Pacman hits a Super Coin, the player pow pel status
         # flips to true and back to false upon collecting the next coin.

@@ -1,7 +1,9 @@
 import threading
+from collections import namedtuple, deque
 from enum import Enum
 import random
 
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -9,13 +11,25 @@ import torch.nn.functional as F
 
 DEVICE = torch.device("cpu") # use CPU rather than Cuda GPU to power agent
 HIDDEN_LAYER_WIDTH = 5
+
 class Actions(Enum):
     UP = 0
     DOWN = 1
     LEFT = 2
     RIGHT = 3
 
-class LearnerAgent():
+class LearnerAgent:
+
+    agent_instance = None
+
+    @staticmethod
+    def create_agent_instance(game_inst):
+        LearnerAgent.agent_instance = LearnerAgent(game_inst)
+
+    @staticmethod
+    def run_decision():
+        thread = threading.Thread(target=LearnerAgent.agent_instance.decide)
+        thread.start()
 
     def __init__(self, pacmanInst):
         self.api = pacmanInst
@@ -23,24 +37,15 @@ class LearnerAgent():
         self.policy_net = Network(pacmanInst)
         self.target_net = Network(pacmanInst)
 
-    def run(self):
-        # make thread
-        thread = threading.Thread(target=self.listen)
-        thread.start()
-    
-
-    def listen(self):
+    def decide(self):
         # TODO: potentially change to flag
-        while True:
-            game_state = self.api.getUpdateState()
-            if game_state == 1:
-                state = self.get_game_vals()
-                output = self.policy_net.forward(state)
-                print(str(output))
+        state = self.get_game_vals()
+        output = self.policy_net.forward(state)
+        print(str(output))
 
-                criterion = torch.nn.MSELoss()
-                self.policy_net.train()
-                self.target_net.eval() 
+        criterion = torch.nn.MSELoss()
+        self.policy_net.train()
+        self.target_net.eval()
 
     def choose_action(self, state):
         state = torch.from_numpy(state).float().unsqueeze(0).to(DEVICE)
