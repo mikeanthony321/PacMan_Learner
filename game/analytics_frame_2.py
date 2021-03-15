@@ -1,5 +1,7 @@
 import sys, math, time
 from network_visualizer_test import get_network_diagram, network_update
+from agent_analytics_frame import AgentAnalyticsFrameAPI
+from network_diagram import NeuralNetwork, Layer
 from settings import *
 from PyQt5.QtWidgets import QVBoxLayout, QMainWindow, QLineEdit, QPushButton, QTableWidget, QDesktopWidget, QTableWidgetItem, QWidget, QHBoxLayout, QLabel, QApplication
 from PyQt5.QtCore import QTimer, Qt, QSize, QPoint
@@ -8,7 +10,7 @@ from PyQt5.QtGui import QFont,QPixmap, QPainter, QBrush, QPen, QColor, QRadialGr
 
 class Visualizer(QWidget):
 
-    def __init__(self, network_diagram):
+    def __init__(self, network_diagram, interface):
         super().__init__()
         self.title = "Visualizer"
         self.width = 400
@@ -19,6 +21,7 @@ class Visualizer(QWidget):
         self.thickness_param = 3
         self.base_line_thickness_param = 1
         self.network = network_diagram
+        self.agent_interface = interface
 
         self.initUI()
         self.initialize_structure()
@@ -94,21 +97,30 @@ class Visualizer(QWidget):
 
 
 class Analytics(QMainWindow):
-    def __init__(self, monitor_size, network_diagram):
+    def __init__(self, monitor_size):
         super().__init__()
         self.window = QMainWindow()
         self.window.resize(WIDTH * 2, HEIGHT)
         self.window.move(math.floor(monitor_size.width() / 2 - (1.5 * WIDTH)), math.floor(monitor_size.height() / 2 - HEIGHT / 2 - 31))
         self.window.setWindowTitle('Pac-Man Learner Analytics')
-
+        self.agent_interface = AgentAnalyticsFrameAPI()
         self.running = False
         self.tar_high_score = 0
-        self.learning_rate = 0.0
-        self.network_diagram = network_diagram
         self.timer_min = 0
         self.timer_sec = 0
         self.timer_ms = 0
+        self.create_nn()
         self.start_screen()
+
+    def create_nn(self):
+        structure_array = self.agent_interface.get_network_structure()
+        network = NeuralNetwork()
+        for i in range(len(structure_array)):
+            layer = Layer(i)
+            for j in range(structure_array[i]):
+                layer.add_node(None)
+            network.add_layer(layer)
+        self.n_network = network
 
 # -- -- -- GENERAL FUNCTIONS -- -- -- #
     def updateScreen(self):
@@ -147,6 +159,7 @@ class Analytics(QMainWindow):
             self.tar_high_score = int(self.tar_high_score)
             print("The target high score is: " + self.tar_high_score_input.text())
             self.tar_high_score_input.setText("")
+            self.agent_interface.set_target_score(self.tar_high_score)
         else:
             print("You must stop the sim to enter a target high score")
             self.tar_high_score_input.setText("")
@@ -157,6 +170,7 @@ class Analytics(QMainWindow):
             self.learning_rate = float(self.learning_rate)
             if self.learning_rate < 1.0:
                 print(self.learning_rate)
+                self.agent_interface.set_learning_rate(self.learning_rate)
             else: #I do not know enough about learning rate to know if we want to require it be under 1, just did to have a test
                 print('Please enter a number less than 1')
             self.learning_rate_input.setText("")
@@ -201,7 +215,7 @@ class Analytics(QMainWindow):
         layout.addWidget(self.begin_button)
         self.begin_button.clicked.connect(self.buttonClicked)
 
-        self.visualizer = Visualizer(self.network_diagram)
+        self.visualizer = Visualizer(self.network_diagram, self.agent_interface)
         self.visualizer.resize(150, 500)
         layout.addWidget(self.visualizer)
 
