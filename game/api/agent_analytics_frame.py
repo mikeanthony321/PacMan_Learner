@@ -18,31 +18,31 @@ class AgentAnalyticsFrameAPI(ABC):
         pass
 
     """
-    qvals is a nested list of float values corresponding to the q values of each node of the 
-    network, organized by layer.
+    activation_vals is a nested list of float values corresponding to the activation values of 
+    each node of the network, organized by layer.
     Ex [[0.1, 0, 0.2], [0.1, 0.1], [0, 0.2, 0, 0.3]] 
-    represents the q values of each node in the network, starting with the input layer with 
-    3 nodes, then the hidden layer with 2 nodes, and output layer with 4 nodes.
-    The order in which the q values of nodes within a layer is provided as
+    represents the activation values of each node in the network, starting with the input layer 
+    with 3 nodes, then the hidden layer with 2 nodes, and output layer with 4 nodes.
+    The order in which the activation values of nodes within a layer is provided as
     [[(n1,1), (n1,2), (n1,3)], [(n2,1), (n2,2)], [(n3,1), (n3,2), (n3,3), (n3,4)]]
     and is consistent with the order in which connection weights are accessed in get_weights
     """
 
     # method returns a nested list of float values used to update the network diagram
     # called continuously (update rate tbd)
-    # accesses q values of each node of the network
+    # accesses activation values of each node of the network
     @abstractmethod
-    def get_qvals(self):
+    def get_activation_vals(self):
         pass
 
     """
     weights is a nested list of float values corresponding to the weights between each node of the 
     network, organized by layer, then by node.
     Ex [[[0.3, 0.2], [0.1, 0.3], [0.4, 0]], [[0.3, 0, 0, 0.1], [0, 0, 0.4, 0.2]]]
-    represents the weights of a network with three layers, having three inputs, two nodes in the 
-    hidden layer, and four output nodes. Weights are enumerated as 
+    represents the weights of a network with three layers, having 3 inputs, 2 nodes in the 
+    hidden layer, and 4 output nodes. Weights are enumerated as 
     [[[(n1,1 -> n2,1), (n1,1 -> n2,2)], [(n1,2 -> n2,1), (n1,2 -> n2,2)]  . . .  (n2,2 -> n3,4)]]]
-    and is consistent with the order in which q values are accessed in get_qvals
+    and is consistent with the order in which activation values are accessed in get_activation_vals
     """
 
     # method returns a nested list of float values used to update the network diagram
