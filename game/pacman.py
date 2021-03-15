@@ -2,6 +2,7 @@ import sys
 from api.game_agent import GameAgentAPI
 from player import *
 from cell import *
+from ghost import *
 from analytics_frame_2 import *
 from network_visualizer_test import get_network_diagram
 
@@ -12,13 +13,21 @@ class Pacman(GameAgentAPI):
     def __init__(self, monitor_size):
         self.screen = pygame.display.set_mode((WIDTH, HEIGHT))
         self.analytics = Analytics(monitor_size, get_network_diagram())
-        self.level = pygame.image.load('lev_og.png')
+        self.level = pygame.image.load('res/lev_og.png')
+        self.sprites = pygame.image.load('res/pacmanspritesheet.png')
         self.clock = pygame.time.Clock()
         self.running = True
         self.state = 'title'
         self.cells = CellMap()
-        self.player = Player(self, PLAYER_START_POS)
-        
+
+        self.player = Player(self, self.screen, PLAYER_START_POS, self.sprites)
+
+        self.blinky = Ghost(self, self.screen, True, "Blinky", BLINKY_START_POS, BLINKY_SPRITE_POS, self.sprites)
+        self.inky = Ghost(self, self.screen, False, "Inky", INKY_START_POS, INKY_SPRITE_POS, self.sprites)
+        self.pinky = Ghost(self, self.screen, False, "Pinky", PINKY_START_POS, PINKY_SPRITE_POS, self.sprites)
+        self.clyde = Ghost(self, self.screen, False, "Clyde", CLYDE_START_POS, CLYDE_SPRITE_POS, self.sprites)
+        self.power_pellet_timer = POWER_PELLET_TIMER
+
     def run(self):
         while self.running:
             if self.state == 'title':
@@ -32,8 +41,6 @@ class Pacman(GameAgentAPI):
             else:
                 self.running = False
 
-            #This is a temporary section meant to test interaction (albeit a simple interaction)
-            #self.analytics.updateScreen()
             if self.analytics.running:
                 self.state = 'game'
 
@@ -42,6 +49,7 @@ class Pacman(GameAgentAPI):
         # exit routine
         if self.player.score >= int(HIGH_SCORE):
             open("db/hs.txt", "w").write(str(self.player.score))
+
         if self.player.score >= int(self.analytics.tar_high_score):
             print("Target High Score Achieved!")
         pygame.quit()
@@ -114,9 +122,39 @@ class Pacman(GameAgentAPI):
                     self.moveUp()
                 if event.key == pygame.K_DOWN:
                     self.moveDown()
+                # Temporary to test death of ghost
+                if event.key == pygame.K_SPACE:
+                    self.blinky.set_alive_status(False)
+                    self.inky.set_alive_status(False)
+                    self.pinky.set_alive_status(False)
+                    self.clyde.set_alive_status(False)
 
     def game_update(self):
         self.player.update()
+
+        # When Pacman hits a Super Coin, the player pow pel status
+        # flips to true and back to false upon collecting the next coin.
+        # This is managed during coin collection in player.py
+
+        if self.player.power_pellet_active:
+            if self.power_pellet_timer == POWER_PELLET_TIMER:
+                self.set_ghost_power_pellet_status(True)
+            if self.power_pellet_timer > 0:
+                self.power_pellet_timer -= 1
+            else:
+                self.player.set_power_pellet_status(False)
+                self.set_ghost_power_pellet_status(False)
+        else:
+            self.power_pellet_timer = POWER_PELLET_TIMER
+
+        self.blinky.update()
+        self.pinky.update()
+        self.inky.update()
+        self.clyde.update()
+
+        self.set_pac_pos()
+
+        self.check_ghost_pac_collision()
 
     def game_draw(self):
         self.screen.fill(BLACK)
@@ -130,11 +168,77 @@ class Pacman(GameAgentAPI):
         self.screen.blit(self.level, (0, PAD_TOP))
         self.spawn_coins()
 
-        # spawn
-        self.player.draw()
+        # This if/else alters the order of drawing such that a ghost will appear over Pac-Man normally,
+        # but render below when Pac-Man is defeated. Might be a waste to do this, we can just render Pac-Man last at
+        # all times if preferred.
+        if self.player.alive:
+            # spawn
+            self.player.draw()
+
+            # ghosts
+            self.blinky.draw()
+            self.pinky.draw()
+            self.inky.draw()
+            self.clyde.draw()
+        else:
+            # ghosts
+            self.blinky.draw()
+            self.pinky.draw()
+            self.inky.draw()
+            self.clyde.draw()
+
+            # spawn
+            self.player.draw()
+
         if SHOW_GRID:
             self.grid()
+
         pygame.display.update()
+
+    def set_pac_pos(self):
+        self.blinky.set_pacman_pos(self.player.get_presence())
+        self.inky.set_pacman_pos(self.player.get_presence())
+        self.pinky.set_pacman_pos(self.player.get_presence())
+        self.clyde.set_pacman_pos(self.player.get_presence())
+
+    def check_ghost_pac_collision(self):
+        # todo: this could be much better
+        if self.blinky.get_pixel_pos() == self.player.get_pixel_pos() and self.player.get_alive_status():
+            if not self.player.power_pellet_active:
+                self.player.set_alive_status(False)
+                self.blinky.set_display_status(False)
+            else:
+                self.blinky.set_alive_status(False)
+        if self.pinky.get_pixel_pos() == self.player.get_pixel_pos() and self.player.get_alive_status():
+            if not self.player.power_pellet_active:
+                self.player.set_alive_status(False)
+                self.pinky.set_display_status(False)
+            else:
+                self.pinky.set_alive_status(False)
+        if self.inky.get_pixel_pos() == self.player.get_pixel_pos() and self.player.get_alive_status():
+            if not self.player.power_pellet_active:
+                self.player.set_alive_status(False)
+                self.inky.set_display_status(False)
+            else:
+                self.inky.set_alive_status(False)
+        if self.clyde.get_pixel_pos() == self.player.get_pixel_pos() and self.player.get_alive_status():
+            if not self.player.power_pellet_active:
+                self.player.set_alive_status(False)
+                self.clyde.set_display_status(False)
+            else:
+                self.clyde.set_alive_status(False)
+
+        if not self.player.get_alive_status():
+            self.blinky.set_alive_status(False)
+            self.pinky.set_alive_status(False)
+            self.inky.set_alive_status(False)
+            self.clyde.set_alive_status(False)
+
+    def set_ghost_power_pellet_status(self, status):
+        self.blinky.set_power_pellet_status(status)
+        self.inky.set_power_pellet_status(status)
+        self.pinky.set_power_pellet_status(status)
+        self.clyde.set_power_pellet_status(status)
 
 # -- -- -- AGENT API FUNCTIONS -- -- -- #
     def getUpdateState(self):

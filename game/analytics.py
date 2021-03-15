@@ -7,8 +7,8 @@ class Analytics(QMainWindow):
     def __init__(self, monitor_size):
         super().__init__()
         self.window = QMainWindow()
-        self.window.resize(WIDTH, HEIGHT)
-        self.window.move(monitor_size.width() / 2 - WIDTH, monitor_size.height() / 2 - HEIGHT / 2 - 31)
+        self.window.resize(WIDTH * 2, HEIGHT)
+        self.window.move(monitor_size.width() / 2 - (1.5 * WIDTH), monitor_size.height() / 2 - HEIGHT / 2 - 31)
         self.window.setWindowTitle('Pac-Man Learner Analytics')
 
         self.running = False
