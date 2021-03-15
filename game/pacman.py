@@ -46,11 +46,7 @@ class Pacman(GameAgentAPI):
             self.clock.tick(FPS)
 
         # exit routine
-        if self.player.score >= int(HIGH_SCORE):
-            open("db/hs.txt", "w").write(str(self.player.score))
-
-        if self.player.score >= int(self.analytics.tar_high_score):
-            print("Target High Score Achieved!")
+        self.score_reset()
         pygame.quit()
         sys.exit()
 
@@ -76,11 +72,25 @@ class Pacman(GameAgentAPI):
 
     def reset_level(self):
         self.cells = CellMap()
+        self.score_reset()
         self.player.reset()
+        self.player.set_alive_status(True)
+        self.ghost_reset()
+
+    def score_reset(self):
+        if self.player.score >= int(HIGH_SCORE):
+            open("db/hs.txt", "w").write(str(self.player.score))
+
+        if self.player.score >= int(self.analytics.tar_high_score):
+            print("Target High Score Achieved!")
+
+        self.player.score = 0
 
     def spawn_coins(self):
+        count = 0
         for cell in self.cells.map:
             if cell.hasCoin:
+                count += 1
                 if cell.coin.isSuperCoin:
                     pygame.draw.circle(self.screen, RED, (
                         cell.pos[0] * CELL_W + CELL_W // 2, cell.pos[1] * CELL_H + CELL_H // 2 + PAD_TOP), 6)
@@ -88,6 +98,8 @@ class Pacman(GameAgentAPI):
                     pygame.draw.circle(self.screen, WHITE,
                                        (cell.pos[0] * CELL_W + CELL_W // 2,
                                         cell.pos[1] * CELL_H + CELL_H // 2 + PAD_TOP), 3)
+        if count == 0:
+            self.reset_level()
 
 # -- -- -- TITLE FUNCTIONS -- -- -- #
     def title_events(self):
@@ -130,6 +142,8 @@ class Pacman(GameAgentAPI):
 
     def game_update(self):
         self.player.update()
+        if not self.player.alive:
+            self.reset_level()
 
         # When Pacman hits a Super Coin, the player pow pel status
         # flips to true and back to false upon collecting the next coin.
@@ -238,6 +252,13 @@ class Pacman(GameAgentAPI):
         self.inky.set_power_pellet_status(status)
         self.pinky.set_power_pellet_status(status)
         self.clyde.set_power_pellet_status(status)
+
+
+    def ghost_reset(self):
+        self.blinky.set_alive_status(True)
+        self.pinky.set_alive_status(True)
+        self.inky.set_alive_status(True)
+        self.clyde.set_alive_status(True)
 
 # -- -- -- AGENT API FUNCTIONS -- -- -- #
     def getUpdateState(self):
