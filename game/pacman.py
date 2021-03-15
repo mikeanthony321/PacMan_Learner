@@ -82,7 +82,7 @@ class Pacman(GameAgentAPI):
             open("db/hs.txt", "w").write(str(self.player.score))
 
         if self.player.score >= int(self.analytics.tar_high_score):
-            print("Target High Score Achieved!")
+            print("Target High Score Achieved! Score: ", self.player.score)
 
         self.player.score = 0
 
@@ -256,9 +256,13 @@ class Pacman(GameAgentAPI):
 
     def ghost_reset(self):
         self.blinky.set_alive_status(True)
+        self.blinky.set_display_status(True)
         self.pinky.set_alive_status(True)
+        self.pinky.set_display_status(True)
         self.inky.set_alive_status(True)
+        self.inky.set_display_status(True)
         self.clyde.set_alive_status(True)
+        self.clyde.set_display_status(True)
 
 # -- -- -- AGENT API FUNCTIONS -- -- -- #
     def getUpdateState(self):
