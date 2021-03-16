@@ -21,9 +21,6 @@ class Pacman(GameAgentAPI):
         self.running = True
         self.app_state = 'title'
 
-        # This int value is for the AI. Refer to game_agent.py for details.
-        self.game_state = 0
-
         self.cells = CellMap()
 
         self.player = Player(self, self.screen, PLAYER_START_POS, self.sprites)
@@ -251,9 +248,6 @@ class Pacman(GameAgentAPI):
         self.clyde.set_power_pellet_status(status)
 
 # -- -- -- AGENT API FUNCTIONS -- -- -- #
-    def getUpdateState(self):
-        return self.game_state
-
     def moveUp(self):
         self.player.move(vec(0, -1))
 

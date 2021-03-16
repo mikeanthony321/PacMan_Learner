@@ -24,7 +24,8 @@ class LearnerAgent:
 
     @staticmethod
     def create_agent_instance(game_inst):
-        LearnerAgent.agent_instance = LearnerAgent(game_inst)
+        if LearnerAgent.agent_instance is None:
+            LearnerAgent.agent_instance = LearnerAgent(game_inst)
 
     @staticmethod
     def run_decision():
@@ -73,9 +74,9 @@ class LearnerAgent:
         print('Power: {}'.format(power_tuple))
         print('Active: {}'.format(power_active))
 
-        tensor = [player_tuple[0], player_tuple[1], ghost_tuple[0], ghost_tuple[1], 
-        pellet_tuple[0], pellet_tuple[1], power_tuple[0], power_tuple[1], 
-        1 if power_active else 0]
+        tensor = torch.Tensor([player_tuple[0], player_tuple[1], ghost_tuple[0], ghost_tuple[1],
+                               pellet_tuple[0], pellet_tuple[1], power_tuple[0], power_tuple[1],
+                               1 if power_active else 0])
         return tensor
 
 class Network(nn.Module):
