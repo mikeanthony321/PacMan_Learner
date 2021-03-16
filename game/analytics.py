@@ -19,6 +19,8 @@ class Analytics(QMainWindow):
         self.timer_sec = 0
         self.timer_ms = 0
 
+        self.restart = False
+
         self.start_screen()
 
 # -- -- -- GENERAL FUNCTIONS -- -- -- #
@@ -43,11 +45,29 @@ class Analytics(QMainWindow):
         else:
             self.timer_label.setText("Execution timer: %d:%d" % (self.timer_min, self.timer_sec))
 
+    def setRunning(self, game_over):
+        self.running = game_over
+
+    def getRestart(self):
+        return self.restart
+
+    def setRestart(self, restart):
+        self.restart = restart
+
 # -- -- -- BUTTON FUNCTIONS -- -- -- #
     def buttonClicked(self):
         self.timer.start(1000)
-        self.sim_screen()
+        #self.sim_screen()
         self.running = True
+
+
+    def restartClicked(self):
+        if self.running == False:
+            self.restart = True
+            self.timer_min = 0
+            self.timer_sec = 0
+            self.timer_ms = 0
+            self.buttonClicked()
 
     def highScoreButton(self):
         if not self.running:
@@ -99,6 +119,13 @@ class Analytics(QMainWindow):
         self.begin_button = QPushButton('Begin', self.window)
         self.begin_button.move(170, 275)
         self.begin_button.clicked.connect(self.buttonClicked)
+
+        # Create the Label/Button for the Restart button to reset the game and start over
+        self.restart_label = QLabel('Restart Sim', self.window)
+        self.restart_label.move(270, 250)
+        self.restart_button = QPushButton('Restart', self.window)
+        self.restart_button.move(270, 275)
+        self.restart_button.clicked.connect(self.restartClicked)
 
         #Create the Label and Timer for the Execution Timer
         #This would actually be present on the sim screen, not the main screen but for now it'll live on the main screen

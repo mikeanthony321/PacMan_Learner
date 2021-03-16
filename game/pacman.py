@@ -75,7 +75,9 @@ class Pacman(GameAgentAPI):
         self.score_reset()
         self.player.reset()
         self.player.set_alive_status(True)
+        self.player.set_game_over_status(False)
         self.ghost_reset()
+        self.analytics.setRestart(False)
 
     def score_reset(self):
         if self.player.score >= int(HIGH_SCORE):
@@ -133,41 +135,42 @@ class Pacman(GameAgentAPI):
                     self.moveUp()
                 if event.key == pygame.K_DOWN:
                     self.moveDown()
-                # Temporary to test death of ghost
-                if event.key == pygame.K_SPACE:
-                    self.blinky.set_alive_status(False)
-                    self.inky.set_alive_status(False)
-                    self.pinky.set_alive_status(False)
-                    self.clyde.set_alive_status(False)
+                if self.player.get_game_over_status == True and event.key == pygame.K_SPACE:
+                    self.reset_level()
 
     def game_update(self):
-        self.player.update()
-        if not self.player.alive:
-            self.reset_level()
+        if not self.player.get_game_over_status():
+            self.player.update()
+            #if not self.player.alive:
+                #self.reset_level()
 
         # When Pacman hits a Super Coin, the player pow pel status
         # flips to true and back to false upon collecting the next coin.
         # This is managed during coin collection in player.py
 
-        if self.player.power_pellet_active:
-            if self.power_pellet_timer == POWER_PELLET_TIMER:
-                self.set_ghost_power_pellet_status(True)
-            if self.power_pellet_timer > 0:
-                self.power_pellet_timer -= 1
+            if self.player.power_pellet_active:
+                if self.power_pellet_timer == POWER_PELLET_TIMER:
+                    self.set_ghost_power_pellet_status(True)
+                if self.power_pellet_timer > 0:
+                    self.power_pellet_timer -= 1
+                else:
+                    self.player.set_power_pellet_status(False)
+                    self.set_ghost_power_pellet_status(False)
             else:
-                self.player.set_power_pellet_status(False)
-                self.set_ghost_power_pellet_status(False)
-        else:
-            self.power_pellet_timer = POWER_PELLET_TIMER
+                self.power_pellet_timer = POWER_PELLET_TIMER
 
-        self.blinky.update()
-        self.pinky.update()
-        self.inky.update()
-        self.clyde.update()
+            if self.player.get_alive_status():
+                self.blinky.update()
+                self.pinky.update()
+                self.inky.update()
+                self.clyde.update()
 
-        self.set_pac_pos()
+            self.set_pac_pos()
 
-        self.check_ghost_pac_collision()
+            self.check_ghost_pac_collision()
+
+        if self.analytics.getRestart() == True:
+            self.reset_level()
 
     def game_draw(self):
         self.screen.fill(BLACK)
@@ -220,32 +223,21 @@ class Pacman(GameAgentAPI):
             if not self.player.power_pellet_active:
                 self.player.set_alive_status(False)
                 self.blinky.set_display_status(False)
-            else:
-                self.blinky.set_alive_status(False)
         if self.pinky.get_pixel_pos() == self.player.get_pixel_pos() and self.player.get_alive_status():
             if not self.player.power_pellet_active:
                 self.player.set_alive_status(False)
                 self.pinky.set_display_status(False)
-            else:
-                self.pinky.set_alive_status(False)
         if self.inky.get_pixel_pos() == self.player.get_pixel_pos() and self.player.get_alive_status():
             if not self.player.power_pellet_active:
                 self.player.set_alive_status(False)
                 self.inky.set_display_status(False)
-            else:
-                self.inky.set_alive_status(False)
         if self.clyde.get_pixel_pos() == self.player.get_pixel_pos() and self.player.get_alive_status():
             if not self.player.power_pellet_active:
                 self.player.set_alive_status(False)
                 self.clyde.set_display_status(False)
-            else:
-                self.clyde.set_alive_status(False)
 
-        if not self.player.get_alive_status():
-            self.blinky.set_alive_status(False)
-            self.pinky.set_alive_status(False)
-            self.inky.set_alive_status(False)
-            self.clyde.set_alive_status(False)
+        if self.player.get_alive_status() == False:
+            self.analytics.setRunning(False)
 
     def set_ghost_power_pellet_status(self, status):
         self.blinky.set_power_pellet_status(status)
@@ -255,14 +247,10 @@ class Pacman(GameAgentAPI):
 
 
     def ghost_reset(self):
-        self.blinky.set_alive_status(True)
-        self.blinky.set_display_status(True)
-        self.pinky.set_alive_status(True)
-        self.pinky.set_display_status(True)
-        self.inky.set_alive_status(True)
-        self.inky.set_display_status(True)
-        self.clyde.set_alive_status(True)
-        self.clyde.set_display_status(True)
+        self.blinky.reset()
+        self.pinky.reset()
+        self.inky.reset()
+        self.clyde.reset()
 
 # -- -- -- AGENT API FUNCTIONS -- -- -- #
     def getUpdateState(self):

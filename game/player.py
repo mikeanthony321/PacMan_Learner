@@ -82,7 +82,7 @@ class Player:
 
         # Death animation frames
         self.death_frames.append(self.frames[0])  # first frame is same as stationary frame
-        for x in range(1, 11):
+        for x in range(1, 12):
             image = pygame.Surface([SPRITE_SIZE, SPRITE_SIZE])
             image.blit(self.sprite_sheet,
                        (0, 0),
@@ -122,6 +122,8 @@ class Player:
         if not self.alive and self.frame_changes < len(self.death_frames):
             self.frame = self.death_frames[self.frame_changes]
             self.frame_changes += 1
+            if self.frame_changes == len(self.death_frames):
+                self.game_over = True
 
     def update(self):
         self.frame_count += 1
@@ -132,7 +134,7 @@ class Player:
             else:
                 self.update_frame(self.death_frames)
 
-        if not self.alive:
+        if not self.alive and self.game_over:
             if isAligned(self.pixel_pos):
                 self.reset()
 
@@ -233,8 +235,16 @@ class Player:
         return self.alive
 
     def set_alive_status(self, status):
+        if status == False:
+            self.direction = vec(0, 0)
         self.alive = status
         self.frame_changes = 0
+
+    def get_game_over_status(self):
+        return self.game_over
+
+    def set_game_over_status(self, game_over):
+        self.game_over = game_over
 
     def get_presence(self):
         return self.presence_pos
