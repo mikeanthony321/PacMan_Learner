@@ -18,6 +18,8 @@ class Ghost(pygame.sprite.Sprite):
 
         # Vector indicating the Cell of the Grid currently occupied by the Ghost
         self.grid_pos = pos
+        self.steps = 0
+        self.next_tile = self.grid_pos
 
         # pixel position of center of ghost
         self.pixel_pos = vec(self.grid_pos.x * CELL_W + (CELL_W // 2),
@@ -27,7 +29,7 @@ class Ghost(pygame.sprite.Sprite):
                              self.grid_pos.y * CELL_H + PAD_TOP)
 
         # Currently, all four ghosts begin with the same direction, this can be randomized
-        self.direction = vec(-1, 0)
+        self.direction = vec(0, 0)
         self.speed = 1.0
 
         # Sprite Sheet information
@@ -41,16 +43,16 @@ class Ghost(pygame.sprite.Sprite):
         self.frame_count = 0
         self.frame_changes = 0
 
-
-
         # Game State Information
         self.power_pellet_active = False
+        self.fleeing = False
+        self.respawning = False
+        self.pac_pos = PLAYER_START_POS
 
-        if self.name == "Blinky":
-            self.pac_pos = PLAYER_START_POS
+        # Find the initial path for an aggressive ghost to Pac-Man
+        if self.aggressive:
             self.direction = vec(0, 0)
             self.path = self.a_search(self.grid_pos, self.pac_pos)
-
 
     def get_frames(self):
         # Store the animation frames for the Ghost within a list
@@ -90,19 +92,20 @@ class Ghost(pygame.sprite.Sprite):
                 self.frame = self.frames[self.frame_changes + GHOST_LEFT]
             elif self.direction.x == 1:
                 self.frame = self.frames[self.frame_changes + GHOST_RIGHT]
-            elif self.direction.y == -1:
-                self.frame = self.frames[self.frame_changes + GHOST_UP]
             elif self.direction.y == 1:
                 self.frame = self.frames[self.frame_changes + GHOST_DOWN]
+            elif self.direction.y == -1:
+                self.frame = self.frames[self.frame_changes + GHOST_UP]
             self.frame_changes += 1
             if self.frame_changes == 2:
                 self.frame_changes = 0
 
         # todo: implement animation frames for ghosts during Power pellet
         if self.power_pellet_active and self.ghost_alive:
+            self.frame_changes = 0
             self.frame = self.power_pellet_frames[self.frame_changes]
             self.frame_changes += 1
-            if self.frame_changes == 4:
+            if self.frame_changes == 3:
                 self.frame_changes = 0
 
         # todo: implement animation frames for ghosts consumed by Pac-Man
@@ -120,82 +123,129 @@ class Ghost(pygame.sprite.Sprite):
         # initialize an array to hold possible direction changes
         poss_dir = []
 
+        if self.power_pellet_active and not self.fleeing:
+            manhattan_dist = self.node_score(self.grid_pos, self.pac_pos)
+            if manhattan_dist < 10:
+                self.direction = -self.direction
+                self.fleeing = True
+
         # check tiles above and below
         if GRID[int(self.grid_pos.y - 1)][int(self.grid_pos.x)] == 1:
-            poss_dir.append(vec(0, -1))
+            if -self.direction != vec(0, -1):
+                poss_dir.append(vec(0, -1))
+
         if GRID[int(self.grid_pos.y + 1)][int(self.grid_pos.x)] == 1:
-            poss_dir.append(vec(0, 1))
+            if -self.direction != vec(0, 1):
+                poss_dir.append(vec(0, 1))
 
         # check tiles to the left and right
         if GRID[int(self.grid_pos.y)][int(self.grid_pos.x - 1)] == 1:
-            poss_dir.append(vec(-1, 0))
+            if -self.direction != vec(-1, 0):
+                poss_dir.append(vec(-1, 0))
+
         if GRID[int(self.grid_pos.y)][int(self.grid_pos.x + 1)] == 1:
-            poss_dir.append(vec(1, 0))
+            if -self.direction != vec(1, 0):
+                poss_dir.append(vec(1, 0))
 
         # choose a direction randomly from available changes
         if len(poss_dir) != 0:
             rand = random.randint(0, len(poss_dir) - 1)
-            if poss_dir[rand] != -self.direction:
-                self.direction = poss_dir[rand]
-                # call for a frame update regardless of 15 fps animations
-                self.update_frame()
+            self.direction = poss_dir[rand]
+
+    def calcGridPos(self):
+        if self.direction.x != 0:
+            # Check if the ghost has entered a new grid tile and update direction as necessary
+            if (self.pixel_pos.x - 30) % CELL_W == 0:
+                self.grid_pos.x = (self.pixel_pos.x - CELL_W // 2) // CELL_W
+
+        if self.direction.y != 0:
+            # Check if the ghost has entered a new grid tile and update direction as necessary
+            if (self.pixel_pos.y - 55) % CELL_H == 0:
+                self.grid_pos.y = (self.pixel_pos.y - (CELL_H // 2) - PAD_TOP) // CELL_H
+
+    def step(self):
+        if self.steps == 0:
+            self.check_tile()
+            self.steps = 20
+
+        if self.steps > 0:
+            self.pixel_pos += self.direction
+            self.image_pos += self.direction
+            self.calcGridPos()
+            self.steps -= 1
 
     def update(self):
-        # Check whether a new path needs to be determined
-        if self.aggressive and self.ghost_alive and self.should_display:
-            if self.path[-1] != self.pac_pos:
-                self.path = self.a_search(self.grid_pos, self.pac_pos)
-
-        #15 frames for ghost frame changes seems about right, though increased speed may make it look weird
+        # Update the animation frame every 15 game frames
         self.frame_count += 1
 
         if self.frame_count % 15 == 0:
             self.update_frame()
 
-        # collision detection
-        coords = (int(self.grid_pos[0] + self.direction.x), int(self.grid_pos[1] + self.direction.y))
-        if self.game.cells.detectCollision(coords):
-            self.check_tile()
-
-        # movement
-        if self.ghost_alive and self.should_display:
-            if self.aggressive and len(self.path) > 0:
-                if self.grid_pos != self.path[0]:
-                # temporary
-                    if len(self.path) == 0:
-                        self.direction = vec(0, 0)
+        if self.frame_count % 2 == 0:
+            if self.should_display:
+                if self.ghost_alive:
+                    if not self.power_pellet_active:
+                        if self.aggressive:
+                            if self.steps == 0:
+                                if len(self.path) > 0:
+                                    if self.path[-1] != self.pac_pos:
+                                        self.path = self.a_search(self.grid_pos, self.pac_pos)
+                                    if self.grid_pos != self.path[0]:
+                                        self.direction = vec(0, 0)
+                                        self.direction = self.path[0] - self.grid_pos
+                                else:
+                                    self.path = self.a_search(self.grid_pos, self.pac_pos)
+                                self.steps = 20
+                            if self.steps > 0:
+                                self.pixel_pos += self.direction
+                                self.image_pos += self.direction
+                                self.calcGridPos()
+                                if len(self.path) > 0:
+                                    if self.grid_pos == self.path[0]:
+                                        self.path.pop(0)
+                                self.steps -= 1
+                        else:
+                            self.step()
                     else:
-                        self.direction = self.path[0] - self.grid_pos
+                        self.step()
 
-                if self.aggressive and self.grid_pos == self.path[0]:
-                    if len(self.path) > 0:
-                        self.path.pop(0)
-
-        else:
-            self.path = self.a_search(self.grid_pos, vec(14, 14))
-            if len(self.path) > 0:
-                if self.grid_pos != self.path[0]:
-                    self.direction = self.path[0] - self.grid_pos
-                if self.grid_pos == self.path[0]:
-                    if len(self.path) > 0:
-                        self.path.pop(0)
-            else:
-                self.ghost_alive = True
-
-        self.pixel_pos += (self.direction * self.speed)
-        self.image_pos += (self.direction * self.speed)
-
-        if self.direction.x != 0:
-            # Check if the ghost has entered a new grid tile and update direction as necessary
-            if (self.pixel_pos.x - 30) % CELL_W == 0:
-                self.grid_pos[0] = (self.pixel_pos.x - CELL_W // 2) // CELL_W
-                self.check_tile()
-
-        if self.direction.y != 0:
-            # Check if the ghost has entered a new grid tile and update direction as necessary
-            if (self.pixel_pos.y - 55) % CELL_H == 0:
-                self.grid_pos[1] = (self.pixel_pos.y - (CELL_H // 2) - PAD_TOP) // CELL_H
-                self.check_tile()
+                else:
+                    # Movement when the ghost is dead
+                    if not self.respawning:
+                        self.path = self.a_search(self.grid_pos, vec(14, 14))
+                        if self.steps == 0:
+                            if len(self.path) > 0:
+                                if self.grid_pos != self.path[0]:
+                                    self.direction = self.path[0] - self.grid_pos
+                            else:
+                                self.respawning = True
+                            self.steps = 20
+                        if self.steps > 0:
+                            self.pixel_pos += self.direction
+                            self.image_pos += self.direction
+                            self.calcGridPos()
+                            if len(self.path) > 0:
+                                if self.grid_pos == self.path[0]:
+                                    self.path.pop(0)
+                            self.steps -= 1
+                    else:
+                        self.path = self.a_search(self.grid_pos, vec(15, 11))
+                        if self.steps == 0:
+                            if len(self.path) > 0:
+                                if self.grid_pos != self.path[0]:
+                                    self.direction = self.path[0] - self.grid_pos
+                            else:
+                                self.respawning = False
+                                self.ghost_alive = True
+                            self.steps = 20
+                        if self.steps > 0:
+                            self.pixel_pos += self.direction
+                            self.image_pos += self.direction
+                            self.calcGridPos()
+                            if len(self.path) > 0:
+                                if self.grid_pos == self.path[0]:
+                                    self.path.pop(0)
+                            self.steps -= 1
 
 
     def draw(self):

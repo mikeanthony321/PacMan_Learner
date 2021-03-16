@@ -1,5 +1,7 @@
 from settings import *
+
 vec = pygame.math.Vector2
+
 
 def isAligned(pixel):
     return isAlignedX(pixel) and isAlignedY(pixel)
@@ -11,6 +13,7 @@ def isAlignedX(pixel):
 
 def isAlignedY(pixel):
     return (pixel.y - 55) % CELL_H == 0
+
 
 class Player:
     def __init__(self, game, screen, pos, sprite_sheet):
@@ -33,7 +36,7 @@ class Player:
                               self.grid_pos.y * CELL_H + PAD_TOP)
 
         # The current xy direction pacman is moving
-        self.direction = vec(1, 0) # pacman must spawn in already moving
+        self.direction = vec(1, 0)  # pacman must spawn in already moving
 
         # To prevent cell clipping, movement is only enabled during certain pixel positions.
         # Inputs are stored in this variable until direction change is allowed.
@@ -46,6 +49,7 @@ class Player:
         # Game status
         self.alive = True
         self.game_over = False
+        self.power_pellet_active = False
 
         # Sprite Sheet information
         self.sprite_sheet = sprite_sheet
@@ -60,7 +64,7 @@ class Player:
         # Full Pac-Man frame
         image = pygame.Surface([SPRITE_SIZE, SPRITE_SIZE])
         image.blit(self.sprite_sheet,
-                   (0,0),
+                   (0, 0),
                    (0, SPRITE_SIZE, SPRITE_SIZE, SPRITE_SIZE))
         image.set_colorkey(BLACK)
         image = pygame.transform.scale(image, (CELL_W, CELL_H))
@@ -70,25 +74,24 @@ class Player:
         for x in range(0, 8):
             image = pygame.Surface([SPRITE_SIZE, SPRITE_SIZE])
             image.blit(self.sprite_sheet,
-                       (0,0),
+                       (0, 0),
                        (x * SPRITE_SIZE, 0, SPRITE_SIZE, SPRITE_SIZE))
             image.set_colorkey(BLACK)
             image = pygame.transform.scale(image, (CELL_W, CELL_H))
             self.frames.append(image)
 
         # Death animation frames
-        self.death_frames.append(self.frames[0]) #first frame is same as stationary frame
+        self.death_frames.append(self.frames[0])  # first frame is same as stationary frame
         for x in range(1, 11):
             image = pygame.Surface([SPRITE_SIZE, SPRITE_SIZE])
             image.blit(self.sprite_sheet,
-                       (0,0),
+                       (0, 0),
                        (x * SPRITE_SIZE, SPRITE_SIZE, SPRITE_SIZE, SPRITE_SIZE))
             image.set_colorkey(BLACK)
             image = pygame.transform.scale(image, (CELL_W, CELL_H))
             self.death_frames.append(image)
 
     def update_frame(self, frames):
-
         # update frames for Pac-Man while alive
         if self.alive:
             if self.direction.x == 0 and self.direction.y == 0:
@@ -123,12 +126,15 @@ class Player:
     def update(self):
         self.frame_count += 1
 
-
         if self.frame_count % 6 == 0:
             if self.alive:
                 self.update_frame(self.frames)
             else:
                 self.update_frame(self.death_frames)
+
+        if not self.alive:
+            if isAligned(self.pixel_pos):
+                self.reset()
 
         # collision detection
         # direction change request detection
@@ -162,12 +168,14 @@ class Player:
 
             if isAligned(self.pixel_pos):
                 # coin mgmt
-                self.score += self.game.cells.collectCoin(self.grid_pos)
+                score_up = self.game.cells.collectCoin(self.grid_pos)
+                # supercoin mgmt
+                if score_up == SUPERCOIN_SCORE:
+                    self.power_pellet_active = True
+                self.score += score_up
 
         if abs(self.grid_pos.x - self.presence_pos.y) > 2 or abs(self.grid_pos.y - self.presence_pos.y) > 2:
             self.presence_pos = self.grid_pos
-
-
 
     def draw(self):
         # pacman
@@ -175,7 +183,7 @@ class Player:
 
         if SHOW_GRID:
             # hit box
-            pygame.draw.rect(self.game.screen, CERU,
+            pygame.draw.rect(self.game.screen, BLUE,
                              (self.grid_pos[0] * CELL_W, self.grid_pos[1] * CELL_H + PAD_TOP, CELL_W, CELL_H), 2)
             # tested cell
             pygame.draw.rect(self.game.screen, WHITE,
@@ -190,6 +198,8 @@ class Player:
     def teleport(self, pos):
         self.stop()
         self.grid_pos = pos
+        self.sprite_pos = vec(self.grid_pos.x * CELL_W,
+                              self.grid_pos.y * CELL_H + PAD_TOP)
         self.pixel_pos = vec(self.grid_pos.x * CELL_W + (CELL_W // 2),
                              self.grid_pos.y * CELL_H + (CELL_H // 2) + PAD_TOP)
 
@@ -228,3 +238,6 @@ class Player:
 
     def get_presence(self):
         return self.presence_pos
+
+    def set_power_pellet_status(self, status):
+        self.power_pellet_active = status

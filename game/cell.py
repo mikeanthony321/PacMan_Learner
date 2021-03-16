@@ -1,6 +1,5 @@
 from coin import *
 
-
 class CellMap:
     def __init__(self):
         self.map: Cell = self.getCells()
@@ -30,21 +29,14 @@ class CellMap:
                 return cell
 
     def detectCollision(self, pos):
-        if self.getCell(pos).hasWall == True:
-            return True
-        else:
-            return False
+        return self.getCell(pos).hasWall
 
     def collectCoin(self, pos):
         cell = self.getCell(pos)
         if cell.hasCoin:
-            if cell.coin.isSuperCoin:
-                pass
-                # todo: ghost logic when super pellet is collected
             cell.hasCoin = False
             return cell.coin.score
-        else:
-            return 0
+        return 0
 
 class Cell:
     def __init__(self, hasWall, pos):
@@ -57,7 +49,8 @@ class Cell:
             if pos == (6, 8) or pos == (21, 8) or pos == (6, 20) or pos == (21, 20):
                 self.coin = SuperCoin()
 
-    def toBool(self, s):
+    @staticmethod
+    def toBool(s):
         if s == '1':
             return True
         elif s == '0':
