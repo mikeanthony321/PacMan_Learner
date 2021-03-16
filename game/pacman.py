@@ -223,18 +223,26 @@ class Pacman(GameAgentAPI):
             if not self.player.power_pellet_active:
                 self.player.set_alive_status(False)
                 self.blinky.set_display_status(False)
+            else:
+                self.blinky.set_alive_status(False)
         if self.pinky.get_pixel_pos() == self.player.get_pixel_pos() and self.player.get_alive_status():
             if not self.player.power_pellet_active:
                 self.player.set_alive_status(False)
                 self.pinky.set_display_status(False)
+            else:
+                self.pinky.set_alive_status(False)
         if self.inky.get_pixel_pos() == self.player.get_pixel_pos() and self.player.get_alive_status():
             if not self.player.power_pellet_active:
                 self.player.set_alive_status(False)
                 self.inky.set_display_status(False)
+            else:
+                self.inky.set_alive_status(False)
         if self.clyde.get_pixel_pos() == self.player.get_pixel_pos() and self.player.get_alive_status():
             if not self.player.power_pellet_active:
                 self.player.set_alive_status(False)
                 self.clyde.set_display_status(False)
+            else:
+                self.clyde.set_alive_status(False)
 
         if self.player.get_alive_status() == False:
             self.analytics.setRunning(False)
