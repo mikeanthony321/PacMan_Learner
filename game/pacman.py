@@ -47,11 +47,7 @@ class Pacman(GameAgentAPI):
             self.clock.tick(FPS)
 
         # exit routine
-        if self.player.score >= int(HIGH_SCORE):
-            open("db/hs.txt", "w").write(str(self.player.score))
-
-        if self.player.score >= int(self.analytics.tar_high_score):
-            print("Target High Score Achieved!")
+        self.score_reset()
         pygame.quit()
         sys.exit()
 
@@ -77,11 +73,27 @@ class Pacman(GameAgentAPI):
 
     def reset_level(self):
         self.cells = CellMap()
+        self.score_reset()
         self.player.reset()
+        self.player.set_alive_status(True)
+        self.player.set_game_over_status(False)
+        self.ghost_reset()
+        self.analytics.setRestart(False)
+
+    def score_reset(self):
+        if self.player.score >= int(HIGH_SCORE):
+            open("db/hs.txt", "w").write(str(self.player.score))
+
+        if self.player.score >= int(self.analytics.tar_high_score):
+            print("Target High Score Achieved! Score: ", self.player.score)
+
+        self.player.score = 0
 
     def spawn_coins(self):
+        count = 0
         for cell in self.cells.map:
             if cell.hasCoin:
+                count += 1
                 if cell.coin.isSuperCoin:
                     pygame.draw.circle(self.screen, RED, (
                         cell.pos[0] * CELL_W + CELL_W // 2, cell.pos[1] * CELL_H + CELL_H // 2 + PAD_TOP), 6)
@@ -89,6 +101,8 @@ class Pacman(GameAgentAPI):
                     pygame.draw.circle(self.screen, WHITE,
                                        (cell.pos[0] * CELL_W + CELL_W // 2,
                                         cell.pos[1] * CELL_H + CELL_H // 2 + PAD_TOP), 3)
+        if count == 0:
+            self.reset_level()
 
 # -- -- -- TITLE FUNCTIONS -- -- -- #
     def title_events(self):
@@ -122,39 +136,42 @@ class Pacman(GameAgentAPI):
                     self.moveUp()
                 if event.key == pygame.K_DOWN:
                     self.moveDown()
-                # Temporary to test death of ghost
-                if event.key == pygame.K_SPACE:
-                    self.blinky.set_alive_status(False)
-                    self.inky.set_alive_status(False)
-                    self.pinky.set_alive_status(False)
-                    self.clyde.set_alive_status(False)
+                if self.player.get_game_over_status == True and event.key == pygame.K_SPACE:
+                    self.reset_level()
 
     def game_update(self):
-        self.player.update()
+        if not self.player.get_game_over_status():
+            self.player.update()
+            #if not self.player.alive:
+                #self.reset_level()
 
         # When Pacman hits a Super Coin, the player pow pel status
         # flips to true and back to false upon collecting the next coin.
         # This is managed during coin collection in player.py
 
-        if self.player.power_pellet_active:
-            if self.power_pellet_timer == POWER_PELLET_TIMER:
-                self.set_ghost_power_pellet_status(True)
-            if self.power_pellet_timer > 0:
-                self.power_pellet_timer -= 1
+            if self.player.power_pellet_active:
+                if self.power_pellet_timer == POWER_PELLET_TIMER:
+                    self.set_ghost_power_pellet_status(True)
+                if self.power_pellet_timer > 0:
+                    self.power_pellet_timer -= 1
+                else:
+                    self.player.set_power_pellet_status(False)
+                    self.set_ghost_power_pellet_status(False)
             else:
-                self.player.set_power_pellet_status(False)
-                self.set_ghost_power_pellet_status(False)
-        else:
-            self.power_pellet_timer = POWER_PELLET_TIMER
+                self.power_pellet_timer = POWER_PELLET_TIMER
 
-        self.blinky.update()
-        self.pinky.update()
-        self.inky.update()
-        self.clyde.update()
+            if self.player.get_alive_status():
+                self.blinky.update()
+                self.pinky.update()
+                self.inky.update()
+                self.clyde.update()
 
-        self.set_pac_pos()
+            self.set_pac_pos()
 
-        self.check_ghost_pac_collision()
+            self.check_ghost_pac_collision()
+
+        if self.analytics.getRestart() == True:
+            self.reset_level()
 
     def game_draw(self):
         self.screen.fill(BLACK)
@@ -228,17 +245,21 @@ class Pacman(GameAgentAPI):
             else:
                 self.clyde.set_alive_status(False)
 
-        if not self.player.get_alive_status():
-            self.blinky.set_alive_status(False)
-            self.pinky.set_alive_status(False)
-            self.inky.set_alive_status(False)
-            self.clyde.set_alive_status(False)
+        if self.player.get_alive_status() == False:
+            self.analytics.setRunning(False)
 
     def set_ghost_power_pellet_status(self, status):
         self.blinky.set_power_pellet_status(status)
         self.inky.set_power_pellet_status(status)
         self.pinky.set_power_pellet_status(status)
         self.clyde.set_power_pellet_status(status)
+
+
+    def ghost_reset(self):
+        self.blinky.reset()
+        self.pinky.reset()
+        self.inky.reset()
+        self.clyde.reset()
 
 # -- -- -- AGENT API FUNCTIONS -- -- -- #
     def getUpdateState(self):

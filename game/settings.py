@@ -9,7 +9,7 @@ GRID_PIXEL_H = HEIGHT - PAD_TOP - PAD_BOT
 GRID_W, GRID_H = 28, 32
 CELL_W, CELL_H = WIDTH // GRID_W, GRID_PIXEL_H // GRID_H
 FPS = 60
-SHOW_GRID = True
+SHOW_GRID = False
 
 # db
 HIGH_SCORE: int = open("db/hs.txt", "r").readline()
