@@ -1,6 +1,6 @@
 import sys, math, time
 from network_visualizer_test import get_network_diagram, network_update
-from agent_analytics_frame import AgentAnalyticsFrameAPI
+from api.agent_analytics_frame import AgentAnalyticsFrameAPI
 from network_diagram import NeuralNetwork, Layer
 from settings import *
 from PyQt5.QtWidgets import QVBoxLayout, QMainWindow, QLineEdit, QPushButton, QTableWidget, QDesktopWidget, QTableWidgetItem, QWidget, QHBoxLayout, QLabel, QApplication
@@ -150,8 +150,6 @@ class Analytics(QMainWindow):
         self.timer.start(1000)
         self.sim_screen()
         self.running = True
-
-
 
     def highScoreButton(self):
         if not self.running:

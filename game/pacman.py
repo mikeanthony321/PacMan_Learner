@@ -3,7 +3,8 @@ from api.game_agent import GameAgentAPI
 from player import *
 from cell import *
 from ghost import *
-from analytics_frame_2 import *
+#from analytics_frame_2 import *
+from analytics_frame import *
 from network_visualizer_test import get_network_diagram
 
 pygame.init()
@@ -12,7 +13,8 @@ vec = pygame.math.Vector2
 class Pacman(GameAgentAPI):
     def __init__(self, monitor_size):
         self.screen = pygame.display.set_mode((WIDTH, HEIGHT))
-        self.analytics = Analytics(monitor_size, get_network_diagram())
+        #self.analytics = Analytics(monitor_size, get_network_diagram())
+        self.analytics = Analytics(monitor_size)
         self.level = pygame.image.load('res/lev_og.png')
         self.sprites = pygame.image.load('res/pacmanspritesheet.png')
         self.clock = pygame.time.Clock()
@@ -78,7 +80,7 @@ class Pacman(GameAgentAPI):
         self.player.set_alive_status(True)
         self.player.set_game_over_status(False)
         self.ghost_reset()
-        self.analytics.setRestart(False)
+        #self.analytics.setRestart(False)
 
     def score_reset(self):
         if self.player.score >= int(HIGH_SCORE):
@@ -136,8 +138,8 @@ class Pacman(GameAgentAPI):
                     self.moveUp()
                 if event.key == pygame.K_DOWN:
                     self.moveDown()
-                if self.player.get_game_over_status == True and event.key == pygame.K_SPACE:
-                    self.reset_level()
+                #if self.player.get_game_over_status == True and event.key == pygame.K_SPACE:
+                #    self.reset_level()
 
     def game_update(self):
         if not self.player.get_game_over_status():
@@ -170,8 +172,8 @@ class Pacman(GameAgentAPI):
 
             self.check_ghost_pac_collision()
 
-        if self.analytics.getRestart() == True:
-            self.reset_level()
+        #if self.analytics.getRestart() == True:
+        #    self.reset_level()
 
     def game_draw(self):
         self.screen.fill(BLACK)

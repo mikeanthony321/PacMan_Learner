@@ -15,7 +15,7 @@ class AgentAnalyticsFrameAPI(ABC):
     # called once when initializing frame
     @abstractmethod
     def get_network_structure(self):
-        pass
+        return [9, 5, 5, 4]
 
     """
     activation_vals is a nested list of float values corresponding to the activation values of 
