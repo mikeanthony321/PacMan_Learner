@@ -1,6 +1,7 @@
 import threading
 from collections import namedtuple, deque
-from enum import Enum
+
+from api.actions import Actions
 import random
 import math
 
@@ -13,12 +14,6 @@ import torch.nn.functional as F
 DEVICE = torch.device("cpu") # use CPU rather than Cuda GPU to power agent
 HIDDEN_LAYER_WIDTH = 5
 BATCH_SIZE = 100
-
-class Actions(Enum):
-    UP = 0
-    DOWN = 1
-    LEFT = 2
-    RIGHT = 3
 
 class LearnerAgent:
 
@@ -47,11 +42,21 @@ class LearnerAgent:
         state = self.get_game_vals()
         rate = self.learning_strat.get_rate()
         
+        decision = None
+        available_actions = self.api.getAvailableActions()
+
         if random.random() > rate:
             with torch.no_grad():
-                return self.policy_net(state)
+                output = self.policy_net(state).tolist()
+                max = (0, -1)
+                for action in available_actions:
+                    if output[action] > max[1]:
+                        max = (action, output[action])
+                decision = max[0]
         else:
-            return random.randrange(4)
+            decision = random.choice(available_actions)
+        
+        self.choose_action(decision)
         # output = self.policy_net.forward(state)
         # print(str(output))
         
@@ -60,18 +65,15 @@ class LearnerAgent:
         # self.policy_net.train()
         # self.target_net.eval()
 
-    # def choose_action(self, state):
-    #     state = torch.from_numpy(state).float().unsqueeze(0).to(DEVICE)
-    #     self.policy_net.eval()
-    #     with torch.no_grad():
-    #         action_values = self.policy_net(state)
-    #     self.policy_net.train()
-
-    #     #Epsilon -greedy action selction
-    #     if random.random() > EPSILON_THRESHOLD:
-    #         return np.argmax(action_values.cpu().data.numpy())
-    #     else:
-    #         return random.choice(np.arange(self.action_size))
+    def choose_action(self, decision):
+        if decision is Actions.UP:
+            self.api.moveUp()
+        elif decision is Actions.DOWN:
+            self.api.moveDown()
+        elif decision is Actions.LEFT:
+            self.api.moveLeft()
+        elif decision is Actions.RIGHT:
+            self.api.moveRight()
     
     def get_game_vals(self):
         player_tuple = self.api.getPlayerGridCoords()

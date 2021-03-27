@@ -2,6 +2,10 @@ from abc import ABC, abstractmethod
 
 class GameAgentAPI(ABC):
 
+    @abstractmethod
+    def getAvailableActions(self):
+        pass
+
     # Change the player's direction to move upwards
     @abstractmethod
     def moveUp(self):

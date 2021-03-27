@@ -1,10 +1,12 @@
 import sys
 import copy
 from api.game_agent import GameAgentAPI
+from agent import LearnerAgent
 from player import *
 from cell import *
 from analytics import *
 from ghost import *
+from api.actions import Actions
 
 pygame.init()
 vec = pygame.math.Vector2
@@ -271,8 +273,9 @@ class Pacman(GameAgentAPI):
         self.clyde.reset()
 
 # -- -- -- AGENT API FUNCTIONS -- -- -- #
-    def getUpdateState(self):
-        return self.game_state
+    def getAvailableActions(self):
+        available_cells = []
+        
 
     def moveUp(self):
         self.player.move(vec(0, -1))
