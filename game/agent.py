@@ -1,4 +1,5 @@
 import threading
+import settings as s
 from collections import namedtuple, deque
 
 from api.actions import Actions
@@ -12,8 +13,6 @@ import torch.optim as optim
 import torch.nn.functional as F
 
 DEVICE = torch.device("cpu") # use CPU rather than Cuda GPU to power agent
-HIDDEN_LAYER_WIDTH = 5
-BATCH_SIZE = 100
 
 class LearnerAgent:
 
@@ -22,7 +21,7 @@ class LearnerAgent:
     @staticmethod
     def create_agent_instance(game_inst):
         if LearnerAgent.agent_instance is None:
-            LearnerAgent.agent_instance = LearnerAgent(game_inst, EpsilonGreedyStrategy(1, 0.05, 200))
+            LearnerAgent.agent_instance = LearnerAgent(game_inst, EpsilonGreedyStrategy(s.EPSILON_START, s.EPSILON_END, s.EPSILON_DECAY))
 
     @staticmethod
     def run_decision():
@@ -36,7 +35,8 @@ class LearnerAgent:
         self.target_net = Network(pacman_inst)
         self.target_net.load_state_dict(self.policy_net.state_dict())
         self.target_net.eval()
-
+        self.memory = ReplayMemory(s.REPLAY_MEMORY_SIZE, s.REPLAY_BATCH_SIZE)
+        self.current_state = self.get_game_vals()
 
     def decide(self):
         state = self.get_game_vals()
@@ -57,13 +57,16 @@ class LearnerAgent:
             decision = random.choice(available_actions)
         
         self.choose_action(decision)
-        # output = self.policy_net.forward(state)
-        # print(str(output))
-        
-        # # TODO: create comparision between networks
-        # criterion = torch.nn.MSELoss()
-        # self.policy_net.train()
-        # self.target_net.eval()
+
+        self.memory.add(self.current_state, decision, self.api.getReward(), state)
+
+        if self.memory.can_provide_sample(s.REPLAY_BATCH_SIZE):
+            batch = self.memory.sample(s.REPLAY_BATCH_SIZE)
+            for state, action, reward, next_state in batch:
+                #TODO: Propogation
+
+        self.current_state = state
+
 
     def choose_action(self, decision):
         if decision is Actions.UP:
@@ -91,9 +94,9 @@ class Network(nn.Module):
     
     def __init__(self, pacmanInst):
         super(Network, self).__init__()
-        self.input = nn.Linear(9, HIDDEN_LAYER_WIDTH)
-        self.hidden = nn.Linear(HIDDEN_LAYER_WIDTH, HIDDEN_LAYER_WIDTH)
-        self.output = nn.Linear(HIDDEN_LAYER_WIDTH, 4)
+        self.input = nn.Linear(9, s.HIDDEN_LAYER_WIDTH)
+        self.hidden = nn.Linear(s.HIDDEN_LAYER_WIDTH, s.HIDDEN_LAYER_WIDTH)
+        self.output = nn.Linear(s.HIDDEN_LAYER_WIDTH, 4)
         self.squishifier = nn.ReLU()
         self.api = pacmanInst
 
@@ -107,12 +110,11 @@ class Network(nn.Module):
         return x
 
 class ReplayMemory:
-    def __init__(self, capacity, buffer_size, seed):
+    def __init__(self, capacity, buffer_size):
         self.capacity = capacity
         self.memory = deque(maxlen=buffer_size)
         self.experiences = namedtuple("Experience", 
         field_names=["state", "action", "reward", "next_state"])
-        self.seed = random.seed(seed)
 
     def add(self,state, action, reward, next_state):
         #TODO: add a push counter?

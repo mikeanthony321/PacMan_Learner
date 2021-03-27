@@ -40,6 +40,19 @@ CLYDE_START_POS = vec(15, 17)
 
 # AI settings
 DECISION_FREQUENCY = 0.8
+HIDDEN_LAYER_WIDTH = 5
+REPLAY_BATCH_SIZE = 100
+REPLAY_MEMORY_SIZE = 10000
+EPSILON_START = 1
+EPSILON_END = 0.05
+EPSILON_DECAY = 200
+
+# Q-Value settings (careful when tweaking!)
+LEVEL_PASSED = 50
+PELLET_FUNC = lambda a : ((a / 20) + 1)
+MOVE = 2
+NO_MOVE = -2
+DIED = -50
 
 # spritesheet settings
 SPRITE_SIZE = 16

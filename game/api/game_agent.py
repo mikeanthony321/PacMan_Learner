@@ -55,3 +55,7 @@ class GameAgentAPI(ABC):
     @abstractmethod
     def isPowerPelletActive(self):
         pass
+
+    @abstractmethod
+    def getReward(self):
+        pass
