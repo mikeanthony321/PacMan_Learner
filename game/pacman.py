@@ -31,6 +31,7 @@ class Pacman(GameAgentAPI):
         self.pinky = Ghost(self, self.screen, False, "Pinky", PINKY_START_POS, PINKY_SPRITE_POS, self.sprites)
         self.clyde = Ghost(self, self.screen, False, "Clyde", CLYDE_START_POS, CLYDE_SPRITE_POS, self.sprites)
         self.power_pellet_timer = POWER_PELLET_TIMER
+        self.idle_timer = 0
 
     def run(self):
         while self.running:
@@ -149,8 +150,12 @@ class Pacman(GameAgentAPI):
             self.player.update()
 
             # Alert the AI if a new grid square has been entered
-            if (self.player.get_grid_pos() != player_pos) and (len(self.getAvailableActions()) > 2 or random.random() < DECISION_FREQUENCY):
-                LearnerAgent.run_decision()
+            if (self.player.get_grid_pos() != player_pos) or self.idle_timer >= MAX_IDLE_ALLOWANCE:
+                self.idle_timer = 0
+                if random.random() < DECISION_FREQUENCY:
+                    LearnerAgent.run_decision()
+            else:
+                self.idle_timer += 1
 
             #if not self.player.alive:
                 #self.reset_level()
@@ -332,3 +337,19 @@ class Pacman(GameAgentAPI):
 
     def isPowerPelletActive(self):
         return self.player.power_pellet_active
+
+    def getReward(self):
+        reward = 0
+        player_cell = next((c for c in self.cells.map if c.pos == self.player.get_grid_pos()), None)
+        player_in_coin_cell = player_cell is not None and player_cell.hasCoin
+        pellet_count = len([c for c in self.cells.map if not c.hasWall and not c.hasCoin])
+
+        reward += Q_MOVE
+        if player_in_coin_cell:
+            reward += Q_PELLET_FUNC(pellet_count)
+            if len([c for c in self.cells.map if c.hasCoin]) == 1:
+                reward += Q_LEVEL_PASSED
+        if not self.player.get_alive_status():
+            reward += Q_DIED
+
+        return reward

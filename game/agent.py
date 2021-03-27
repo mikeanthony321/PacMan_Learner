@@ -63,7 +63,7 @@ class LearnerAgent:
         if self.memory.can_provide_sample(s.REPLAY_BATCH_SIZE):
             batch = self.memory.sample(s.REPLAY_BATCH_SIZE)
             for state, action, reward, next_state in batch:
-                #TODO: Propogation
+                # TODO: Propagation
 
         self.current_state = state
 

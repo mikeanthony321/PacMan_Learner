@@ -39,6 +39,7 @@ PINKY_START_POS = vec(12, 17)
 CLYDE_START_POS = vec(15, 17)
 
 # AI settings
+MAX_IDLE_ALLOWANCE = 80
 DECISION_FREQUENCY = 0.8
 HIDDEN_LAYER_WIDTH = 5
 REPLAY_BATCH_SIZE = 100
@@ -48,11 +49,10 @@ EPSILON_END = 0.05
 EPSILON_DECAY = 200
 
 # Q-Value settings (careful when tweaking!)
-LEVEL_PASSED = 50
-PELLET_FUNC = lambda a : ((a / 20) + 1)
-MOVE = 2
-NO_MOVE = -2
-DIED = -50
+Q_LEVEL_PASSED = 50
+Q_PELLET_FUNC = lambda a: ((a / 20) + 1)
+Q_MOVE = 2
+Q_DIED = -50
 
 # spritesheet settings
 SPRITE_SIZE = 16
