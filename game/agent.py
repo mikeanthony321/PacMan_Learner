@@ -2,6 +2,7 @@ import threading
 from collections import namedtuple, deque
 from enum import Enum
 import random
+import math
 
 import numpy as np
 import torch
@@ -38,19 +39,19 @@ class LearnerAgent:
         self.learning_strat = learning_strat
         self.policy_net = Network(pacman_inst)
         self.target_net = Network(pacman_inst)
-        self.target_net.load_state_dict(self.policy_net.load_state_dict())
+        self.target_net.load_state_dict(self.policy_net.state_dict())
         self.target_net.eval()
 
 
-    def decide(self, state):   
+    def decide(self):
         state = self.get_game_vals()
         rate = self.learning_strat.get_rate()
         
         if random.random() > rate:
             with torch.no_grad():
-                return policy_net(state)
+                return self.policy_net(state)
         else:
-            return random.choice(np.arange(self.action_size))
+            return random.randrange(4)
         # output = self.policy_net.forward(state)
         # print(str(output))
         
@@ -79,12 +80,6 @@ class LearnerAgent:
         power_tuple = self.api.getNearestPowerPelletGridCoords()
         power_active = self.api.isPowerPelletActive()
 
-        print('Player: {}'.format(player_tuple))
-        print('Ghost: {}'.format(ghost_tuple))
-        print('Pellet: {}'.format(pellet_tuple))
-        print('Power: {}'.format(power_tuple))
-        print('Active: {}'.format(power_active))
-
         tensor = torch.Tensor([player_tuple[0], player_tuple[1], ghost_tuple[0], ghost_tuple[1],
                                pellet_tuple[0], pellet_tuple[1], power_tuple[0], power_tuple[1],
                                1 if power_active else 0])
@@ -109,8 +104,8 @@ class Network(nn.Module):
         x = self.squishifier(x)
         return x
 
-class ReplayMemory():
-    def __init__(self, action_size, buffer_size, seed):
+class ReplayMemory:
+    def __init__(self, capacity, buffer_size, seed):
         self.capacity = capacity
         self.memory = deque(maxlen=buffer_size)
         self.experiences = namedtuple("Experience", 
@@ -133,7 +128,7 @@ class ReplayMemory():
     def __len__(self):
         return len(self.memory)
 
-class EpsilonGreedyStrategy():
+class EpsilonGreedyStrategy:
 
     def __init__(self, start, end, decay):
         self.start = start

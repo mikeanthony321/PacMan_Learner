@@ -51,7 +51,6 @@ class Ghost(pygame.sprite.Sprite):
 
         # Find the initial path for an aggressive ghost to Pac-Man
         if self.aggressive:
-            self.direction = vec(0, 0)
             self.path = self.a_search(self.grid_pos, self.pac_pos)
 
     def get_frames(self):
@@ -247,11 +246,35 @@ class Ghost(pygame.sprite.Sprite):
                                     self.path.pop(0)
                             self.steps -= 1
 
-
     def draw(self):
         # Draw the ghost to the pygame screen
         if self.should_display:
             self.screen.blit(self.frame, self.image_pos)
+
+    def reset(self):
+        self.direction = vec(0, 0)
+
+        # todo: set them to their original spawns
+        self.grid_pos = vec(13, 11)
+
+        # pixel position of center of ghost
+        self.pixel_pos = vec(self.grid_pos.x * CELL_W + (CELL_W // 2),
+                             self.grid_pos.y * CELL_H + (CELL_H // 2) + PAD_TOP)
+        # pixel position for top left corner of image surface
+        self.image_pos = vec(self.grid_pos.x * CELL_W,
+                             self.grid_pos.y * CELL_H + PAD_TOP)
+
+        if self.aggressive:
+            self.path = self.a_search(self.grid_pos, self.pac_pos)
+
+        # Reset ghost state
+        self.ghost_alive = True
+        self.should_display = True
+
+        # Reset game state
+        self.power_pellet_active = False
+        self.fleeing = False
+        self.respawning = False
 
     # -- -- -- GETTERS / SETTERS -- -- -- #
     # Currently increasing the speed creates the potential to overshoot collision detection and will need to be
