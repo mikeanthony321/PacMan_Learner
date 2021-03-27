@@ -7,6 +7,7 @@ from cell import *
 from analytics import *
 from ghost import *
 from api.actions import Actions
+import random
 
 pygame.init()
 vec = pygame.math.Vector2
@@ -20,9 +21,6 @@ class Pacman(GameAgentAPI):
         self.clock = pygame.time.Clock()
         self.running = True
         self.app_state = 'title'
-
-        # This int value is for the AI. Refer to game_agent.py for details.
-        self.game_state = 0
 
         self.cells = CellMap()
 
@@ -147,10 +145,11 @@ class Pacman(GameAgentAPI):
 
     def game_update(self):
         if not self.player.get_game_over_status():
-            # Alert the AI if a new grid square has been entered
             player_pos = copy.deepcopy(self.player.get_grid_pos())
             self.player.update()
-            if self.player.get_grid_pos() != player_pos:
+
+            # Alert the AI if a new grid square has been entered
+            if (self.player.get_grid_pos() != player_pos) and (len(self.getAvailableActions()) > 2 or random.random() < DECISION_FREQUENCY):
                 LearnerAgent.run_decision()
 
             #if not self.player.alive:
@@ -273,9 +272,15 @@ class Pacman(GameAgentAPI):
         self.clyde.reset()
 
 # -- -- -- AGENT API FUNCTIONS -- -- -- #
+
     def getAvailableActions(self):
-        available_cells = []
-        
+        available_actions = []
+        player_x, player_y = self.player.get_grid_pos()
+        for action, x, y in [(Actions.UP, 0, -1), (Actions.DOWN, 0, 1), (Actions.LEFT, -1, 0), (Actions.RIGHT, 1, 0)]:
+            cell = next((c for c in self.cells.map if c.pos == (player_x + x, player_y + y)), None)
+            if (cell is not None) and (not cell.hasWall):
+                available_actions.append(action)
+        return available_actions
 
     def moveUp(self):
         self.player.move(vec(0, -1))

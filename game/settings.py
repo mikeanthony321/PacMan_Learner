@@ -38,6 +38,9 @@ BLINKY_START_POS = vec(15, 11)
 PINKY_START_POS = vec(12, 17)
 CLYDE_START_POS = vec(15, 17)
 
+# AI settings
+DECISION_FREQUENCY = 0.8
+
 # spritesheet settings
 SPRITE_SIZE = 16
 

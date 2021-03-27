@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 
 class GameAgentAPI(ABC):
 
+    # Provide the list of actions the player is able to take, in the form of Action enums
     @abstractmethod
     def getAvailableActions(self):
         pass

@@ -48,11 +48,11 @@ class LearnerAgent:
         if random.random() > rate:
             with torch.no_grad():
                 output = self.policy_net(state).tolist()
-                max = (0, -1)
+                best_decision = (0, -1)
                 for action in available_actions:
-                    if output[action] > max[1]:
-                        max = (action, output[action])
-                decision = max[0]
+                    if output[action.value] > best_decision[1]:
+                        best_decision = (action, output[action.value])
+                decision = best_decision[0]
         else:
             decision = random.choice(available_actions)
         
