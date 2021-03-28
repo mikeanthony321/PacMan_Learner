@@ -5,7 +5,7 @@ from cell import *
 from ghost import *
 #from analytics_frame_2 import *
 from analytics_frame import *
-from network_visualizer_test import get_network_diagram
+from analytics_test import testAgent
 
 pygame.init()
 vec = pygame.math.Vector2
@@ -14,7 +14,6 @@ class Pacman(GameAgentAPI):
     def __init__(self, monitor_size):
         self.screen = pygame.display.set_mode((WIDTH, HEIGHT))
         #self.analytics = Analytics(monitor_size, get_network_diagram())
-        self.analytics = Analytics(monitor_size)
         self.level = pygame.image.load('res/lev_og.png')
         self.sprites = pygame.image.load('res/pacmanspritesheet.png')
         self.clock = pygame.time.Clock()
@@ -43,8 +42,9 @@ class Pacman(GameAgentAPI):
             else:
                 self.running = False
 
-            if self.analytics.running:
+            if Analytics.analytics_instance.running:
                 self.state = 'game'
+                Analytics.analytics_instance.update()
 
             self.clock.tick(FPS)
 
@@ -248,7 +248,7 @@ class Pacman(GameAgentAPI):
                 self.clyde.set_alive_status(False)
 
         if self.player.get_alive_status() == False:
-            self.analytics.setRunning(False)
+            Analytics.analytics_instance.setRunning(False)
 
     def set_ghost_power_pellet_status(self, status):
         self.blinky.set_power_pellet_status(status)
