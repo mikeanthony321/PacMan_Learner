@@ -13,7 +13,10 @@ import torch.optim as optim
 import torch.nn.functional as F
 
 DEVICE = torch.device("cpu") # use CPU rather than Cuda GPU to power agent
+EXPERIENCE = namedtuple("Experience", 
+        field_names=["state", "action", "reward", "next_state"])
 
+GAMMA = 0.999
 class LearnerAgent:
 
     agent_instance = None
@@ -35,7 +38,7 @@ class LearnerAgent:
         self.target_net = Network(pacman_inst)
         self.target_net.load_state_dict(self.policy_net.state_dict())
         self.target_net.eval()
-        self.memory = ReplayMemory(s.REPLAY_MEMORY_SIZE, s.REPLAY_BATCH_SIZE)
+        self.memory = ReplayMemory(s.REPLAY_MEMORY_SIZE)
         self.current_state = self.get_game_vals()
 
     def decide(self):
@@ -58,12 +61,43 @@ class LearnerAgent:
         
         self.choose_action(decision)
 
-        self.memory.add(self.current_state, decision, self.api.getReward(), state)
+        self.memory.add(self.current_state.unsqueeze(0), torch.tensor([[decision.value]]), torch.tensor([[self.api.getReward()]]), state.unsqueeze(0))
 
         if self.memory.can_provide_sample(s.REPLAY_BATCH_SIZE):
-            batch = self.memory.sample(s.REPLAY_BATCH_SIZE)
-            for state, action, reward, next_state in batch:
-                # TODO: Propagation
+            torch.autograd.set_detect_anomaly(True)
+  
+            transitions = self.memory.sample(s.REPLAY_BATCH_SIZE)
+            batch = EXPERIENCE(*zip(*transitions))
+
+            non_final_mask = torch.tensor(tuple(map(lambda s: s is not None,
+                                                    batch.next_state)), device=DEVICE, dtype=torch.bool)
+            non_final_next_states = torch.cat([s for s in batch.next_state
+                                                        if s is not None])
+
+            state_batch = torch.cat(batch.state)
+            action_batch = torch.cat(batch.action)
+            reward_batch = torch.cat(batch.reward)
+
+            state_action_values = self.policy_net(state_batch).gather(1, action_batch)
+            
+            next_state_values = torch.zeros(s.REPLAY_BATCH_SIZE, device=DEVICE)
+            next_state_values[non_final_mask] = self.target_net(non_final_next_states).max(1)[0].detach().clone()
+            
+            expected_state_action_values = next_state_values * GAMMA
+
+            for i in range(s.REPLAY_BATCH_SIZE):
+                expected_state_action_values[i] = expected_state_action_values[i] + reward_batch[i][0] 
+            expected_state_action_values = expected_state_action_values.unsqueeze(1)
+            
+            loss = F.smooth_l1_loss(state_action_values, expected_state_action_values)
+
+            optimizer = optim.RMSprop(self.policy_net.parameters())
+
+            optimizer.zero_grad()
+            loss.backward()   # BUG: this fails after a few runs
+            for param in self.policy_net.parameters():
+                param.grad.data.clamp_(-1, 1)
+            optimizer.step()
 
         self.current_state = state
 
@@ -105,26 +139,25 @@ class Network(nn.Module):
         x = self.squishifier(x)
         x = self.hidden(x)
         x = self.squishifier(x)
-        x = self.output(x)
+        x = self.output(x) # This is the layer where problems happen
         x = self.squishifier(x)
         return x
 
 class ReplayMemory:
-    def __init__(self, capacity, buffer_size):
+    def __init__(self, capacity):
         self.capacity = capacity
-        self.memory = deque(maxlen=buffer_size)
-        self.experiences = namedtuple("Experience", 
-        field_names=["state", "action", "reward", "next_state"])
+        self.memory = deque(maxlen=capacity)
 
     def add(self,state, action, reward, next_state):
         #TODO: add a push counter?
-        if len(self.memory) < self.capacity:
+        if len(self.memory) >= self.capacity:
             self.memory.append(None)
         else:
-            self.memory.append((state,action,reward,next_state))
+            self.memory.append(EXPERIENCE(state,action,reward,next_state))
         
     def sample(self, batch_size):
-        return random.sample(self.memory, batch_size)
+        sampled_exp = random.sample(self.memory, batch_size)
+        return sampled_exp
     
     def can_provide_sample(self, batch_size):
         return len(self.memory) >= batch_size
