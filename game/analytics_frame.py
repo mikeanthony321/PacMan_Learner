@@ -2,7 +2,8 @@ import sys, math, time, threading
 from api.agent_analytics_frame import AgentAnalyticsFrameAPI
 from network_diagram import NeuralNetwork, Layer
 from settings import *
-from PyQt5.QtWidgets import QVBoxLayout, QMainWindow, QLineEdit, QPushButton, QTableWidget, QDesktopWidget, QTableWidgetItem, QWidget, QHBoxLayout, QLabel, QApplication
+from frame_styles import *
+from PyQt5.QtWidgets import QVBoxLayout, QMainWindow, QLineEdit, QTabWidget, QPushButton, QTableWidget, QDesktopWidget, QTableWidgetItem, QWidget, QHBoxLayout, QLabel, QApplication
 from PyQt5.QtCore import QTimer, Qt, QSize, QPoint
 from PyQt5.QtGui import QFont,QPixmap, QPainter, QBrush, QPen, QColor, QRadialGradient
 
@@ -32,10 +33,11 @@ class Analytics(QMainWindow):
         self.window.move(math.floor(monitor_size.width() / 2 - (1.5 * WIDTH)), math.floor(monitor_size.height() / 2 - HEIGHT / 2 - 31))
         self.setWindowTitle('Pac-Man Leaner Analytics')
         self.agent_interface = agent_instance
-        self.diagram_width = 400
-        self.diagram_height = 400
+        self.diagram_width = 450
+        self.diagram_height = 450
         self.neural_network = None
         self.visualizer = None
+        self.tabs = QTabWidget()
 
         # State Variables
         self.running = False
@@ -159,36 +161,81 @@ class Analytics(QMainWindow):
         # Initialize layout
         self.center_widget = QWidget()
         layout = QVBoxLayout()
+        self.tabs.setStyleSheet(QTAB_STYLE)
+
+        self.tabs.addTab(self.main_tab_UI(), "Start")
+        self.tabs.addTab(self.qtable_tab_UI(), "Q Values")
+        layout.addWidget(self.tabs)
+        self.center_widget.setLayout(layout)
+        self.window.setCentralWidget(self.center_widget)
+        self.window.show()
+
+
+    def main_tab_UI(self):
+        mainTab = QWidget()
+        main_tab_layout = QHBoxLayout()
+        left_layout = QVBoxLayout()
+        right_layout = QVBoxLayout()
+
+        self.setup_label = QLabel('Learning Parameters')
+        self.setup_label.setFont(QFont('Arial', 12))
+        left_layout.addWidget(self.setup_label)
 
         # Create the Label/Text Input/Button for the Target High Score
+        hlayout1 = QHBoxLayout()
         self.tar_high_score_label = QLabel('Target High Score', self.window)
         self.tar_high_score_label.setFont(QFont('Arial', 12))
-        layout.addWidget(self.tar_high_score_label)
+        # layout.addWidget(self.tar_high_score_label)
         self.tar_high_score_input = QLineEdit(self.window)
-        self.tar_high_score_input.resize(150, 30)
-        layout.addWidget(self.tar_high_score_input)
-        self.tar_high_score_button = QPushButton('Submit', self.window)
+        self.tar_high_score_input.setMinimumSize(300, 30)
+        # layout.addWidget(self.tar_high_score_input, 1)
+        self.tar_high_score_button = QPushButton('Set Target High Score', self.window)
         self.tar_high_score_button.clicked.connect(self.highScoreButton)
-        layout.addWidget(self.tar_high_score_button)
+        self.tar_high_score_button.setMinimumSize(130, 30)
+        self.tar_high_score_button.setStyleSheet(BUTTON_STYLE)
+        hlayout1.addWidget(self.tar_high_score_input, 1)
+        hlayout1.addSpacing(5)
+        hlayout1.addWidget(self.tar_high_score_button)
+        left_layout.addLayout(hlayout1)
+        left_layout.addSpacing(10)
 
         # Create the Label/Text Input/Button for the Learning Rate
+        hlayout2 = QHBoxLayout()
         self.learning_rate_label = QLabel('Learning Rate', self.window)
         self.learning_rate_label.setFont(QFont('Arial', 12))
-        layout.addWidget(self.learning_rate_label)
+        # layout.addWidget(self.learning_rate_label)
         self.learning_rate_input = QLineEdit(self.window)
-        self.learning_rate_input.resize(150, 30)
-        layout.addWidget(self.learning_rate_input)
-        self.learning_rate_button = QPushButton('Submit', self.window)
+        self.learning_rate_input.setMinimumSize(300, 30)
+        # layout.addWidget(self.learning_rate_input)
+        self.learning_rate_button = QPushButton('Set Learning Rate', self.window)
+        self.learning_rate_button.setMinimumSize(130, 30)
         self.learning_rate_button.clicked.connect(self.learningRateButton)
-        layout.addWidget(self.learning_rate_button)
+        self.learning_rate_button.setStyleSheet(BUTTON_STYLE)
+        hlayout2.addWidget(self.learning_rate_input)
+        hlayout2.addSpacing(5)
+        hlayout2.addWidget(self.learning_rate_button)
+        left_layout.addLayout(hlayout2)
 
         # Create the Label/Button for the Begin button to start the game (sim)
         self.begin_label = QLabel('Begin Sim', self.window)
         self.begin_label.setFont(QFont('Arial', 12))
-        layout.addWidget(self.begin_label)
+        # left_layout.addWidget(self.begin_label)
         self.begin_button = QPushButton('Begin', self.window)
-        layout.addWidget(self.begin_button)
+        self.begin_button.setStyleSheet(BUTTON_STYLE)
+        self.begin_button.setMinimumSize(130, 30)
+        left_layout.addSpacing(20)
+        left_layout.addWidget(self.begin_button)
         self.begin_button.clicked.connect(self.beginButton)
+
+        self.visualization_label = QLabel('Neural Network Activity', self.window)
+        self.visualization_label.setFont(QFont('Arial', 12))
+        right_layout.addWidget(self.visualization_label)
+
+        # Initialize the Visualizer
+        self.visualizer = Visualizer(self.neural_network, self.diagram_width, self.diagram_height, self.agent_interface)
+        self.visualizer.resize(250, 500)
+        right_layout.addWidget(self.visualizer)
+        right_layout.addSpacing(20)
 
         # Create the Label and Timer for the Execution Timer
         self.timer = QTimer(self)
@@ -196,18 +243,25 @@ class Analytics(QMainWindow):
         self.timer_label = QLabel('Execution timer: 0:00', self.window)
         self.timer_label.resize(150, 50)
         self.timer_label.setFont(QFont('Arial', 12))
-        layout.addWidget(self.timer_label)
-
-        # Initialize the Visualizer
-        self.visualizer = Visualizer(self.neural_network, self.diagram_width, self.diagram_height, self.agent_interface)
-        self.visualizer.resize(150, 500)
-        layout.addWidget(self.visualizer)
+        right_layout.addWidget(self.timer_label)
 
         # Show the window with current widgets
-        layout.setSpacing(0)
-        self.center_widget.setLayout(layout)
-        self.window.setCentralWidget(self.center_widget)
-        self.window.show()
+        left_layout.setSpacing(0)
+        main_tab_layout.addLayout(left_layout)
+        main_tab_layout.addSpacing(30)
+        main_tab_layout.addLayout(right_layout)
+        mainTab.setLayout(main_tab_layout)
+        return mainTab
+
+    def qtable_tab_UI(self):
+        qtableTab = QWidget()
+        qtable_tab_layout = QVBoxLayout()
+
+        """
+        Table implementation here
+        """
+        qtableTab.setLayout(qtable_tab_layout)
+        return qtableTab
 
     def setRunning(self, isRunning):
         self.running = isRunning
@@ -220,8 +274,8 @@ class Visualizer(QWidget):
         self.width = width
         self.height = height
         self.node_size = 35
-        self.color_var_param = 250
-        self.base_color_param = 80
+        self.base_color = (51, 199, 255)
+        self.color_val_param = 1
         self.thickness_param = 3
         self.base_line_thickness_param = 1
 
@@ -240,41 +294,29 @@ class Visualizer(QWidget):
     def paintEvent(self, event):
 
         painter = QPainter(self)
-        painter.setPen(QPen(Qt.blue, 2, Qt.SolidLine))
 
         # Draw connections
         for i in range(len(self.network.layers)):
             for j in range(len(self.network.layers[i].nodes)):
                 if i > 0:
                     for k in range(len(self.network.layers[i-1].nodes)):
-                        thickness = (self.thickness_param) * (self.network.layers[i].nodes[j].connections[k].weight)\
-                                    + self.base_line_thickness_param
-                        painter.setPen(QPen(QColor(90, 90, 90), thickness))
+                        painter.setPen(self.transformConnection(self.network.layers[i].nodes[j].connections[k].weight))
                         painter.drawLine((self.network.layers[i].nodes[j].x + math.floor((self.node_size / 2))),
                                          (self.network.layers[i].nodes[j].y + math.floor((self.node_size / 2))),
                                          (self.network.layers[i-1].nodes[k].x + math.floor((self.node_size / 2))),
                                          (self.network.layers[i-1].nodes[k].y + math.floor((self.node_size / 2))))
 
         # Draw nodes
-        painter.setPen(QPen(QColor(80, 100, 150), 1))
+        painter.setPen(QPen(self.transformColor(-0.5, 1), 1))
         for a in range(len(self.network.layers)):
             for b in range(len(self.network.layers[a].nodes)):
                 radialGradient = QRadialGradient(
                     QPoint((self.network.layers[a].nodes[b].x + math.floor(self.node_size / 2)),
                            self.network.layers[a].nodes[b].y + math.floor(self.node_size / 2)), 40)
 
-                node_color_1 = QColor(min(math.floor(self.base_color_param + self.network.layers[a].nodes[
-                    b].get_activation_value() * (self.color_var_param * 1.5)), 255), min(math.floor(
-                    self.base_color_param + self.network.layers[a].nodes[
-                        b].get_activation_value() * (self.color_var_param * 1.3)), 255), 255)
-                node_color_2 = QColor(min(math.floor(self.base_color_param + self.network.layers[a].nodes[
-                    b].get_activation_value() * (self.color_var_param * 1)), 255), min(math.floor(
-                    self.base_color_param + self.network.layers[a].nodes[
-                        b].get_activation_value() * (self.color_var_param * 0.9)), 255), 255)
-                node_color_3 = QColor(min(math.floor(self.base_color_param + self.network.layers[a].nodes[
-                    b].get_activation_value() * (self.color_var_param * 0.8)), 255), min(math.floor(
-                    self.base_color_param + self.network.layers[a].nodes[
-                        b].get_activation_value() * (self.color_var_param * 0.6)), 255), 255)
+                node_color_1 = self.transformColor(self.network.layers[a].nodes[b].get_activation_value(), 0.5)
+                node_color_2 = self.transformColor(self.network.layers[a].nodes[b].get_activation_value(), -1)
+                node_color_3 = self.transformColor(self.network.layers[a].nodes[b].get_activation_value(), -1.5)
 
                 radialGradient.setColorAt(0.1, node_color_1)
                 radialGradient.setColorAt(0.5, node_color_2)
@@ -283,12 +325,22 @@ class Visualizer(QWidget):
                 painter.drawEllipse(self.network.layers[a].nodes[b].x, self.network.layers[a].nodes[b].y,
                                     self.node_size, self.node_size)
 
+    def transformColor(self, val, param):
+        r = max(min(math.floor((self.base_color[0] + (self.base_color[1] * val * self.color_val_param * param))), 255), self.base_color[0] * 0.2)
+        g = max(min(math.floor((self.base_color[1] + (self.base_color[1] * val * self.color_val_param * param))), 255), self.base_color[0] * 0.2)
+        b = max(min(math.floor((self.base_color[2] + (self.base_color[2] * val * self.color_val_param * param))), 255), self.base_color[0] * 0.2)
+        return QColor(r, g, b)
+
+    def transformConnection(self, weight_param):
+        thickness = (self.thickness_param * weight_param) + self.base_line_thickness_param
+
+        return QPen(QColor(90, 90, 90), thickness)
 
     def minimumSizeHint(self):
-        return QSize(400, 400)
+        return QSize(500, 500)
 
     def sizeHint(self):
-        return QSize(400, 400)
+        return QSize(500, 500)
 
     def update_diagram(self, network_diagram):
         self.network = network_diagram
