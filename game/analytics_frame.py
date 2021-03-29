@@ -3,7 +3,7 @@ from api.agent_analytics_frame import AgentAnalyticsFrameAPI
 from network_diagram import NeuralNetwork, Layer
 from settings import *
 from frame_styles import *
-from PyQt5.QtWidgets import QVBoxLayout, QMainWindow, QLineEdit, QTabWidget, QPushButton, QTableWidget, QDesktopWidget, QTableWidgetItem, QWidget, QHBoxLayout, QLabel, QApplication
+from PyQt5.QtWidgets import QFrame, QVBoxLayout, QMainWindow, QLineEdit, QTabWidget, QPushButton, QTableWidget, QDesktopWidget, QTableWidgetItem, QWidget, QHBoxLayout, QLabel, QApplication
 from PyQt5.QtCore import QTimer, Qt, QSize, QPoint
 from PyQt5.QtGui import QFont,QPixmap, QPainter, QBrush, QPen, QColor, QRadialGradient
 
@@ -34,7 +34,7 @@ class Analytics(QMainWindow):
         self.setWindowTitle('Pac-Man Leaner Analytics')
         self.agent_interface = agent_instance
         self.diagram_width = 450
-        self.diagram_height = 450
+        self.diagram_height = 350
         self.neural_network = None
         self.visualizer = None
         self.tabs = QTabWidget()
@@ -46,6 +46,7 @@ class Analytics(QMainWindow):
         self.timer_min = 0
         self.timer_sec = 0
         self.timer_ms = 0
+
 
         # Create Neural Network
         self.create_nn()
@@ -94,6 +95,8 @@ class Analytics(QMainWindow):
         else:
             print("Neural Network object has not been initialized")
 
+
+
     def update(self):
         for i in range(len(self.neural_network.layers)):
             for j in range(len(self.neural_network.layers[i].nodes)):
@@ -120,42 +123,52 @@ class Analytics(QMainWindow):
 
     def formatTime(self):
         if self.timer_sec < 10:
-            self.timer_label.setText("Execution timer: %d:0%d" % (self.timer_min, self.timer_sec))
+            self.timer_label.setText("%d:0%d" % (self.timer_min, self.timer_sec))
         else:
-            self.timer_label.setText("Execution timer: %d:%d" % (self.timer_min, self.timer_sec))
+            self.timer_label.setText("%d:%d" % (self.timer_min, self.timer_sec))
 
     # -- -- -- BUTTON FUNCTIONS -- -- -- #
     def beginButton(self):
         if self.tar_high_score is not None and self.learning_rate is not None:
             self.timer.start(1000)
             self.running = True
+            self.help_text_label.setText("")
         else:
             print("Target high score and learning rate must be set before beginning simulation")
+            self.help_text_label.setText("Target High Score and Learning Rate must be set before beginning simulation")
 
     def highScoreButton(self):
-        if not self.running:
-            self.tar_high_score = self.tar_high_score_input.text()
-            self.tar_high_score = int(self.tar_high_score)
-            print("The target high score is: " + self.tar_high_score_input.text())
-            self.tar_high_score_input.setText("")
-            self.agent_interface.set_target_score(self.tar_high_score)
-        else:
-            print("You must stop the sim to enter a target high score")
-            self.tar_high_score_input.setText("")
+        if self.tar_high_score_input.text() != "":
+            if not self.running:
+                self.tar_high_score = self.tar_high_score_input.text()
+                self.tar_high_score = int(self.tar_high_score)
+                self.tar_high_score_label.setText("Target High Score: " + self.tar_high_score_input.text())
+                self.tar_high_score_input.setText("")
+                self.help_text_label.setText("")
+                self.agent_interface.set_target_score(self.tar_high_score)
+            else:
+                #print("You must stop the sim to enter a target high score")
+                self.help_text_label.setText("The Target High Score cannot be changed while the game is running")
+                self.tar_high_score_input.setText("")
+
 
     def learningRateButton(self):
-        if not self.running:
-            self.learning_rate = self.learning_rate_input.text()
-            self.learning_rate = float(self.learning_rate)
-            if self.learning_rate < 1.0:
-                print(self.learning_rate)
-                self.agent_interface.set_learning_rate(self.learning_rate)
-            else: #I do not know enough about learning rate to know if we want to require it be under 1, just did to have a test
-                print('Please enter a number less than 1')
-            self.learning_rate_input.setText("")
-        else:
-            print("You must stop the sim to enter a new learning rate")
-            self.learning_rate_input.setText("")
+        if self.learning_rate_input.text() != "":
+            if not self.running:
+                self.learning_rate = self.learning_rate_input.text()
+                self.learning_rate = float(self.learning_rate)
+                if self.learning_rate < 1.0:
+                    self.learning_rate_label.setText("Learning Rate: " + self.learning_rate_input.text())
+                    self.help_text_label.setText("")
+                    self.agent_interface.set_learning_rate(self.learning_rate)
+                else: #I do not know enough about learning rate to know if we want to require it be under 1, just did to have a test
+                    self.help_text_label.setText("Invalid Learning Rate")
+                self.learning_rate_input.setText("")
+            else:
+                print("You must stop the sim to enter a new learning rate")
+                self.help_text_label.setText("The Learning Rate cannot be changed while the game is running")
+                self.learning_rate_input.setText("")
+
 
     def load_screen(self):
         # Initialize layout
@@ -164,7 +177,7 @@ class Analytics(QMainWindow):
         self.tabs.setStyleSheet(QTAB_STYLE)
 
         self.tabs.addTab(self.main_tab_UI(), "Start")
-        self.tabs.addTab(self.qtable_tab_UI(), "Q Values")
+        self.tabs.addTab(self.explainAI_tab_UI(), "Model Insights")
         layout.addWidget(self.tabs)
         self.center_widget.setLayout(layout)
         self.window.setCentralWidget(self.center_widget)
@@ -172,26 +185,26 @@ class Analytics(QMainWindow):
 
 
     def main_tab_UI(self):
+
+        # Set up layout for main tab
         mainTab = QWidget()
         main_tab_layout = QHBoxLayout()
         left_layout = QVBoxLayout()
         right_layout = QVBoxLayout()
 
+        # Left Panel Title
         self.setup_label = QLabel('Learning Parameters')
-        self.setup_label.setFont(QFont('Arial', 12))
+        self.setup_label.setStyleSheet(TITLE_STYLE)
         left_layout.addWidget(self.setup_label)
+        left_layout.addSpacing(20)
 
-        # Create the Label/Text Input/Button for the Target High Score
+        # Create the Target High Score input box and button
         hlayout1 = QHBoxLayout()
-        self.tar_high_score_label = QLabel('Target High Score', self.window)
-        self.tar_high_score_label.setFont(QFont('Arial', 12))
-        # layout.addWidget(self.tar_high_score_label)
         self.tar_high_score_input = QLineEdit(self.window)
         self.tar_high_score_input.setMinimumSize(300, 30)
-        # layout.addWidget(self.tar_high_score_input, 1)
         self.tar_high_score_button = QPushButton('Set Target High Score', self.window)
         self.tar_high_score_button.clicked.connect(self.highScoreButton)
-        self.tar_high_score_button.setMinimumSize(130, 30)
+        self.tar_high_score_button.setMinimumSize(180, 30)
         self.tar_high_score_button.setStyleSheet(BUTTON_STYLE)
         hlayout1.addWidget(self.tar_high_score_input, 1)
         hlayout1.addSpacing(5)
@@ -199,69 +212,106 @@ class Analytics(QMainWindow):
         left_layout.addLayout(hlayout1)
         left_layout.addSpacing(10)
 
-        # Create the Label/Text Input/Button for the Learning Rate
+        # Create the Learning Rate input box and button
         hlayout2 = QHBoxLayout()
-        self.learning_rate_label = QLabel('Learning Rate', self.window)
-        self.learning_rate_label.setFont(QFont('Arial', 12))
-        # layout.addWidget(self.learning_rate_label)
         self.learning_rate_input = QLineEdit(self.window)
         self.learning_rate_input.setMinimumSize(300, 30)
-        # layout.addWidget(self.learning_rate_input)
         self.learning_rate_button = QPushButton('Set Learning Rate', self.window)
-        self.learning_rate_button.setMinimumSize(130, 30)
+        self.learning_rate_button.setMinimumSize(180, 30)
         self.learning_rate_button.clicked.connect(self.learningRateButton)
         self.learning_rate_button.setStyleSheet(BUTTON_STYLE)
         hlayout2.addWidget(self.learning_rate_input)
         hlayout2.addSpacing(5)
         hlayout2.addWidget(self.learning_rate_button)
         left_layout.addLayout(hlayout2)
+        left_layout.addSpacing(20)
 
-        # Create the Label/Button for the Begin button to start the game (sim)
-        self.begin_label = QLabel('Begin Sim', self.window)
-        self.begin_label.setFont(QFont('Arial', 12))
-        # left_layout.addWidget(self.begin_label)
-        self.begin_button = QPushButton('Begin', self.window)
+        # Create the confirmation / help panel
+        help_layout = QVBoxLayout()
+        self.helpPanelWidget = BorderWidget()
+        self.tar_high_score_label = QLabel("Target High Score is not set")
+        help_layout.addWidget(self.tar_high_score_label)
+        self.learning_rate_label = QLabel("Learning Rate is not set")
+        help_layout.addWidget(self.learning_rate_label)
+        self.helpPanelWidget.setLayout(help_layout)
+        self.help_text_label = QLabel("")
+        help_layout.addWidget(self.help_text_label)
+        left_layout.addWidget(self.helpPanelWidget)
+        left_layout.addSpacing(20)
+
+        # Create the Button for the Begin button to start the game (sim)
+        self.begin_button = QPushButton('Start Learning Agent', self.window)
         self.begin_button.setStyleSheet(BUTTON_STYLE)
         self.begin_button.setMinimumSize(130, 30)
-        left_layout.addSpacing(20)
         left_layout.addWidget(self.begin_button)
         self.begin_button.clicked.connect(self.beginButton)
+        left_layout.addSpacing(20)
+        left_layout.addStretch()
 
+        # Right Panel Title
         self.visualization_label = QLabel('Neural Network Activity', self.window)
-        self.visualization_label.setFont(QFont('Arial', 12))
+        self.visualization_label.setStyleSheet(TITLE_STYLE)
         right_layout.addWidget(self.visualization_label)
 
         # Initialize the Visualizer
         self.visualizer = Visualizer(self.neural_network, self.diagram_width, self.diagram_height, self.agent_interface)
-        self.visualizer.resize(250, 500)
+        #self.visualizer.resize(250, 250)
         right_layout.addWidget(self.visualizer)
         right_layout.addSpacing(20)
 
+        # Create and add Qvalue Table
+        self.createTable()
+        right_layout.addWidget(self.q_value_table)
+        self.q_value_table.setMinimumSize(250, 150)
+        right_layout.addSpacing(20)
+
         # Create the Label and Timer for the Execution Timer
+        timer_layout = QHBoxLayout()
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.showTime)
-        self.timer_label = QLabel('Execution timer: 0:00', self.window)
-        self.timer_label.resize(150, 50)
-        self.timer_label.setFont(QFont('Arial', 12))
-        right_layout.addWidget(self.timer_label)
+        time_label = QLabel('Running time')
+        time_label.setStyleSheet(TEXT_STYLE)
+        self.timer_label = QLabel('0:00', self.window)
+        self.timer_label.setStyleSheet(TEXT_STYLE)
+        self.timer_label.setAlignment(Qt.AlignRight)
+        timer_layout.addWidget(time_label)
+        timer_layout.addWidget(self.timer_label)
+        left_layout.addLayout(timer_layout)
+        left_layout.addSpacing(10)
 
         # Show the window with current widgets
         left_layout.setSpacing(0)
+
         main_tab_layout.addLayout(left_layout)
         main_tab_layout.addSpacing(30)
         main_tab_layout.addLayout(right_layout)
+        main_tab_layout.addStretch()
         mainTab.setLayout(main_tab_layout)
         return mainTab
 
-    def qtable_tab_UI(self):
-        qtableTab = QWidget()
-        qtable_tab_layout = QVBoxLayout()
+    def explainAI_tab_UI(self):
+        explainAITab = QWidget()
+        explainAI_tab_layout = QVBoxLayout()
 
         """
-        Table implementation here
+        Explainability implementation here
         """
-        qtableTab.setLayout(qtable_tab_layout)
-        return qtableTab
+        explainAITab.setLayout(explainAI_tab_layout)
+        return explainAITab
+
+    def createTable(self):
+        self.q_value_table = QTableWidget(4, 5)
+        self.q_value_table.setVerticalHeaderLabels(["Up", "Down", "Left", "Right"])
+        self.q_value_table.setItem(0, 0, QTableWidgetItem("Cell (1,1)"))
+        self.q_value_table.setItem(0, 1, QTableWidgetItem("Cell (1,2)"))
+        self.q_value_table.setItem(1, 0, QTableWidgetItem("Cell (2,1)"))
+        self.q_value_table.setItem(1, 1, QTableWidgetItem("Cell (2,2)"))
+        self.q_value_table.setItem(2, 0, QTableWidgetItem("Cell (3,1)"))
+        self.q_value_table.setItem(2, 1, QTableWidgetItem("Cell (3,2)"))
+        self.q_value_table.setItem(3, 0, QTableWidgetItem("Cell (4,1)"))
+        self.q_value_table.setItem(3, 1, QTableWidgetItem("Cell (4,2)"))
+        self.q_value_table.setStyleSheet(TABLE_STYLE)
+
 
     def setRunning(self, isRunning):
         self.running = isRunning
@@ -273,7 +323,7 @@ class Visualizer(QWidget):
         self.title = "Visualizer"
         self.width = width
         self.height = height
-        self.node_size = 35
+        self.node_size = 30
         self.base_color = (51, 199, 255)
         self.color_val_param = 1
         self.thickness_param = 3
@@ -337,11 +387,20 @@ class Visualizer(QWidget):
         return QPen(QColor(90, 90, 90), thickness)
 
     def minimumSizeHint(self):
-        return QSize(500, 500)
+        return QSize(450, 350)
 
     def sizeHint(self):
-        return QSize(500, 500)
+        return QSize(500, 350)
 
     def update_diagram(self, network_diagram):
         self.network = network_diagram
         self.repaint()
+
+class BorderWidget(QFrame):
+
+    def __init__(self, *args):
+        super(BorderWidget, self).__init__(*args)
+        self.setStyleSheet(WIDGET_STYLE)
+
+    def minimumSizeHint(self):
+        return QSize(550, 100)
