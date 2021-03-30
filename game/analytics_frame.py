@@ -48,6 +48,8 @@ class Analytics(QMainWindow):
         self.timer_min = 0
         self.timer_sec = 0
         self.timer_ms = 0
+        self.table_col = 4
+        self.table_rows = 5
 
 
         # Create Neural Network
@@ -110,6 +112,7 @@ class Analytics(QMainWindow):
                 self.neural_network.layers[i].nodes[j].set_activation_value(activation_val)
 
         self.visualizer.update_diagram(self.neural_network)
+        self.update_table()
 
 
 
@@ -263,7 +266,6 @@ class Analytics(QMainWindow):
 
         # Initialize the Visualizer
         self.visualizer = Visualizer(self.neural_network, self.diagram_width, self.diagram_height, self.agent_interface)
-        #self.visualizer.resize(250, 250)
         right_layout.addWidget(self.visualizer)
         right_layout.addSpacing(20)
 
@@ -309,26 +311,30 @@ class Analytics(QMainWindow):
         return explainAITab
 
     def createTable(self):
-        self.q_value_table = QTableWidget(5, 4, self.window)
+        self.q_value_table = QTableWidget(self.table_rows, self.table_col, self.window)
         self.q_value_table.setHorizontalHeaderLabels(["Up", "Down", "Left", "Right"])
-        self.q_value_table.setItem(0, 0, QTableWidgetItem("Cell (1,1)"))
-        self.q_value_table.setItem(0, 1, QTableWidgetItem("Cell (1,2)"))
-        #self.q_value_table.setItem(1, 0, QTableWidgetItem("Cell (2,1)"))
-        #self.q_value_table.setItem(1, 1, QTableWidgetItem("Cell (2,2)"))
-        #self.q_value_table.setItem(2, 0, QTableWidgetItem("Cell (3,1)"))
-        #self.q_value_table.setItem(2, 1, QTableWidgetItem("Cell (3,2)"))
-        #self.q_value_table.setItem(3, 0, QTableWidgetItem("Cell (4,1)"))
-        #self.q_value_table.setItem(3, 1, QTableWidgetItem("Cell (4,2)"))
+        for i in range(self.table_rows):
+            for j in range(self.table_col):
+                self.q_value_table.setItem(i, j, QTableWidgetItem(""))
 
 
         self.q_value_table.setStyleSheet(TABLE_STYLE)
 
     def set_table_dimension(self):
-        for i in range(0, 4):
-            self.q_value_table.horizontalHeader().setSectionResizeMode(i, QHeaderView.Stretch)
-
-        for i in range(0, 5):
+        for i in range(0, self.table_col):
+                self.q_value_table.horizontalHeader().setSectionResizeMode(i, QHeaderView.Stretch)
+        for i in range(0, self.table_rows):
             self.q_value_table.verticalHeader().setSectionResizeMode(i, QHeaderView.Stretch)
+
+    def update_table(self):
+
+        for i in range(self.table_rows - 1):
+            for j in range(self.table_col):
+                self.q_value_table.item(self.table_rows - i - 1, j).setText(
+                    self.q_value_table.item(self.table_rows - i - 2, j).text())
+
+        for k in range(self.table_col):
+            self.q_value_table.item(0, k).setText(str(round(self.neural_network.layers[3].nodes[k].get_activation_value(), 5)))
 
     def setRunning(self, isRunning):
         self.running = isRunning
