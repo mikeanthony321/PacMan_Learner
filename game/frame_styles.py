@@ -2,7 +2,7 @@
 BUTTON_STYLE = """
                 QPushButton{ 
                 text-align: center; 
-                border: 1px outset white;
+                border: 1px outset blue;
                 font: 12px "Consolas";
                         }
                 QPushButton:disabled{ background-color: lightgrey; }
@@ -21,6 +21,7 @@ TEXT_STYLE = """
                     """
 TABLE_STYLE = """ 
                     QTableView{
+                    border: 1px solid blue;
                     font: 14px "Consolas";
                     color: white;
                     background: rgb(40, 40, 40); 
@@ -30,13 +31,22 @@ TABLE_STYLE = """
                     QHeaderView::section{ 
                     font: 14px "Consolas";
                     color: white;
-                    background-color: black;
+                    background-color: rgb(40, 40, 40);
+                    }
+                    
+                    QTableWidget QTableCornerButton::section {
+                    background-color: rgb(40, 40, 40);
+                    }
+                    
+                    QTableView {
+                    selection-background-color: rgb(225, 190, 5);
+                    selection-color: black;
                     }
 
                     """
 WIDGET_STYLE = """
                     BorderWidget{
-                    border:1px inset white;
+                    border:1px inset blue;
                     background: rgb(40, 40, 40); 
                     }
                     
@@ -50,7 +60,7 @@ WIDGET_STYLE = """
 QTAB_STYLE = """
                 QTabBar::tab {
                 background: rgb(0, 0, 0); 
-                border: 1px solid white;
+                border: 1px solid blue;
                 padding: 10px;
                 font: 12px "Consolas";
                 color: white;
@@ -64,4 +74,14 @@ QTAB_STYLE = """
                 color: white;
                 min-width: 40ex;
                 }
+                
+                QTabWidget:pane {
+                border: 1px solid blue;
+                }
                 """
+
+QLINE_STYLE = """
+            QLineEdit {
+            border: 1px inset blue;
+            }
+            """

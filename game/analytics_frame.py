@@ -3,7 +3,8 @@ from api.agent_analytics_frame import AgentAnalyticsFrameAPI
 from network_diagram import NeuralNetwork, Layer
 from settings import *
 from frame_styles import *
-from PyQt5.QtWidgets import QFrame, QVBoxLayout, QMainWindow, QLineEdit, QTabWidget, QPushButton, QTableWidget, QDesktopWidget, QTableWidgetItem, QWidget, QHBoxLayout, QLabel, QApplication
+from PyQt5.QtWidgets import QFrame, QVBoxLayout, QMainWindow, QLineEdit, QTabWidget, QPushButton, QTableWidget, \
+    QDesktopWidget, QTableWidgetItem, QWidget, QHBoxLayout, QLabel, QApplication, QHeaderView
 from PyQt5.QtCore import QTimer, Qt, QSize, QPoint
 from PyQt5.QtGui import QFont,QPixmap, QPainter, QBrush, QPen, QColor, QRadialGradient
 
@@ -150,6 +151,8 @@ class Analytics(QMainWindow):
                 #print("You must stop the sim to enter a target high score")
                 self.help_text_label.setText("The Target High Score cannot be changed while the game is running")
                 self.tar_high_score_input.setText("")
+        else:
+            print("Invalid Entry: Please enter a target high score")
 
 
     def learningRateButton(self):
@@ -168,6 +171,8 @@ class Analytics(QMainWindow):
                 print("You must stop the sim to enter a new learning rate")
                 self.help_text_label.setText("The Learning Rate cannot be changed while the game is running")
                 self.learning_rate_input.setText("")
+        else:
+            print("Invalid Entry: Please enter a learning rate")
 
 
     def load_screen(self):
@@ -202,6 +207,7 @@ class Analytics(QMainWindow):
         hlayout1 = QHBoxLayout()
         self.tar_high_score_input = QLineEdit(self.window)
         self.tar_high_score_input.setMinimumSize(300, 30)
+        self.tar_high_score_input.setStyleSheet(QLINE_STYLE)
         self.tar_high_score_button = QPushButton('Set Target High Score', self.window)
         self.tar_high_score_button.clicked.connect(self.highScoreButton)
         self.tar_high_score_button.setMinimumSize(180, 30)
@@ -216,6 +222,7 @@ class Analytics(QMainWindow):
         hlayout2 = QHBoxLayout()
         self.learning_rate_input = QLineEdit(self.window)
         self.learning_rate_input.setMinimumSize(300, 30)
+        self.learning_rate_input.setStyleSheet(QLINE_STYLE)
         self.learning_rate_button = QPushButton('Set Learning Rate', self.window)
         self.learning_rate_button.setMinimumSize(180, 30)
         self.learning_rate_button.clicked.connect(self.learningRateButton)
@@ -300,18 +307,27 @@ class Analytics(QMainWindow):
         return explainAITab
 
     def createTable(self):
-        self.q_value_table = QTableWidget(4, 5)
-        self.q_value_table.setVerticalHeaderLabels(["Up", "Down", "Left", "Right"])
+        self.q_value_table = QTableWidget(5, 4, self.window)
+        self.q_value_table.setHorizontalHeaderLabels(["Up", "Down", "Left", "Right"])
         self.q_value_table.setItem(0, 0, QTableWidgetItem("Cell (1,1)"))
         self.q_value_table.setItem(0, 1, QTableWidgetItem("Cell (1,2)"))
-        self.q_value_table.setItem(1, 0, QTableWidgetItem("Cell (2,1)"))
-        self.q_value_table.setItem(1, 1, QTableWidgetItem("Cell (2,2)"))
-        self.q_value_table.setItem(2, 0, QTableWidgetItem("Cell (3,1)"))
-        self.q_value_table.setItem(2, 1, QTableWidgetItem("Cell (3,2)"))
-        self.q_value_table.setItem(3, 0, QTableWidgetItem("Cell (4,1)"))
-        self.q_value_table.setItem(3, 1, QTableWidgetItem("Cell (4,2)"))
+        #self.q_value_table.setItem(1, 0, QTableWidgetItem("Cell (2,1)"))
+        #self.q_value_table.setItem(1, 1, QTableWidgetItem("Cell (2,2)"))
+        #self.q_value_table.setItem(2, 0, QTableWidgetItem("Cell (3,1)"))
+        #self.q_value_table.setItem(2, 1, QTableWidgetItem("Cell (3,2)"))
+        #self.q_value_table.setItem(3, 0, QTableWidgetItem("Cell (4,1)"))
+        #self.q_value_table.setItem(3, 1, QTableWidgetItem("Cell (4,2)"))
+
+
         self.q_value_table.setStyleSheet(TABLE_STYLE)
 
+    #Not currently called.
+    def set_table_dimension(self):
+        for i in range(0, 4):
+            self.q_value_table.horizontalHeader().setSectionResizeMode(i, QHeaderView.Stretch)
+
+        for i in range(0, 5):
+            self.q_value_table.verticalHeader().setSectionResizeMode(i, QHeaderView.Stretch)
 
     def setRunning(self, isRunning):
         self.running = isRunning
