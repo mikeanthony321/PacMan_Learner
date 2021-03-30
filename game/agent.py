@@ -17,6 +17,9 @@ EXPERIENCE = namedtuple("Experience",
         field_names=["state", "action", "reward", "next_state"])
 
 GAMMA = 0.999
+
+is_calc_grad = False
+
 class LearnerAgent:
 
     agent_instance = None
@@ -56,15 +59,19 @@ class LearnerAgent:
                     if output[action.value] > best_decision[1]:
                         best_decision = (action, output[action.value])
                 decision = best_decision[0]
+                print("Calculated (exploitation) decision: " + str(decision))
         else:
             decision = random.choice(available_actions)
-        
+            print("Random (exploration) decision: " + str(decision))
+
+
         self.choose_action(decision)
 
         self.memory.add(self.current_state.unsqueeze(0), torch.tensor([[decision.value]]), torch.tensor([[self.api.getReward()]]), state.unsqueeze(0))
 
-        if self.memory.can_provide_sample(s.REPLAY_BATCH_SIZE):
+        if self.memory.can_provide_sample(s.REPLAY_BATCH_SIZE) and safe_batch(): 
             torch.autograd.set_detect_anomaly(True)
+            toggle_safe_batch()
   
             transitions = self.memory.sample(s.REPLAY_BATCH_SIZE)
             batch = EXPERIENCE(*zip(*transitions))
@@ -74,12 +81,12 @@ class LearnerAgent:
             non_final_next_states = torch.cat([s for s in batch.next_state
                                                         if s is not None])
 
-            state_batch = torch.cat(batch.state)
-            action_batch = torch.cat(batch.action)
-            reward_batch = torch.cat(batch.reward)
+            state_batch = torch.cat(batch.state).clone()
+            action_batch = torch.cat(batch.action).clone()
+            reward_batch = torch.cat(batch.reward).clone()
 
-            state_action_values = self.policy_net(state_batch).gather(1, action_batch)
-            
+            state_action_values = self.policy_net(state_batch).gather(1, action_batch).clone() #this line fails to compute gradient
+
             next_state_values = torch.zeros(s.REPLAY_BATCH_SIZE, device=DEVICE)
             next_state_values[non_final_mask] = self.target_net(non_final_next_states).max(1)[0].detach().clone()
             
@@ -89,7 +96,7 @@ class LearnerAgent:
                 expected_state_action_values[i] = expected_state_action_values[i] + reward_batch[i][0] 
             expected_state_action_values = expected_state_action_values.unsqueeze(1)
             
-            loss = F.smooth_l1_loss(state_action_values, expected_state_action_values)
+            loss = F.smooth_l1_loss(state_action_values.clone(), expected_state_action_values).clone()
 
             optimizer = optim.RMSprop(self.policy_net.parameters())
 
@@ -98,6 +105,9 @@ class LearnerAgent:
             for param in self.policy_net.parameters():
                 param.grad.data.clamp_(-1, 1)
             optimizer.step()
+
+            toggle_safe_batch()
+        
 
         self.current_state = state
 
@@ -123,6 +133,13 @@ class LearnerAgent:
                                pellet_tuple[0], pellet_tuple[1], power_tuple[0], power_tuple[1],
                                1 if power_active else 0])
         return tensor
+
+def safe_batch():
+    return not is_calc_grad
+
+def toggle_safe_batch():
+    global is_calc_grad 
+    is_calc_grad = not is_calc_grad
 
 class Network(nn.Module):
     
