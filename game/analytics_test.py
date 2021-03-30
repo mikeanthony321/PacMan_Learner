@@ -7,6 +7,7 @@ class testAgent(AgentAnalyticsFrameAPI):
         self.count = 0
         self.learning_rate = None
         self.target_score = None
+        self.running = False
 
     def get_network_structure(self):
         return self.structure
@@ -26,3 +27,9 @@ class testAgent(AgentAnalyticsFrameAPI):
 
     def set_target_score(self, target_score):
         self.target_score = target_score
+
+    def stop_sim(self):
+        self.running = False
+
+    def start_sim(self):
+        self.running = True

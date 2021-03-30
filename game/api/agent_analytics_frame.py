@@ -62,3 +62,8 @@ class AgentAnalyticsFrameAPI(ABC):
     @abstractmethod
     def stop_sim(self):
         pass
+
+    # starts the learning agent
+    @abstractmethod
+    def start_sim(self):
+        pass
