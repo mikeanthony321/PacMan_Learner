@@ -3,8 +3,9 @@ from api.agent_analytics_frame import AgentAnalyticsFrameAPI
 from network_diagram import NeuralNetwork, Layer
 from settings import *
 from frame_styles import *
-from PyQt5.QtWidgets import QFrame, QVBoxLayout, QMainWindow, QLineEdit, QTabWidget, QPushButton, QTableWidget, \
-    QDesktopWidget, QTableWidgetItem, QWidget, QHBoxLayout, QLabel, QApplication, QHeaderView
+from PyQt5.QtWidgets import QVBoxLayout, QMainWindow, QLineEdit, QTabWidget, QPushButton, \
+    QTableView, QTableWidget, QDesktopWidget, QTableWidgetItem, QWidget, QHBoxLayout, QLabel, \
+    QApplication, QHeaderView, QFrame
 from PyQt5.QtCore import QTimer, Qt, QSize, QPoint
 from PyQt5.QtGui import QFont,QPixmap, QPainter, QBrush, QPen, QColor, QRadialGradient
 
@@ -270,6 +271,7 @@ class Analytics(QMainWindow):
         self.createTable()
         right_layout.addWidget(self.q_value_table)
         self.q_value_table.setMinimumSize(250, 150)
+        self.set_table_dimension()
         right_layout.addSpacing(20)
 
         # Create the Label and Timer for the Execution Timer
@@ -321,7 +323,6 @@ class Analytics(QMainWindow):
 
         self.q_value_table.setStyleSheet(TABLE_STYLE)
 
-    #Not currently called.
     def set_table_dimension(self):
         for i in range(0, 4):
             self.q_value_table.horizontalHeader().setSectionResizeMode(i, QHeaderView.Stretch)
