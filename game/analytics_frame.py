@@ -346,7 +346,7 @@ class Visualizer(QWidget):
         self.title = "Visualizer"
         self.width = width
         self.height = height
-        self.node_size = 30
+        self.node_size = int(self.height / 13)
         self.base_color = (51, 199, 255)
         self.color_val_param = 1
         self.thickness_param = 3

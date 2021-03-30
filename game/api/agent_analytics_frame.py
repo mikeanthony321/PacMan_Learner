@@ -57,3 +57,8 @@ class AgentAnalyticsFrameAPI(ABC):
     @abstractmethod
     def set_target_score(self, target_score):
         pass
+
+    # stops the learning agent and game
+    @abstractmethod
+    def stop_sim(self):
+        pass
