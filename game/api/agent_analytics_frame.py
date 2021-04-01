@@ -16,28 +16,16 @@ class AgentAnalyticsFrameAPI(ABC):
     def get_network_structure(self):
         pass
 
-    """
-    node_address is a tuple representing the node to be accessed
-    Ex (3, 5) is layer 3, node 5
-    """
-
-    # method returns the activation value of the specified node
+    # method returns the activation values of the nodes in a specified layer
     # called continuously (update rate tbd)
-    # accesses activation values of each node of the network
     @abstractmethod
-    def get_activation_val(self, node_address):
+    def get_activation_vals(self, layer_index):
         pass
 
-    """
-    connection_address is a list of tuples representing the connection to be accessed
-    Ex [(2, 2), (3, 4)] is the connection from layer 2, node 2, to the next layer 3, node 4
-    """
-
-    # method returns the weight of the specified connection
+    # method returns the weights connecting the specified layer
     # called continuously (update rate tbd)
-    # accesses the connection weights of each node to every node on the following layer
     @abstractmethod
-    def get_weight(self, connection_address):
+    def get_weights(self, layer_index):
         pass
 
     # returns the logic count as an integer

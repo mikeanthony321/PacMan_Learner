@@ -1,17 +1,16 @@
 import sys
 import copy
 import random
-from game.api.game_agent import GameAgentAPI
-from game.agent import LearnerAgent
-from game.player import *
-from game.cell import *
-from game.ghost import *
-from game.settings import *
-from game.api.actions import Actions
+from api.game_agent import GameAgentAPI
+from agent import LearnerAgent
+from player import *
+from cell import *
+from ghost import *
+from settings import *
+from api.actions import Actions
 
 #from analytics_frame_2 import *
-from game.analytics_frame import *
-from game.analytics_test import testAgent
+from analytics_frame import *
 
 pygame.init()
 vec = pygame.math.Vector2
@@ -19,7 +18,6 @@ vec = pygame.math.Vector2
 class Pacman(GameAgentAPI):
     def __init__(self, monitor_size):
         self.screen = pygame.display.set_mode((WIDTH, HEIGHT))
-        #self.analytics = Analytics(monitor_size, get_network_diagram())
         self.level = pygame.image.load('res/lev_og.png')
         self.sprites = pygame.image.load('res/pacmanspritesheet.png')
         self.clock = pygame.time.Clock()
@@ -44,7 +42,6 @@ class Pacman(GameAgentAPI):
                 self.title_update()
                 self.title_draw()
             elif self.app_state == 'game':
-                self.game_events()
                 self.game_update()
                 self.game_draw()
             else:
@@ -52,7 +49,6 @@ class Pacman(GameAgentAPI):
 
             if Analytics.analytics_instance.running:
                 self.app_state = 'game'
-                Analytics.analytics_instance.update()
 
             self.clock.tick(FPS)
 
@@ -94,7 +90,7 @@ class Pacman(GameAgentAPI):
         if self.player.score >= int(HIGH_SCORE):
             open("db/hs.txt", "w").write(str(self.player.score))
 
-        if self.player.score >= int(self.analytics.tar_high_score):
+        if self.player.score >= int(Analytics.analytics_instance.tar_high_score):
             print("Target High Score Achieved! Score: ", self.player.score)
 
         self.player.score = 0
@@ -133,21 +129,6 @@ class Pacman(GameAgentAPI):
         pygame.display.update()
 
 # -- -- -- GAME FUNCTIONS -- -- -- #
-    def game_events(self):
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                self.running = False
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_LEFT:
-                    self.moveLeft()
-                if event.key == pygame.K_RIGHT:
-                    self.moveRight()
-                if event.key == pygame.K_UP:
-                    self.moveUp()
-                if event.key == pygame.K_DOWN:
-                    self.moveDown()
-                #if self.player.get_game_over_status == True and event.key == pygame.K_SPACE:
-                #    self.reset_level()
 
     def game_update(self):
         if not self.player.get_game_over_status():
@@ -304,19 +285,13 @@ class Pacman(GameAgentAPI):
     def moveRight(self):
         self.player.move(vec(1, 0))
 
-    def getPlayerGridCoords(self):
-        return self.player.get_grid_pos()
-
-    def getNearestGhostGridCoords(self):
+    def getGhostsGridCoords(self):
         player_coords = self.player.get_grid_pos()
-        min_coords = [100, 100]
+        ghost_coords = []
         for ghost in [self.blinky, self.pinky, self.inky, self.clyde]:
-            ghost_coords = ghost.get_grid_pos()
-            distances = [sum([abs(c) for c in min_coords - player_coords]),
-                         sum([abs(c) for c in ghost_coords - player_coords])]
-            if distances[1] < distances[0]:
-                min_coords = ghost_coords
-        return min_coords
+            coords = ghost.get_grid_pos()
+            ghost_coords.append(coords - player_coords)
+        return ghost_coords
 
     def getNearestPelletGridCoords(self):
         player_coords = self.player.get_grid_pos()
@@ -327,7 +302,7 @@ class Pacman(GameAgentAPI):
                          sum([abs(c) for c in cell_coords - player_coords])]
             if distances[1] < distances[0]:
                 min_coords = cell_coords
-        return min_coords
+        return min_coords - player_coords
 
     def getNearestPowerPelletGridCoords(self):
         player_coords = self.player.get_grid_pos()
@@ -338,7 +313,7 @@ class Pacman(GameAgentAPI):
                          sum([abs(c) for c in cell_coords - player_coords])]
             if distances[1] < distances[0]:
                 min_coords = cell_coords
-        return min_coords
+        return min_coords - player_coords
 
     def isPowerPelletActive(self):
         return self.player.power_pellet_active

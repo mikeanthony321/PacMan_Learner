@@ -3,6 +3,8 @@ import settings as s
 from collections import namedtuple, deque
 
 from api.actions import Actions
+from analytics_frame import Analytics
+from api.agent_analytics_frame import AgentAnalyticsFrameAPI
 import random
 import math
 
@@ -20,7 +22,7 @@ GAMMA = 0.999
 
 is_calc_grad = False
 
-class LearnerAgent:
+class LearnerAgent(AgentAnalyticsFrameAPI):
 
     agent_instance = None
 
@@ -64,7 +66,6 @@ class LearnerAgent:
             decision = random.choice(available_actions)
             print("Random (exploration) decision: " + str(decision))
 
-
         self.choose_action(decision)
 
         self.memory.add(self.current_state.unsqueeze(0), torch.tensor([[decision.value]]), torch.tensor([[self.api.getReward()]]), state.unsqueeze(0))
@@ -107,9 +108,9 @@ class LearnerAgent:
             optimizer.step()
 
             toggle_safe_batch()
-        
 
         self.current_state = state
+        Analytics.update_frame()
 
 
     def choose_action(self, decision):
@@ -123,16 +124,49 @@ class LearnerAgent:
             self.api.moveRight()
     
     def get_game_vals(self):
-        player_tuple = self.api.getPlayerGridCoords()
-        ghost_tuple = self.api.getNearestGhostGridCoords()
+        ghost_list = self.api.getGhostsGridCoords()
         pellet_tuple = self.api.getNearestPelletGridCoords()
         power_tuple = self.api.getNearestPowerPelletGridCoords()
         power_active = self.api.isPowerPelletActive()
 
-        tensor = torch.Tensor([player_tuple[0], player_tuple[1], ghost_tuple[0], ghost_tuple[1],
+        tensor = torch.Tensor([ghost_list[0][0], ghost_list[0][1], ghost_list[1][0], ghost_list[1][1],
+                               ghost_list[2][0], ghost_list[2][1], ghost_list[3][0], ghost_list[3][1],
                                pellet_tuple[0], pellet_tuple[1], power_tuple[0], power_tuple[1],
                                1 if power_active else 0])
         return tensor
+
+# -- -- -- AGENT API FUNCTIONS -- -- -- #
+
+    def get_network_structure(self):
+        return [13, 10, 10, 8, 4]
+
+    def get_activation_vals(self, layer_index):
+        try:
+            return self.policy_net.full_node_dist[layer_index]
+        except IndexError:
+            return None
+
+    def get_weights(self, layer_index):
+        try:
+            return next((weights[1] for weights in self.policy_net.full_weight_dist if weights[0] == layer_index), None)
+            # return self.policy_net.full_weight_dist[layer_index]
+        except IndexError:
+            return None
+
+    def get_logic_count(self):
+        return 1
+
+    def set_learning_rate(self, learning_rate):
+        pass
+
+    def set_target_score(self, target_score):
+        pass
+
+    def stop_sim(self):
+        pass
+
+    def start_sim(self):
+        pass
 
 def safe_batch():
     return not is_calc_grad
@@ -145,19 +179,32 @@ class Network(nn.Module):
     
     def __init__(self, pacmanInst):
         super(Network, self).__init__()
-        self.input = nn.Linear(9, s.HIDDEN_LAYER_WIDTH)
-        self.hidden = nn.Linear(s.HIDDEN_LAYER_WIDTH, s.HIDDEN_LAYER_WIDTH)
-        self.output = nn.Linear(s.HIDDEN_LAYER_WIDTH, 4)
+        self.input = nn.Linear(13, 10)
+        self.h1 = nn.Linear(10, 10)
+        self.h2 = nn.Linear(10, 8)
+        self.output = nn.Linear(8, 4)
         self.squishifier = nn.ReLU()
         self.api = pacmanInst
 
+        self.full_node_dist = []
+        self.full_weight_dist = []
+
     def forward(self, x):
-        x = self.input(x)
-        x = self.squishifier(x)
-        x = self.hidden(x)
-        x = self.squishifier(x)
-        x = self.output(x) # This is the layer where problems happen
-        x = self.squishifier(x)
+        input_is_batch = isinstance(x.tolist()[0], list)
+        node_dist = [self.squishifier(x).tolist()]
+        weight_dist = []
+
+        for index, layer in [(0, self.input), (1, self.h1), (2, self.h2), (3, self.output)]:
+            x = layer(x)
+            x = self.squishifier(x)
+            if not input_is_batch:
+                node_dist.append(x.tolist())
+                weight_dist.append((index, layer.weight.tolist()))
+
+        if not input_is_batch:
+            self.full_node_dist = node_dist
+            self.full_weight_dist = weight_dist
+
         return x
 
 class ReplayMemory:

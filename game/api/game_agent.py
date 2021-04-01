@@ -27,25 +27,19 @@ class GameAgentAPI(ABC):
     def moveRight(self):
         pass
 
-    # Provide the coordinates of the player, in terms of grid indices
+    # Provide the coordinates of the ghosts, in terms of grid-index offset from player
     # Provide as a vector, or some similar data structure
     @abstractmethod
-    def getPlayerGridCoords(self):
+    def getGhostsGridCoords(self):
         pass
 
-    # Provide the coordinates of the ghost that is closest to the player, in terms of grid indices
-    # Provide as a vector, or some similar data structure
-    @abstractmethod
-    def getNearestGhostGridCoords(self):
-        pass
-
-    # Provide the coordinates of the pellet that is closest to the player, in terms of grid indices
+    # Provide the coordinates of the pellet that is closest to the player, in terms of grid-index offset from player
     # Provide as a vector, or some similar data structure
     @abstractmethod
     def getNearestPelletGridCoords(self):
         pass
 
-    # Provide the coordinates of the power pellet that is closest to the player, in terms of grid indices
+    # Provide the coordinates of the power pellet that is closest to the player, in terms of grid-index offset from player
     # Provide as a vector, or some similar data structure
     @abstractmethod
     def getNearestPowerPelletGridCoords(self):
