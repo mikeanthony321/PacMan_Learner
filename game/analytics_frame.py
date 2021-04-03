@@ -7,10 +7,11 @@ from PyQt5.QtWidgets import QVBoxLayout, QMainWindow, QLineEdit, QTabWidget, QPu
     QTableView, QTableWidget, QDesktopWidget, QTableWidgetItem, QWidget, QHBoxLayout, QLabel, \
     QApplication, QHeaderView, QFrame
 from PyQt5.QtCore import QTimer, Qt, QSize, QPoint
-from PyQt5.QtGui import QFont,QPixmap, QPainter, QBrush, QPen, QColor, QRadialGradient
+from PyQt5.QtGui import QFont, QPixmap, QPainter, QBrush, QPen, QColor, QRadialGradient
+
 
 class Analytics(QMainWindow):
-    #__metaclass__ = AgentAnalyticsFrameAPI
+    # __metaclass__ = AgentAnalyticsFrameAPI
 
     analytics_instance = None
 
@@ -27,12 +28,12 @@ class Analytics(QMainWindow):
     def __init__(self, monitor_size, agent_instance):
         super().__init__()
 
-
         # Initialize the window
         self.window = QMainWindow()
         self.window.resize(WIDTH * 2, HEIGHT)
         self.window.setStyleSheet("background-color: black; color: white;")
-        self.window.move(math.floor(monitor_size.width() / 2 - (1.5 * WIDTH)), math.floor(monitor_size.height() / 2 - HEIGHT / 2 - 31))
+        self.window.move(math.floor(monitor_size.width() / 2 - (1.5 * WIDTH)),
+                         math.floor(monitor_size.height() / 2 - HEIGHT / 2 - 31))
         self.setWindowTitle('Pac-Man Leaner Analytics')
         self.agent_interface = agent_instance
         self.diagram_width = 450
@@ -50,7 +51,6 @@ class Analytics(QMainWindow):
         self.timer_ms = 0
         self.table_col = 4
         self.table_rows = 5
-
 
         # Create Neural Network
         self.create_nn()
@@ -85,7 +85,8 @@ class Analytics(QMainWindow):
                 for j in range(len(self.neural_network.layers[i].nodes)):
                     if i > 0:
                         for k in range(len(self.neural_network.layers[i - 1].nodes)):
-                            self.neural_network.layers[i].nodes[j].set_connection(self.neural_network.layers[i - 1].nodes[k])
+                            self.neural_network.layers[i].nodes[j].set_connection(
+                                self.neural_network.layers[i - 1].nodes[k])
 
             for i in range(len(self.neural_network.layers)):
                 activation_vals = self.agent_interface.get_activation_vals(i)
@@ -93,13 +94,13 @@ class Analytics(QMainWindow):
                     if i > 0:
                         weights = self.agent_interface.get_weights(i - 1)
                         for k in range(len(self.neural_network.layers[i - 1].nodes)):
-                            self.neural_network.layers[i].nodes[j].connections[k].set_weight(0 if weights is None else weights[j][k])
-                    self.neural_network.layers[i].nodes[j].set_activation_value(0 if activation_vals is None else activation_vals[j])
+                            self.neural_network.layers[i].nodes[j].connections[k].set_weight(
+                                0 if weights is None else weights[j][k])
+                    self.neural_network.layers[i].nodes[j].set_activation_value(
+                        0 if activation_vals is None else activation_vals[j])
 
         else:
             print("Neural Network object has not been initialized")
-
-
 
     def update(self):
         for i in range(len(self.neural_network.layers)):
@@ -110,13 +111,14 @@ class Analytics(QMainWindow):
                     for k in range(len(self.neural_network.layers[i - 1].nodes)):
                         if weights is not None:
                             self.neural_network.layers[i].nodes[j].connections[k].set_weight(weights[j][k])
-                self.neural_network.layers[i].nodes[j].set_activation_value(0 if activation_vals is None else activation_vals[j])
+                self.neural_network.layers[i].nodes[j].set_activation_value(
+                    0 if activation_vals is None else activation_vals[j])
 
         self.visualizer.update_diagram(self.neural_network)
         self.update_table()
 
-
-
+    def getTargetHighScore(self):
+        return self.tar_high_score
 
     def showTime(self):
         if self.running:
@@ -153,12 +155,11 @@ class Analytics(QMainWindow):
                 self.help_text_label.setText("")
                 self.agent_interface.set_target_score(self.tar_high_score)
             else:
-                #print("You must stop the sim to enter a target high score")
+                # print("You must stop the sim to enter a target high score")
                 self.help_text_label.setText("The Target High Score cannot be changed while the game is running")
                 self.tar_high_score_input.setText("")
         else:
             print("Invalid Entry: Please enter a target high score")
-
 
     def learningRateButton(self):
         if self.learning_rate_input.text() != "":
@@ -169,7 +170,7 @@ class Analytics(QMainWindow):
                     self.learning_rate_label.setText("Learning Rate: " + self.learning_rate_input.text())
                     self.help_text_label.setText("")
                     self.agent_interface.set_learning_rate(self.learning_rate)
-                else: #I do not know enough about learning rate to know if we want to require it be under 1, just did to have a test
+                else:  # I do not know enough about learning rate to know if we want to require it be under 1, just did to have a test
                     self.help_text_label.setText("Invalid Learning Rate")
                 self.learning_rate_input.setText("")
             else:
@@ -178,7 +179,6 @@ class Analytics(QMainWindow):
                 self.learning_rate_input.setText("")
         else:
             print("Invalid Entry: Please enter a learning rate")
-
 
     def load_screen(self):
         # Initialize layout
@@ -192,7 +192,6 @@ class Analytics(QMainWindow):
         self.center_widget.setLayout(layout)
         self.window.setCentralWidget(self.center_widget)
         self.window.show()
-
 
     def main_tab_UI(self):
 
@@ -322,7 +321,7 @@ class Analytics(QMainWindow):
 
     def set_table_dimension(self):
         for i in range(0, self.table_col):
-                self.q_value_table.horizontalHeader().setSectionResizeMode(i, QHeaderView.Stretch)
+            self.q_value_table.horizontalHeader().setSectionResizeMode(i, QHeaderView.Stretch)
         for i in range(0, self.table_rows):
             self.q_value_table.verticalHeader().setSectionResizeMode(i, QHeaderView.Stretch)
 
@@ -334,10 +333,12 @@ class Analytics(QMainWindow):
                     self.q_value_table.item(self.table_rows - i - 2, j).text())
 
         for k in range(self.table_col):
-            self.q_value_table.item(0, k).setText(str(round(self.neural_network.layers[4].nodes[k].get_activation_value(), 5)))
+            self.q_value_table.item(0, k).setText(
+                str(round(self.neural_network.layers[4].nodes[k].get_activation_value(), 5)))
 
     def setRunning(self, isRunning):
         self.running = isRunning
+
 
 class Visualizer(QWidget):
     def __init__(self, network_diagram, width, height, interface):
@@ -359,7 +360,6 @@ class Visualizer(QWidget):
         # Initialize the UI
         self.initUI()
 
-
     def initUI(self):
         layout = QVBoxLayout()
         self.setLayout(layout)
@@ -372,12 +372,12 @@ class Visualizer(QWidget):
         for i in range(len(self.network.layers)):
             for j in range(len(self.network.layers[i].nodes)):
                 if i > 0:
-                    for k in range(len(self.network.layers[i-1].nodes)):
+                    for k in range(len(self.network.layers[i - 1].nodes)):
                         painter.setPen(self.transformConnection(self.network.layers[i].nodes[j].connections[k].weight))
                         painter.drawLine((self.network.layers[i].nodes[j].x + math.floor((self.node_size / 2))),
                                          (self.network.layers[i].nodes[j].y + math.floor((self.node_size / 2))),
-                                         (self.network.layers[i-1].nodes[k].x + math.floor((self.node_size / 2))),
-                                         (self.network.layers[i-1].nodes[k].y + math.floor((self.node_size / 2))))
+                                         (self.network.layers[i - 1].nodes[k].x + math.floor((self.node_size / 2))),
+                                         (self.network.layers[i - 1].nodes[k].y + math.floor((self.node_size / 2))))
 
         # Draw nodes
         painter.setPen(QPen(self.transformColor(-0.5, 1), 1))
@@ -399,9 +399,12 @@ class Visualizer(QWidget):
                                     self.node_size, self.node_size)
 
     def transformColor(self, val, param):
-        r = max(min(math.floor((self.base_color[0] + (self.base_color[1] * val * self.color_val_param * param))), 255), self.base_color[0] * 0.2)
-        g = max(min(math.floor((self.base_color[1] + (self.base_color[1] * val * self.color_val_param * param))), 255), self.base_color[0] * 0.2)
-        b = max(min(math.floor((self.base_color[2] + (self.base_color[2] * val * self.color_val_param * param))), 255), self.base_color[0] * 0.2)
+        r = max(min(math.floor((self.base_color[0] + (self.base_color[1] * val * self.color_val_param * param))), 255),
+                self.base_color[0] * 0.2)
+        g = max(min(math.floor((self.base_color[1] + (self.base_color[1] * val * self.color_val_param * param))), 255),
+                self.base_color[0] * 0.2)
+        b = max(min(math.floor((self.base_color[2] + (self.base_color[2] * val * self.color_val_param * param))), 255),
+                self.base_color[0] * 0.2)
         return QColor(r, g, b)
 
     def transformConnection(self, weight_param):
@@ -418,6 +421,7 @@ class Visualizer(QWidget):
     def update_diagram(self, network_diagram):
         self.network = network_diagram
         self.repaint()
+
 
 class BorderWidget(QFrame):
 

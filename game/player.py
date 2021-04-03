@@ -44,7 +44,7 @@ class Player:
 
         # player metrics
         self.score = 0
-        self.deaths = PLAYER_DEATHS
+        self.deaths = int(PLAYER_DEATHS)
 
         # Game status
         self.alive = True
@@ -193,12 +193,11 @@ class Player:
                               (self.grid_pos[1] + self.direction.y) * CELL_H + PAD_TOP, CELL_W, CELL_H), 2)
 
     def reset(self):
+        self.deaths += 1
         self.stop()
-        self.teleport(vec(1, 1))
-        self.direction = vec(1, 0)
+        self.teleport(vec(6, 14))
 
     def teleport(self, pos):
-        self.stop()
         self.grid_pos = pos
         self.sprite_pos = vec(self.grid_pos.x * CELL_W,
                               self.grid_pos.y * CELL_H + PAD_TOP)
