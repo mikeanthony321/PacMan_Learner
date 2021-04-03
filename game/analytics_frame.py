@@ -88,13 +88,13 @@ class Analytics(QMainWindow):
                             self.neural_network.layers[i].nodes[j].set_connection(self.neural_network.layers[i - 1].nodes[k])
 
             for i in range(len(self.neural_network.layers)):
+                activation_vals = self.agent_interface.get_activation_vals(i)
                 for j in range(len(self.neural_network.layers[i].nodes)):
                     if i > 0:
+                        weights = self.agent_interface.get_weights(i - 1)
                         for k in range(len(self.neural_network.layers[i - 1].nodes)):
-                            weight = self.agent_interface.get_weight([(i - 1, k), (i, j)])
-                            self.neural_network.layers[i].nodes[j].connections[k].set_weight(weight)
-                    activation_val = self.agent_interface.get_activation_val((i, j))
-                    self.neural_network.layers[i].nodes[j].set_activation_value(activation_val)
+                            self.neural_network.layers[i].nodes[j].connections[k].set_weight(0 if weights is None else weights[j][k])
+                    self.neural_network.layers[i].nodes[j].set_activation_value(0 if activation_vals is None else activation_vals[j])
 
         else:
             print("Neural Network object has not been initialized")
@@ -103,13 +103,14 @@ class Analytics(QMainWindow):
 
     def update(self):
         for i in range(len(self.neural_network.layers)):
+            activation_vals = self.agent_interface.get_activation_vals(i)
             for j in range(len(self.neural_network.layers[i].nodes)):
                 if i > 0:
+                    weights = self.agent_interface.get_weights(i - 1)
                     for k in range(len(self.neural_network.layers[i - 1].nodes)):
-                        weight = self.agent_interface.get_weight([(i - 1, k), (i, j)])
-                        self.neural_network.layers[i].nodes[j].connections[k].set_weight(weight)
-                activation_val = self.agent_interface.get_activation_val((i, j))
-                self.neural_network.layers[i].nodes[j].set_activation_value(activation_val)
+                        if weights is not None:
+                            self.neural_network.layers[i].nodes[j].connections[k].set_weight(weights[j][k])
+                self.neural_network.layers[i].nodes[j].set_activation_value(0 if activation_vals is None else activation_vals[j])
 
         self.visualizer.update_diagram(self.neural_network)
         self.update_table()
@@ -317,7 +318,6 @@ class Analytics(QMainWindow):
             for j in range(self.table_col):
                 self.q_value_table.setItem(i, j, QTableWidgetItem(""))
 
-
         self.q_value_table.setStyleSheet(TABLE_STYLE)
 
     def set_table_dimension(self):
@@ -334,7 +334,7 @@ class Analytics(QMainWindow):
                     self.q_value_table.item(self.table_rows - i - 2, j).text())
 
         for k in range(self.table_col):
-            self.q_value_table.item(0, k).setText(str(round(self.neural_network.layers[3].nodes[k].get_activation_value(), 5)))
+            self.q_value_table.item(0, k).setText(str(round(self.neural_network.layers[4].nodes[k].get_activation_value(), 5)))
 
     def setRunning(self, isRunning):
         self.running = isRunning
