@@ -189,9 +189,10 @@ class Ghost(pygame.sprite.Sprite):
                                 if len(self.path) > 0:
                                     if self.path[-1] != self.pac_pos:
                                         self.path = self.a_search(self.grid_pos, self.pac_pos)
-                                    if self.grid_pos != self.path[0]:
-                                        self.direction = vec(0, 0)
-                                        self.direction = self.path[0] - self.grid_pos
+                                    if len(self.path) > 0:
+                                        if self.grid_pos != self.path[0]:
+                                            self.direction = vec(0, 0)
+                                            self.direction = self.path[0] - self.grid_pos
                                 else:
                                     self.path = self.a_search(self.grid_pos, self.pac_pos)
                                 self.steps = 20
@@ -350,7 +351,7 @@ class Ghost(pygame.sprite.Sprite):
 
                 if self.add_to_open(open, neighbor) == True:
                     open.append(neighbor)
-        return None
+        return []
 
     def add_to_open(self, open, neighbor):
         for node in open:

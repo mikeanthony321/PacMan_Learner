@@ -29,7 +29,8 @@ TITLE_TEXT_SIZE = 16
 TITLE_FONT = "res/barcade.ttf"
 
 # player settings
-PLAYER_START_POS = vec(1, 1)
+PLAYER_START_POS = vec(6, 14)
+PLAYER_RESPAWN_POS = vec(6, 14) # or (20, 14) |
 PLAYER_DEATHS = open("db/deaths.txt", "r").readline()
 
 # ghost settings

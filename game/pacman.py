@@ -27,6 +27,7 @@ class Pacman(GameAgentAPI):
         self.cells = CellMap()
 
         self.player = Player(self, self.screen, PLAYER_START_POS, self.sprites)
+        self.tar_high_score = 0
 
         self.blinky = Ghost(self, self.screen, True, "Blinky", BLINKY_START_POS, BLINKY_SPRITE_POS, self.sprites)
         self.inky = Ghost(self, self.screen, False, "Inky", INKY_START_POS, INKY_SPRITE_POS, self.sprites)
@@ -48,6 +49,7 @@ class Pacman(GameAgentAPI):
                 self.running = False
 
             if Analytics.analytics_instance.running:
+                self.tar_high_score = Analytics.analytics_instance.getTargetHighScore()
                 self.app_state = 'game'
 
             self.clock.tick(FPS)
@@ -90,7 +92,7 @@ class Pacman(GameAgentAPI):
         if self.player.score >= int(HIGH_SCORE):
             open("db/hs.txt", "w").write(str(self.player.score))
 
-        if self.player.score >= int(Analytics.analytics_instance.tar_high_score):
+        if self.player.score >= int(self.tar_high_score):
             print("Target High Score Achieved! Score: ", self.player.score)
 
         self.player.score = 0
@@ -143,8 +145,8 @@ class Pacman(GameAgentAPI):
             else:
                 self.idle_timer += 1
 
-            #if not self.player.alive:
-                #self.reset_level()
+            if not self.player.alive:
+                self.reset_level()
 
         # When Pacman hits a Super Coin, the player pow pel status
         # flips to true and back to false upon collecting the next coin.
