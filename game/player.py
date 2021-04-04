@@ -250,3 +250,11 @@ class Player:
 
     def set_power_pellet_status(self, status):
         self.power_pellet_active = status
+
+    def get_bounds(self):
+        # Returns tuple of points representing Pac-Man's boundaries
+        # (left, right, up, down)
+        # (vec(x,y), vec(x,y), vec(x,y), vec(x,y))
+        radius = SPRITE_SIZE / 2
+        return (vec(self.pixel_pos.x - 5, self.pixel_pos.y), vec(self.pixel_pos.x + 5, self.pixel_pos.y), \
+                vec(self.pixel_pos.x, self.pixel_pos.y - radius), vec(self.pixel_pos.x, self.pixel_pos.y + radius))
