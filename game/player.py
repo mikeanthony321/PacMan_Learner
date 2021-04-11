@@ -50,6 +50,7 @@ class Player:
         self.alive = True
         self.game_over = False
         self.power_pellet_active = False
+        self.power_pellet_time = 0
 
         # Sprite Sheet information
         self.sprite_sheet = sprite_sheet
@@ -174,6 +175,7 @@ class Player:
                 # supercoin mgmt
                 if score_up == SUPERCOIN_SCORE:
                     self.power_pellet_active = True
+                    self.power_pellet_time = POWER_PELLET_TIMER
                 self.score += score_up
 
         if abs(self.grid_pos.x - self.presence_pos.y) > 2 or abs(self.grid_pos.y - self.presence_pos.y) > 2:
@@ -258,3 +260,9 @@ class Player:
         radius = SPRITE_SIZE / 2
         return (vec(self.pixel_pos.x - 5, self.pixel_pos.y), vec(self.pixel_pos.x + 5, self.pixel_pos.y), \
                 vec(self.pixel_pos.x, self.pixel_pos.y - radius), vec(self.pixel_pos.x, self.pixel_pos.y + radius))
+
+    def power_pellet_timer(self):
+        if self.power_pellet_time > 0:
+            self.power_pellet_time -= 1
+        else:
+            self.power_pellet_active = False

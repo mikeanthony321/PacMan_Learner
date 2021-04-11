@@ -9,7 +9,6 @@ from ghost import *
 from settings import *
 from api.actions import Actions
 
-#from analytics_frame_2 import *
 from analytics_frame import *
 
 pygame.init()
@@ -153,17 +152,12 @@ class Pacman(GameAgentAPI):
         # When Pacman hits a Super Coin, the player pow pel status
         # flips to true and back to false upon collecting the next coin.
         # This is managed during coin collection in player.py
+            self.player.power_pellet_timer()
 
             if self.player.power_pellet_active:
-                if self.power_pellet_timer == POWER_PELLET_TIMER:
-                    self.set_ghost_power_pellet_status(True)
-                if self.power_pellet_timer > 0:
-                    self.power_pellet_timer -= 1
-                else:
-                    self.player.set_power_pellet_status(False)
-                    self.set_ghost_power_pellet_status(False)
+                self.set_ghost_power_pellet_status(True)
             else:
-                self.power_pellet_timer = POWER_PELLET_TIMER
+                self.set_ghost_power_pellet_status(False)
 
             if self.player.get_alive_status():
                 for i in range(len(self.ghosts)):
