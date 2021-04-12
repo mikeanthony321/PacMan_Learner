@@ -17,21 +17,52 @@ class AgentAnalyticsFrameAPI(ABC):
         pass
 
     # method returns the activation values of the nodes in a specified layer
-    # called continuously (update rate tbd)
+    # called on update
     @abstractmethod
     def get_activation_vals(self, layer_index):
         pass
 
     # method returns the weights connecting the specified layer
-    # called continuously (update rate tbd)
+    # called on update
     @abstractmethod
     def get_weights(self, layer_index):
         pass
 
     # returns the logic count as an integer
-    # called continuously (update rate tbd)
+    # called on update
     @abstractmethod
     def get_logic_count(self):
+        pass
+
+    # returns ghost coordinates relative to pac-man's coordinates as a list of tuples
+    # called on update
+    @abstractmethod
+    def get_ghost_coords(self):
+        pass
+
+    # returns coordinates relative to pac-man of nearest pellet as tuple
+    # called on update
+    @abstractmethod
+    def get_nearest_pellet_coords(self):
+        pass
+
+    # returns coordinates relative to pac-man of nearest power pellet as tuple
+    # called on update
+    @abstractmethod
+    def get_nearest_power_pellet_coords(self):
+        pass
+
+    # returns a boolean indicating whether a power pellet  is currently active
+    # called on update
+    @abstractmethod
+    def get_power_pellet_active_status(self):
+        pass
+
+    # returns "UP" "DOWN" "LEFT" or "RIGHT" indicating the last decision made by agent,
+    # followed by "exploration" or "exploitation" indicating the type of decision made
+    # called on update
+    @abstractmethod
+    def get_decision(self):
         pass
 
     # sets the learning rate of the agent

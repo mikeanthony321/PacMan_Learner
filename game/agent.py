@@ -45,6 +45,11 @@ class LearnerAgent(AgentAnalyticsFrameAPI):
         self.target_net.eval()
         self.memory = ReplayMemory(s.REPLAY_MEMORY_SIZE)
         self.current_state = self.get_game_vals()
+        self.ghost_list = []
+        self.pellet_tuple = ()
+        self.power_tuple = ()
+        self.power_active = False
+        self.decision_type = ""
 
     def decide(self):
         state = self.get_game_vals()
@@ -61,9 +66,11 @@ class LearnerAgent(AgentAnalyticsFrameAPI):
                     if output[action.value] > best_decision[1]:
                         best_decision = (action, output[action.value])
                 decision = best_decision[0]
+                self.decision_type = "EXPLORATION"
                 print("Calculated (exploitation) decision: " + str(decision))
         else:
             decision = random.choice(available_actions)
+            self.decision_type = "EXPLORATION"
             print("Random (exploration) decision: " + str(decision))
 
         self.choose_action(decision)
@@ -115,12 +122,16 @@ class LearnerAgent(AgentAnalyticsFrameAPI):
 
     def choose_action(self, decision):
         if decision is Actions.UP:
+            self.decision = "UP"
             self.api.moveUp()
         elif decision is Actions.DOWN:
+            self.decision = "DOWN"
             self.api.moveDown()
         elif decision is Actions.LEFT:
+            self.decision = "LEFT"
             self.api.moveLeft()
         elif decision is Actions.RIGHT:
+            self.decision = "RIGHT"
             self.api.moveRight()
     
     def get_game_vals(self):
@@ -133,6 +144,10 @@ class LearnerAgent(AgentAnalyticsFrameAPI):
                                ghost_list[2][0], ghost_list[2][1], ghost_list[3][0], ghost_list[3][1],
                                pellet_tuple[0], pellet_tuple[1], power_tuple[0], power_tuple[1],
                                1 if power_active else 0])
+        self.ghost_list = ghost_list
+        self.pellet_tuple = pellet_tuple
+        self.power_tuple = power_tuple
+        self.power_active = power_active
         return tensor
 
 # -- -- -- AGENT API FUNCTIONS -- -- -- #
@@ -155,6 +170,22 @@ class LearnerAgent(AgentAnalyticsFrameAPI):
 
     def get_logic_count(self):
         return 1
+
+    def get_ghost_coords(self):
+        return self.ghost_list
+
+    def get_nearest_pellet_coords(self):
+        return self.pellet_tuple
+
+    def get_nearest_power_pellet_coords(self):
+        return self.power_tuple
+
+    def get_power_pellet_active_status(self):
+        return self.power_active
+
+    # testing
+    def get_decision(self):
+        return self.decision, self.decision_type
 
     def set_learning_rate(self, learning_rate):
         pass
