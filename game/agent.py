@@ -39,34 +39,38 @@ class LearnerAgent(AgentAnalyticsFrameAPI):
     def __init__(self, pacman_inst, learning_strat):
         self.api = pacman_inst
         self.learning_strat = learning_strat
+        self.learning_rate = None
+
         self.policy_net = Network(pacman_inst)
         self.target_net = Network(pacman_inst)
         self.target_net.load_state_dict(self.policy_net.state_dict())
         self.target_net.eval()
+
         self.memory = ReplayMemory(s.REPLAY_MEMORY_SIZE)
         self.current_state = self.get_game_vals()
+        self.prev_decision = None
 
     def decide(self):
         state = self.get_game_vals()
         rate = self.learning_strat.get_rate()
         
         decision = None
-        available_actions = self.api.getAvailableActions()
 
         if random.random() > rate:
             with torch.no_grad():
                 output = self.policy_net(state).tolist()
                 best_decision = (0, -1)
-                for action in available_actions:
+                for action in self.api.getAvailableActions(None):
                     if output[action.value] > best_decision[1]:
                         best_decision = (action, output[action.value])
                 decision = best_decision[0]
-                print("Calculated (exploitation) decision: " + str(decision))
+                #print("Calculated (exploitation) decision: " + str(decision))
         else:
-            decision = random.choice(available_actions)
-            print("Random (exploration) decision: " + str(decision))
+            decision = random.choice(self.api.getAvailableActions(self.prev_decision))
+            #print("Random (exploration) decision: " + str(decision))
 
         self.choose_action(decision)
+        self.prev_decision = decision
 
         self.memory.add(self.current_state.unsqueeze(0), torch.tensor([[decision.value]]), torch.tensor([[self.api.getReward()]]), state.unsqueeze(0))
 
@@ -99,7 +103,8 @@ class LearnerAgent(AgentAnalyticsFrameAPI):
             
             loss = F.smooth_l1_loss(state_action_values.clone(), expected_state_action_values).clone()
 
-            optimizer = optim.RMSprop(self.policy_net.parameters())
+            optimizer = optim.RMSprop(self.policy_net.parameters(),
+                                      lr=self.init_learning_rate() if self.learning_rate is None else self.learning_rate)
 
             optimizer.zero_grad()
             loss.backward()   # BUG: this fails after a few runs
@@ -134,6 +139,10 @@ class LearnerAgent(AgentAnalyticsFrameAPI):
                                pellet_tuple[0], pellet_tuple[1], power_tuple[0], power_tuple[1],
                                1 if power_active else 0])
         return tensor
+
+    def init_learning_rate(self):
+        self.learning_rate = Analytics.analytics_instance.learning_rate
+        return self.learning_rate
 
 # -- -- -- AGENT API FUNCTIONS -- -- -- #
 
@@ -183,7 +192,7 @@ class Network(nn.Module):
         self.h1 = nn.Linear(10, 10)
         self.h2 = nn.Linear(10, 8)
         self.output = nn.Linear(8, 4)
-        self.squishifier = nn.ReLU()
+        self.squishifier = nn.Sigmoid()
         self.api = pacmanInst
 
         self.full_node_dist = []

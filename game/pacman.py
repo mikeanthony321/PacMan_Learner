@@ -133,6 +133,9 @@ class Pacman(GameAgentAPI):
 # -- -- -- GAME FUNCTIONS -- -- -- #
 
     def game_update(self):
+        self.set_pac_pos()
+        self.check_ghost_pac_collision()
+
         if not self.player.get_game_over_status():
             player_pos = copy.deepcopy(self.player.get_grid_pos())
             self.player.update()
@@ -168,10 +171,6 @@ class Pacman(GameAgentAPI):
                 self.pinky.update()
                 self.inky.update()
                 self.clyde.update()
-
-            self.set_pac_pos()
-
-            self.check_ghost_pac_collision()
 
         #if self.analytics.getRestart() == True:
         #    self.reset_level()
@@ -248,8 +247,8 @@ class Pacman(GameAgentAPI):
             else:
                 self.clyde.set_alive_status(False)
 
-        if self.player.get_alive_status() == False:
-            Analytics.analytics_instance.setRunning(False)
+        # if self.player.get_alive_status() == False:
+        #     Analytics.analytics_instance.setRunning(False)
 
     def set_ghost_power_pellet_status(self, status):
         self.blinky.set_power_pellet_status(status)
@@ -266,13 +265,15 @@ class Pacman(GameAgentAPI):
 
 # -- -- -- AGENT API FUNCTIONS -- -- -- #
 
-    def getAvailableActions(self):
+    def getAvailableActions(self, prev_action):
         available_actions = []
         player_x, player_y = self.player.get_grid_pos()
-        for action, x, y in [(Actions.UP, 0, -1), (Actions.DOWN, 0, 1), (Actions.LEFT, -1, 0), (Actions.RIGHT, 1, 0)]:
+        for action, x, y, opposite in [(Actions.UP, 0, -1, Actions.DOWN), (Actions.DOWN, 0, 1, Actions.UP),
+                                       (Actions.LEFT, -1, 0, Actions.RIGHT), (Actions.RIGHT, 1, 0, Actions.LEFT)]:
             cell = next((c for c in self.cells.map if c.pos == (player_x + x, player_y + y)), None)
-            if (cell is not None) and (not cell.hasWall):
+            if (cell is not None) and (not cell.hasWall) and (prev_action is not opposite):
                 available_actions.append(action)
+
         return available_actions
 
     def moveUp(self):
@@ -331,7 +332,10 @@ class Pacman(GameAgentAPI):
             reward += Q_PELLET_FUNC(pellet_count)
             if len([c for c in self.cells.map if c.hasCoin]) == 1:
                 reward += Q_LEVEL_PASSED
-        if not self.player.get_alive_status():
-            reward += Q_DIED
+        for ghost in [self.blinky, self.pinky, self.inky, self.clyde]:
+            if self.player.get_grid_pos() == ghost.get_grid_pos():
+                reward += Q_CONSUME if self.player.power_pellet_active else Q_DIED
+                break
 
+        print(reward)
         return reward
