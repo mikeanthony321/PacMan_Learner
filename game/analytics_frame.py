@@ -117,8 +117,8 @@ class Analytics(QMainWindow):
         self.visualizer.update_diagram(self.neural_network)
         self.update_table()
 
-    def getTargetHighScore(self):
-        return self.tar_high_score
+
+
 
     def showTime(self):
         if self.running:
@@ -140,6 +140,7 @@ class Analytics(QMainWindow):
         if self.tar_high_score is not None and self.learning_rate is not None:
             self.timer.start(1000)
             self.running = True
+            self.agent_interface.start_sim()
             self.help_text_label.setText("")
         else:
             print("Target high score and learning rate must be set before beginning simulation")

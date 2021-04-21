@@ -22,6 +22,7 @@ class Pacman(GameAgentAPI):
         self.clock = pygame.time.Clock()
         self.running = True
         self.app_state = 'title'
+        self.tar_high_score = None
 
         self.cells = CellMap()
 
@@ -44,14 +45,12 @@ class Pacman(GameAgentAPI):
                 self.title_update()
                 self.title_draw()
             elif self.app_state == 'game':
+                self.game_events()
                 self.game_update()
                 self.game_draw()
             else:
                 self.running = False
 
-            if Analytics.analytics_instance.running:
-                self.tar_high_score = Analytics.analytics_instance.getTargetHighScore()
-                self.app_state = 'game'
 
             self.clock.tick(FPS)
 
@@ -169,6 +168,12 @@ class Pacman(GameAgentAPI):
 
         #if self.analytics.getRestart() == True:
         #    self.reset_level()
+        Analytics.update_frame()
+
+    def game_events(self):
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                self.running = False
 
     def game_draw(self):
         self.screen.fill(BLACK)
@@ -231,6 +236,12 @@ class Pacman(GameAgentAPI):
             self.ghosts[i].reset(i)
 
 # -- -- -- AGENT API FUNCTIONS -- -- -- #
+
+    def gameStart(self):
+        self.app_state = 'game'
+
+    def setTarHighScore(self, score):
+        self.tar_high_score = score
 
     def getAvailableActions(self):
         available_actions = []
