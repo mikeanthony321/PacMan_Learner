@@ -7,6 +7,7 @@ from analytics_frame import Analytics
 from api.agent_analytics_frame import AgentAnalyticsFrameAPI
 import random
 import math
+import copy
 
 import numpy as np
 import torch
@@ -115,7 +116,7 @@ class LearnerAgent(AgentAnalyticsFrameAPI):
             toggle_safe_batch()
 
         self.current_state = state
-        Analytics.update_frame()
+        #Analytics.update_frame()
 
 
     def choose_action(self, decision):
@@ -169,13 +170,14 @@ class LearnerAgent(AgentAnalyticsFrameAPI):
         pass
 
     def set_target_score(self, target_score):
-        pass
+        self.api.setTarHighScore(target_score)
 
     def stop_sim(self):
         pass
 
     def start_sim(self):
-        pass
+        self.api.gameStart()
+
 
 def safe_batch():
     return not is_calc_grad
@@ -192,7 +194,7 @@ class Network(nn.Module):
         self.h1 = nn.Linear(10, 10)
         self.h2 = nn.Linear(10, 8)
         self.output = nn.Linear(8, 4)
-        self.squishifier = nn.Sigmoid()
+        self.squishifier = nn.Tanh()
         self.api = pacmanInst
 
         self.full_node_dist = []
