@@ -110,7 +110,7 @@ class LearnerAgent(AgentAnalyticsFrameAPI):
             toggle_safe_batch()
 
         self.current_state = state
-        Analytics.update_frame()
+        #Analytics.update_frame()
 
 
     def choose_action(self, decision):
@@ -160,13 +160,14 @@ class LearnerAgent(AgentAnalyticsFrameAPI):
         pass
 
     def set_target_score(self, target_score):
-        pass
+        self.api.setTarHighScore(target_score)
 
     def stop_sim(self):
         pass
 
     def start_sim(self):
-        pass
+        self.api.gameStart()
+
 
 def safe_batch():
     return not is_calc_grad

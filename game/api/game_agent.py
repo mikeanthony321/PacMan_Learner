@@ -1,6 +1,16 @@
 from abc import ABC, abstractmethod
 
+
 class GameAgentAPI(ABC):
+
+    # Sets app_state to 'game'
+    @abstractmethod
+    def gameStart(self):
+        pass
+
+    # Sets target high score
+    def setTarHighScore(self, score):
+        pass
 
     # Provide the list of actions the player is able to take, in the form of Action enums
     @abstractmethod
