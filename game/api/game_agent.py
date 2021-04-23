@@ -50,6 +50,15 @@ class GameAgentAPI(ABC):
     def isPowerPelletActive(self):
         pass
 
+    # Sets app_state to 'game'
+    @abstractmethod
+    def gameStart(self):
+        pass
+
+    # Sets target high score
+    def setTarHighScore(self, score):
+        pass
+
     @abstractmethod
     def getReward(self):
         pass

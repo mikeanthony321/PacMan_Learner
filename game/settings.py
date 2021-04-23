@@ -39,6 +39,8 @@ BLINKY_START_POS = vec(15, 11)
 PINKY_START_POS = vec(12, 17)
 CLYDE_START_POS = vec(15, 17)
 
+GHOST_START_POS = (vec(12, 11), vec(15, 11), vec(12, 17), vec(15, 17))
+
 # AI settings
 MAX_IDLE_ALLOWANCE = 60
 DECISION_FREQUENCY = 0.8

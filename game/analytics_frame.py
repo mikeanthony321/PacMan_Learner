@@ -56,9 +56,12 @@ class Analytics(QMainWindow):
 
         # Plot variables
         self.start_plot = False
-        self.inputs = []
+        self.ghosts = []
+        self.nearest_pellet = []
+        self.nearest_p_pellet = []
         self.decision = ""
         self.decision_type = ""
+        self.decision_count = 0
         self.p_active = False
         self.up_plot = PlotStruct()
         self.down_plot = PlotStruct()
@@ -127,61 +130,37 @@ class Analytics(QMainWindow):
                 self.neural_network.layers[i].nodes[j].set_activation_value(
                     0 if activation_vals is None else activation_vals[j])
 
-        self.decision, self.decision_type = self.agent_interface.get_decision()
-        if self.start_plot:
-            if self.p_active:
-                if self.decision_type == "EXPLORATION":
-                    if self.decision == "UP":
-                        self.up_plot.add_active_exploration(self.inputs)
-                    elif self.decision == "DOWN":
-                        self.down_plot.add_active_exploration(self.inputs)
-                    elif self.decision == "LEFT":
-                        self.left_plot.add_active_exploration(self.inputs)
-                    elif self.decision == "RIGHT":
-                        self.right_plot.add_active_exploration(self.inputs)
-                elif self.decision_type == "EXPLOITATION":
-                    if self.decision == "UP":
-                        self.up_plot.add_active_exploitation(self.inputs)
-                    elif self.decision == "DOWN":
-                        self.down_plot.add_active_exploitation(self.inputs)
-                    elif self.decision == "LEFT":
-                        self.left_plot.add_active_exploitation(self.inputs)
-                    elif self.decision == "RIGHT":
-                        self.right_plot.add_active_exploitation(self.inputs)
-            else:
-                if self.decision_type == "EXPLORATION":
-                    if self.decision == "UP":
-                        self.up_plot.add_inactive_exploration(self.inputs)
-                    elif self.decision == "DOWN":
-                        self.down_plot.add_inactive_exploration(self.inputs)
-                    elif self.decision == "LEFT":
-                        self.left_plot.add_inactive_exploration(self.inputs)
-                    elif self.decision == "RIGHT":
-                        self.right_plot.add_inactive_exploration(self.inputs)
-                elif self.decision_type == "EXPLOITATION":
-                    if self.decision == "UP":
-                        self.up_plot.add_inactive_exploitation(self.inputs)
-                    elif self.decision == "DOWN":
-                        self.down_plot.add_inactive_exploitation(self.inputs)
-                    elif self.decision == "LEFT":
-                        self.left_plot.add_inactive_exploitation(self.inputs)
-                    elif self.decision == "RIGHT":
-                        self.right_plot.add_inactive_exploitation(self.inputs)
-        else:
-            self.start_plot = True
-        self.inputs = self.agent_interface.get_ghost_coords()
-        self.inputs.append(self.agent_interface.get_nearest_pellet_coords())
-        self.inputs.append(self.agent_interface.get_nearest_power_pellet_coords())
-        self.up_plot.update_inactive_exploration()
-        self.up_plot.update_plot()
-        print(self.inputs)
+
+        if self.agent_interface.get_logic_count() != self.decision_count:
+            self.decision_count = self.agent_interface.get_logic_count()
+            self.decision, self.decision_type = self.agent_interface.get_decision()
+            # update
+            if self.decision_count >= 2:
+                if self.decision == 'UP':
+                    self.up_plot.update_points(self.ghosts, self.nearest_pellet, self.nearest_p_pellet, self.p_active,
+                                               self.decision_type)
+                    self.up_plot.update_plot()
+                elif self.decision == 'DOWN':
+                    self.down_plot.update_points(self.ghosts, self.nearest_pellet, self.nearest_p_pellet, self.p_active,
+                                                 self.decision_type)
+                    self.down_plot.update_plot()
+                elif self.decision == 'LEFT':
+                    self.left_plot.update_points(self.ghosts, self.nearest_pellet, self.nearest_p_pellet, self.p_active,
+                                                 self.decision_type)
+                    self.left_plot.update_plot()
+                elif self.decision == 'RIGHT':
+                    self.right_plot.update_points(self.ghosts, self.nearest_pellet, self.nearest_p_pellet, self.p_active,
+                                                  self.decision_type)
+                    self.right_plot.update_plot()
+
+            self.ghosts = self.agent_interface.get_ghost_coords()
+            self.nearest_pellet = self.agent_interface.get_nearest_pellet_coords()
+            self.nearest_p_pellet = self.agent_interface.get_nearest_power_pellet_coords()
+
         self.p_active = self.agent_interface.get_power_pellet_active_status()
 
         self.visualizer.update_diagram(self.neural_network)
         self.update_table()
-
-    def getTargetHighScore(self):
-        return self.tar_high_score
 
     def showTime(self):
         if self.running:
@@ -203,6 +182,7 @@ class Analytics(QMainWindow):
         if self.tar_high_score is not None and self.learning_rate is not None:
             self.timer.start(1000)
             self.running = True
+            self.agent_interface.start_sim()
             self.help_text_label.setText("")
         else:
             print("Target high score and learning rate must be set before beginning simulation")
@@ -352,7 +332,6 @@ class Analytics(QMainWindow):
         timer_layout.addWidget(self.timer_label)
         left_layout.addLayout(timer_layout)
         left_layout.addSpacing(10)
-        left_layout.addWidget(self.up_plot.plot_widget)
         # Show the window with current widgets
         left_layout.setSpacing(0)
 
@@ -367,17 +346,17 @@ class Analytics(QMainWindow):
         explainAITab = QWidget()
         explainAI_tab_layout = QVBoxLayout()
         plots_layout = QGridLayout()
-
-        #plots_layout.addWidget(self.up_plot.plot_widget, 0, 1)
+        plots_layout.addWidget(self.up_plot.plot_widget, 0, 0)
+        plots_layout.addWidget(self.down_plot.plot_widget, 0, 1)
+        plots_layout.addWidget(self.left_plot.plot_widget, 1, 0)
+        plots_layout.addWidget(self.right_plot.plot_widget, 1, 1)
         """
         Explainability implementation here
         """
-        #plots_layout.addWidget(up_plot_widget, 0, 1)
+        # plots_layout.addWidget(up_plot_widget, 0, 1)
         explainAI_tab_layout.addLayout(plots_layout)
         explainAITab.setLayout(explainAI_tab_layout)
         return explainAITab
-
-
 
     def createTable(self):
         self.q_value_table = QTableWidget(self.table_rows, self.table_col, self.window)
@@ -505,148 +484,106 @@ class BorderWidget(QFrame):
 class PlotStruct():
 
     def __init__(self):
-        self.show_rand = True
+        self.show_rand = False
         self.show_p_inactive = True
         self.show_p_active = False
+        self.point_size = 10
+        self.base_opacity = 90
+        # i don't think this is working yet
+        self.plot_limit = 36
+        self.pac_spot = {
+            'pos': [0, 0],
+            'size': 20,
+            'brush': pg.mkBrush(225, 190, 5, 255)
+        }
+        self.pellet_brush = pg.mkBrush(220, 220, 220, self.base_opacity)
+        self.p_pellet_brush = pg.mkBrush(142, 240, 67, self.base_opacity)
+        self.blinky_brush = pg.mkBrush(255, 0, 0, self.base_opacity)
+        self.pinky_brush = pg.mkBrush(255, 184, 255, self.base_opacity)
+        self.inky_brush = pg.mkBrush(0, 255, 255, self.base_opacity)
+        self.clyde_brush = pg.mkBrush(255, 184, 82, self.base_opacity)
 
-        self.active_exploration = {
-            "blinky_x": [],
-            "blinky_y": [],
-            "pinky_x": [],
-            "pinky_y": [],
-            "inky_x": [],
-            "inky_y": [],
-            "clyde_x": [],
-            "clyde_y": [],
-            "nearest_pellet_x": [],
-            "nearest_pellet_y": [],
-            "nearest_p_pellet_x": [],
-            "nearest_p_pellet_y": []
-        }
-        self.active_exploitation = {
-            "blinky_x": [],
-            "blinky_y": [],
-            "pinky_x": [],
-            "pinky_y": [],
-            "inky_x": [],
-            "inky_y": [],
-            "clyde_x": [],
-            "clyde_y": [],
-            "nearest_pellet_x": [],
-            "nearest_pellet_y": [],
-            "nearest_p_pellet_x": [],
-            "nearest_p_pellet_y": []
-        }
-        self.inactive_exploration = {
-            "blinky_x": [],
-            "blinky_y": [],
-            "pinky_x": [],
-            "pinky_y": [],
-            "inky_x": [],
-            "inky_y": [],
-            "clyde_x": [],
-            "clyde_y": [],
-            "nearest_pellet_x": [],
-            "nearest_pellet_y": [],
-            "nearest_p_pellet_x": [],
-            "nearest_p_pellet_y": []
-        }
-        self.inactive_exploitation = {
-            "blinky_x": [],
-            "blinky_y": [],
-            "pinky_x": [],
-            "pinky_y": [],
-            "inky_x": [],
-            "inky_y": [],
-            "clyde_x": [],
-            "clyde_y": [],
-            "nearest_pellet_x": [],
-            "nearest_pellet_y": [],
-            "nearest_p_pellet_x": [],
-            "nearest_p_pellet_y": []
-        }
+        self.inactive_exploitation_points = []
+        self.inactive_exploration_points = []
+        self.active_exploitation_points = []
+        self.active_exploration_points = []
 
-        self.inactive_exploration_item = pg.ScatterPlotItem()
-        self.inactive_exploitation_item = pg.ScatterPlotItem()
-        self.active_exploration_item = pg.ScatterPlotItem()
-        self.active_exploitation_item = pg.ScatterPlotItem()
-
+        self.plot_item = pg.ScatterPlotItem()
+        self.plot_item.addPoints([self.pac_spot])
         self.plot_widget = pg.PlotWidget()
         self.plot_widget.setXRange(-20, 20)
-        self.plot_widget.setYRange(-30, 30)
+        self.plot_widget.setYRange(-20, 20)
+        self.plot_widget.addItem(self.plot_item)
+        self.plot_ref = None
 
+    def update_points(self, ghosts, nearest_pellet, nearest_p_pellet, p_active, decision_type):
+        blinky_spot = {
+            'pos': [ghosts[0].x, ghosts[0].y],
+            'size': self.point_size,
+            'brush': self.blinky_brush
+        }
+        pinky_spot = {
+            'pos': [ghosts[1].x, ghosts[1].y],
+            'size': self.point_size,
+            'brush': self.pinky_brush
+        }
+        inky_spot = {
+            'pos': [ghosts[2].x, ghosts[2].y],
+            'size': self.point_size,
+            'brush': self.inky_brush
+        }
+        clyde_spot = {
+            'pos': [ghosts[3].x, ghosts[3].y],
+            'size': self.point_size,
+            'brush': self.clyde_brush
+        }
+        pellet_spot = {
+            'pos': [nearest_pellet[0], nearest_pellet[1]],
+            'size': self.point_size,
+            'brush': self.pellet_brush
+        }
+        p_pellet_spot = {
+            'pos': [nearest_p_pellet[0], nearest_p_pellet[1]],
+            'size': self.point_size,
+            'brush': self.p_pellet_brush
+        }
 
-    def init_plots(self):
-        self.plot_widget.addItem(self.inactive_exploration_item)
-        
-    def add_inactive_exploration(self, inputs):
-        self.inactive_exploration["blinky_x"].append(inputs[0].x)
-        self.inactive_exploration["blinky_y"].append(inputs[0].y)
-        self.inactive_exploration["pinky_x"].append(inputs[1][0])
-        self.inactive_exploration["pinky_y"].append(inputs[1][1])
-        self.inactive_exploration["inky_x"].append(inputs[2][0])
-        self.inactive_exploration["inky_y"].append(inputs[2][1])
-        self.inactive_exploration["clyde_x"].append(inputs[3][0])
-        self.inactive_exploration["clyde_y"].append(inputs[3][1])
-        self.inactive_exploration["nearest_pellet_x"].append(inputs[4][0])
-        self.inactive_exploration["nearest_pellet_y"].append(inputs[4][1])
-        self.inactive_exploration["nearest_p_pellet_x"].append(inputs[5][0])
-        self.inactive_exploration["nearest_p_pellet_y"].append(inputs[5][1])
-        print("ADDING " + str(self.inactive_exploration["blinky_x"]) + ", " + str(self.inactive_exploration["blinky_y"]))
-
-    def add_inactive_exploitation(self, inputs):
-        self.inactive_exploitation["blinky_x"].append(inputs[0].x)
-        self.inactive_exploitation["blinky_y"].append(inputs[0].y)
-        self.inactive_exploitation["pinky_x"].append(inputs[1][0])
-        self.inactive_exploitation["pinky_y"].append(inputs[1][1])
-        self.inactive_exploitation["inky_x"].append(inputs[2][0])
-        self.inactive_exploitation["inky_y"].append(inputs[2][1])
-        self.inactive_exploitation["clyde_x"].append(inputs[3][0])
-        self.inactive_exploitation["clyde_y"].append(inputs[3][1])
-        self.inactive_exploitation["nearest_pellet_x"].append(inputs[4][0])
-        self.inactive_exploitation["nearest_pellet_y"].append(inputs[4][1])
-        self.inactive_exploitation["nearest_p_pellet_x"].append(inputs[5][0])
-        self.inactive_exploitation["nearest_p_pellet_y"].append(inputs[5][1])
-
-    def add_active_exploration(self, inputs):
-        self.active_exploration["blinky_x"].append(inputs[0].x)
-        self.active_exploration["blinky_y"].append(inputs[0].y)
-        self.active_exploration["pinky_x"].append(inputs[1][0])
-        self.active_exploration["pinky_y"].append(inputs[1][1])
-        self.active_exploration["inky_x"].append(inputs[2][0])
-        self.active_exploration["inky_y"].append(inputs[2][1])
-        self.active_exploration["clyde_x"].append(inputs[3][0])
-        self.active_exploration["clyde_y"].append(inputs[3][1])
-        self.active_exploration["nearest_pellet_x"].append(inputs[4][0])
-        self.active_exploration["nearest_pellet_y"].append(inputs[4][1])
-        self.active_exploration["nearest_p_pellet_x"].append(inputs[5][0])
-        self.active_exploration["nearest_p_pellet_y"].append(inputs[5][1])
-
-    def add_active_exploitation(self, inputs):
-        self.active_exploitation["blinky_x"].append(inputs[0].x)
-        self.active_exploitation["blinky_y"].append(inputs[0].y)
-        self.active_exploitation["pinky_x"].append(inputs[1][0])
-        self.active_exploitation["pinky_y"].append(inputs[1][1])
-        self.active_exploitation["inky_x"].append(inputs[2][0])
-        self.active_exploitation["inky_y"].append(inputs[2][1])
-        self.active_exploitation["clyde_x"].append(inputs[3][0])
-        self.active_exploitation["clyde_y"].append(inputs[3][1])
-        self.active_exploitation["nearest_pellet_x"].append(inputs[4][0])
-        self.active_exploitation["nearest_pellet_y"].append(inputs[4][1])
-        self.active_exploitation["nearest_p_pellet_x"].append(inputs[5][0])
-        self.active_exploitation["nearest_p_pellet_y"].append(inputs[5][1])
-
-
-
-    def update_inactive_exploration(self):
-        self.inactive_exploration_item.setData(self.inactive_exploration["blinky_x"],
-                                  self.inactive_exploration["blinky_y"],
-                                  symbol='o')
-        print("updating")
-
+        if p_active:
+            if decision_type == "EXPLORATION":
+                self.active_exploration_points.extend(
+                    [blinky_spot, pinky_spot, inky_spot, clyde_spot, pellet_spot, p_pellet_spot])
+                if len(self.active_exploration_points) >= self.plot_limit:
+                    self.active_exploration_points = self.active_exploration_points[6:]
+            else:
+                self.active_exploitation_points.extend(
+                    [blinky_spot, pinky_spot, inky_spot, clyde_spot, pellet_spot, p_pellet_spot])
+                if len(self.active_exploitation_points) >= self.plot_limit:
+                    self.active_exploitation_points = self.active_exploitation_points[6:]
+        else:
+            if decision_type == "EXPLORATION":
+                self.inactive_exploration_points.extend(
+                    [blinky_spot, pinky_spot, inky_spot, clyde_spot, pellet_spot, p_pellet_spot])
+                if len(self.inactive_exploration_points) >= self.plot_limit:
+                    self.inactive_exploration_points = self.inactive_exploration_points[6:]
+            else:
+                self.inactive_exploitation_points.extend(
+                    [blinky_spot, pinky_spot, inky_spot, clyde_spot, pellet_spot, p_pellet_spot])
+                if len(self.inactive_exploitation_points) >= self.plot_limit:
+                    self.inactive_exploitation_points = self.inactive_exploitation_points[6:]
 
     def update_plot(self):
+
+        plot_points = []
+        if self.show_p_active:
+            plot_points.extend(self.active_exploitation_points)
+        if self.show_p_inactive:
+            plot_points.extend(self.inactive_exploitation_points)
         if self.show_rand:
             if self.show_p_inactive:
-                self.plot_widget.plot(self.inactive_exploration_item)
+                plot_points.extend(self.inactive_exploration_points)
+            if self.show_p_active:
+                plot_points.extend(self.active_exploration_points)
 
+        plot_points.append(self.pac_spot)
+        self.plot_item.addPoints(plot_points)
+        self.plot_widget.addItem(self.plot_item)

@@ -49,7 +49,9 @@ class LearnerAgent(AgentAnalyticsFrameAPI):
         self.pellet_tuple = ()
         self.power_tuple = ()
         self.power_active = False
+        self.decision = None
         self.decision_type = ""
+        self.decision_count = 0
 
     def decide(self):
         state = self.get_game_vals()
@@ -66,7 +68,7 @@ class LearnerAgent(AgentAnalyticsFrameAPI):
                     if output[action.value] > best_decision[1]:
                         best_decision = (action, output[action.value])
                 decision = best_decision[0]
-                self.decision_type = "EXPLORATION"
+                self.decision_type = "EXPLOITATION"
                 print("Calculated (exploitation) decision: " + str(decision))
         else:
             decision = random.choice(available_actions)
@@ -117,7 +119,6 @@ class LearnerAgent(AgentAnalyticsFrameAPI):
             toggle_safe_batch()
 
         self.current_state = state
-        Analytics.update_frame()
 
 
     def choose_action(self, decision):
@@ -133,6 +134,7 @@ class LearnerAgent(AgentAnalyticsFrameAPI):
         elif decision is Actions.RIGHT:
             self.decision = "RIGHT"
             self.api.moveRight()
+        self.decision_count += 1
     
     def get_game_vals(self):
         ghost_list = self.api.getGhostsGridCoords()
@@ -169,7 +171,7 @@ class LearnerAgent(AgentAnalyticsFrameAPI):
             return None
 
     def get_logic_count(self):
-        return 1
+        return self.decision_count
 
     def get_ghost_coords(self):
         return self.ghost_list
@@ -183,7 +185,6 @@ class LearnerAgent(AgentAnalyticsFrameAPI):
     def get_power_pellet_active_status(self):
         return self.power_active
 
-    # testing
     def get_decision(self):
         return self.decision, self.decision_type
 
@@ -191,13 +192,13 @@ class LearnerAgent(AgentAnalyticsFrameAPI):
         pass
 
     def set_target_score(self, target_score):
-        pass
+        self.api.setTarHighScore(target_score)
 
     def stop_sim(self):
         pass
 
     def start_sim(self):
-        pass
+        self.api.gameStart()
 
 def safe_batch():
     return not is_calc_grad

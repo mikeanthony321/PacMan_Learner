@@ -17,6 +17,7 @@ class Ghost(pygame.sprite.Sprite):
         self.should_display = True
 
         # Vector indicating the Cell of the Grid currently occupied by the Ghost
+        self.start_pos = pos
         self.grid_pos = pos
         self.steps = 0
         self.next_tile = self.grid_pos
@@ -195,7 +196,9 @@ class Ghost(pygame.sprite.Sprite):
                                             self.direction = self.path[0] - self.grid_pos
                                 else:
                                     self.path = self.a_search(self.grid_pos, self.pac_pos)
-                                self.steps = 20
+                                # Before resetting steps, check that the direction isn't pointed into a wall
+                                if not self.check_wall_collision():
+                                    self.steps = 20
                             if self.steps > 0:
                                 self.pixel_pos += self.direction
                                 self.image_pos += self.direction
@@ -252,11 +255,19 @@ class Ghost(pygame.sprite.Sprite):
         if self.should_display:
             self.screen.blit(self.frame, self.image_pos)
 
-    def reset(self):
+    def reset(self, index):
         self.direction = vec(0, 0)
 
         # todo: set them to their original spawns
-        self.grid_pos = vec(13, 11)
+        if index == 0:
+            self.grid_pos = vec(12, 11)
+        elif index == 1:
+            self.grid_pos = vec(15, 11)
+        elif index == 2:
+            self.grid_pos = vec(12, 17)
+        elif index == 3:
+            self.grid_pos = vec(15, 17)
+
 
         # pixel position of center of ghost
         self.pixel_pos = vec(self.grid_pos.x * CELL_W + (CELL_W // 2),
@@ -277,6 +288,39 @@ class Ghost(pygame.sprite.Sprite):
         self.fleeing = False
         self.respawning = False
 
+    def check_collision(self, player_bounds, pos):
+        bounds = self.get_bounds();
+        # Check Manhattan Distance to determine if close enough to check collisions
+        # Arbitrary distance of 2 or less
+        if abs(pos.x - self.grid_pos.x) + abs(pos.y - self.grid_pos.y) <= 2 and self.ghost_alive:
+            # Check Players Left and Right Bounds with Ghosts Bounds
+            for i in range(0, 2):
+                if bounds[0].x <= player_bounds[i].x <= bounds[1].x:
+                    if bounds[2].y <= player_bounds[i].y <= bounds[3].y:
+                        if self.power_pellet_active:
+                            self.set_alive_status(False)
+                        else:
+                            return True
+                    else:
+                        return False
+            # Check Players Top and Bottom Bounds with Ghosts Bounds
+            for i in range(2, 4):
+                if bounds[2].y <= player_bounds[i].y <= bounds[3].y:
+                    if bounds[0].x <= player_bounds[i].x <= bounds[1].x:
+                        if self.power_pellet_active:
+                            self.set_alive_status(False)
+                        else:
+                            return True
+                    else:
+                        return False
+                return False
+
+    def check_wall_collision(self):
+        # Check that the current won't enter a wall
+        if GRID[int(self.grid_pos.y + self.direction.y)][int(self.grid_pos.x + self.direction.x)] == 3:
+            return True
+        else:
+            return False
     # -- -- -- GETTERS / SETTERS -- -- -- #
     # Currently increasing the speed creates the potential to overshoot collision detection and will need to be
     # tweaked if we wish to implement it.
@@ -300,6 +344,14 @@ class Ghost(pygame.sprite.Sprite):
 
     def set_power_pellet_status(self, status):
         self.power_pellet_active = status
+
+    def get_bounds(self):
+        # Returns a tuple of the ghosts boundaries
+        # (left, right, up, down)
+        # (vec(x,y), vec(x,y), vec(x,y), vec(x,y))
+        radius = CELL_W / 2
+        return (vec(self.pixel_pos.x - 5, self.pixel_pos.y), vec(self.pixel_pos.x + 5, self.pixel_pos.y), \
+                vec(self.pixel_pos.x, self.pixel_pos.y - radius), vec(self.pixel_pos.x, self.pixel_pos.y + radius))
 
     # -- -- -- A* SEARCH -- -- -- #
     # Adapted from a tutorial by A Name Not Yet Taken AB (annytab.com) for use with our structure
