@@ -60,15 +60,15 @@ class LearnerAgent(AgentAnalyticsFrameAPI):
         if random.random() > rate:
             with torch.no_grad():
                 output = self.policy_net(state).tolist()
-                best_decision = (0, -1)
+                best_decision = (Actions.UP, -1000000)
                 for action in self.api.getAvailableActions(None):
                     if output[action.value] > best_decision[1]:
                         best_decision = (action, output[action.value])
                 decision = best_decision[0]
-                #print("Calculated (exploitation) decision: " + str(decision))
+                #print("Calculated decision: " + str(decision))
         else:
             decision = random.choice(self.api.getAvailableActions(self.prev_decision))
-            #print("Random (exploration) decision: " + str(decision))
+            #print("Random decision: " + str(decision))
 
         self.choose_action(decision)
         self.prev_decision = decision
@@ -223,13 +223,14 @@ class ReplayMemory:
     def __init__(self, capacity):
         self.capacity = capacity
         self.memory = deque(maxlen=capacity)
+        self.push_count = 0
 
     def add(self,state, action, reward, next_state):
-        #TODO: add a push counter?
         if len(self.memory) >= self.capacity:
-            self.memory.append(None)
+            self.memory[self.push_count % self.capacity] = EXPERIENCE(state,action,reward,next_state)
         else:
             self.memory.append(EXPERIENCE(state,action,reward,next_state))
+        self.push_count += 1
         
     def sample(self, batch_size):
         sampled_exp = random.sample(self.memory, batch_size)

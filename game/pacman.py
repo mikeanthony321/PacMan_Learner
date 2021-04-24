@@ -39,6 +39,10 @@ class Pacman(GameAgentAPI):
         self.power_pellet_timer = POWER_PELLET_TIMER
         self.idle_timer = 0
 
+        self.move_history = []
+        for i in range(IDLE_HISTORY_LENGTH):
+            self.move_history.append(None)
+
     def run(self):
         while self.running:
             if self.app_state == 'title':
@@ -144,6 +148,11 @@ class Pacman(GameAgentAPI):
             # Alert the AI if a new grid square has been entered
             if (self.player.get_grid_pos() != player_pos) or self.idle_timer >= MAX_IDLE_ALLOWANCE:
                 self.idle_timer = 0
+
+                for i in range(len(self.move_history) - 1):
+                    self.move_history[i] = copy.deepcopy(self.move_history[i + 1])
+                self.move_history[len(self.move_history) - 1] = self.player.get_grid_pos()
+
                 if random.random() < DECISION_FREQUENCY:
                     LearnerAgent.run_decision()
             else:
@@ -305,7 +314,9 @@ class Pacman(GameAgentAPI):
         player_in_coin_cell = player_cell is not None and player_cell.hasCoin
         pellet_count = len([c for c in self.cells.map if not c.hasWall and not c.hasCoin])
 
-        reward += Q_MOVE
+        for i in range(1, len(self.move_history)):
+            if (self.move_history[i] is not None) and (self.move_history[i] == self.move_history[0]):
+                reward -= Q_IDLE_PENALTY
         if player_in_coin_cell:
             reward += Q_PELLET_FUNC(pellet_count)
             if len([c for c in self.cells.map if c.hasCoin]) == 1:
