@@ -16,7 +16,7 @@ def isAlignedY(pixel):
 
 
 class Player:
-    def __init__(self, game, screen, pos, sprite_sheet):
+    def __init__(self, game, screen, pos, respawn_pos, sprite_sheet):
         # Game instance
         self.game = game
 
@@ -25,6 +25,7 @@ class Player:
 
         # 2D vector (x, y) | Pacman's current cell | Pacman's presence cell
         self.grid_pos = pos
+        self.respawn_pos = respawn_pos
         self.presence_pos = self.grid_pos
 
         # 2D vector (x, y) | Pacman's current pixel position (center)
@@ -197,7 +198,7 @@ class Player:
     def reset(self):
         self.deaths += 1
         self.stop()
-        self.teleport(vec(6, 14))
+        self.teleport(self.respawn_pos)
 
     def teleport(self, pos):
         self.grid_pos = pos

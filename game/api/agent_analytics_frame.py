@@ -77,6 +77,11 @@ class AgentAnalyticsFrameAPI(ABC):
     def set_target_score(self, target_score):
         pass
 
+    # passes dictionary containing start positions of pac man and ghosts to game agent api function
+    @abstractmethod
+    def set_game_start_pos(self, pos_dict):
+        pass
+
     # stops the learning agent and game
     @abstractmethod
     def stop_sim(self):

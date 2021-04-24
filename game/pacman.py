@@ -25,18 +25,26 @@ class Pacman(GameAgentAPI):
         self.tar_high_score = None
         self.cells = CellMap()
 
-        self.player = Player(self, self.screen, PLAYER_START_POS, self.sprites)
+        self.player_start = PLAYER_START_POS
+        self.player_respawn = PLAYER_RESPAWN_POS
+        self.blinky_start = BLINKY_START_POS
+        self.inky_start = INKY_START_POS
+        self.pinky_start = PINKY_START_POS
+        self.clyde_start = CLYDE_START_POS
         self.tar_high_score = 0
-
-        self.ghosts = []
-
-        self.ghosts.append(Ghost(self, self.screen, True, "Blinky", vec(12, 11), BLINKY_SPRITE_POS, self.sprites))
-        self.ghosts.append(Ghost(self, self.screen, False, "Inky", vec(15, 11), INKY_SPRITE_POS, self.sprites))
-        self.ghosts.append(Ghost(self, self.screen, False, "Pinky", vec(12, 17), PINKY_SPRITE_POS, self.sprites))
-        self.ghosts.append(Ghost(self, self.screen, False, "Clyde", vec(15, 17), CLYDE_SPRITE_POS, self.sprites))
 
         self.power_pellet_timer = POWER_PELLET_TIMER
         self.idle_timer = 0
+        self.set_game_objects()
+
+    def set_game_objects(self):
+        self.player = Player(self, self.screen, self.player_start, self.player_respawn, self.sprites)
+        self.ghosts = []
+
+        self.ghosts.append(Ghost(self, self.screen, True, "Blinky", self.blinky_start, BLINKY_SPRITE_POS, self.sprites))
+        self.ghosts.append(Ghost(self, self.screen, False, "Inky", self.inky_start, INKY_SPRITE_POS, self.sprites))
+        self.ghosts.append(Ghost(self, self.screen, False, "Pinky", self.pinky_start, PINKY_SPRITE_POS, self.sprites))
+        self.ghosts.append(Ghost(self, self.screen, False, "Clyde", self.clyde_start, CLYDE_SPRITE_POS, self.sprites))
 
     def run(self):
         while self.running:
@@ -242,6 +250,15 @@ class Pacman(GameAgentAPI):
 
     def setTarHighScore(self, score):
         self.tar_high_score = score
+
+    def set_start_pos(self, pos_dict):
+        self.player_start = pos_dict['player_start']
+        self.player_respawn= pos_dict['player_respawn']
+        self.blinky_start = pos_dict['blinky']
+        self.inky_start = pos_dict['inky']
+        self.pinky_start = pos_dict['pinky']
+        self.clyde_start = pos_dict['clyde']
+        self.set_game_objects()
 
     def getAvailableActions(self):
         available_actions = []

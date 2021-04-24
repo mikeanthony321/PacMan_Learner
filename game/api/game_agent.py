@@ -55,6 +55,11 @@ class GameAgentAPI(ABC):
     def gameStart(self):
         pass
 
+    # sets positions of pac-man and ghosts
+    @abstractmethod
+    def set_start_pos(self, pos_dict):
+        pass
+
     # Sets target high score
     def setTarHighScore(self, score):
         pass

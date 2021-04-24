@@ -4,8 +4,8 @@ from network_diagram import NeuralNetwork, Layer
 from settings import *
 from frame_styles import *
 from PyQt5.QtWidgets import QGridLayout, QVBoxLayout, QMainWindow, QLineEdit, QTabWidget, QPushButton, \
-    QTableView, QTableWidget, QDesktopWidget, QTableWidgetItem, QWidget, QHBoxLayout, QLabel, \
-    QApplication, QHeaderView, QFrame
+    QTableView, QTableWidget, QDesktopWidget, QTableWidgetItem, QWidget, QCheckBox, QRadioButton, QHBoxLayout, QLabel, \
+    QApplication, QSlider, QHeaderView, QFrame
 from PyQt5.QtCore import QTimer, Qt, QSize, QPoint
 from PyQt5.QtGui import QFont, QPixmap, QPainter, QBrush, QPen, QColor, QRadialGradient
 from pyqtgraph import PlotWidget, plot
@@ -34,15 +34,21 @@ class Analytics(QMainWindow):
         self.window = QMainWindow()
         self.window.resize(WIDTH * 2, HEIGHT)
         self.window.setStyleSheet("background-color: black; color: white;")
-        self.window.move(math.floor(monitor_size.width() / 2 - (1.5 * WIDTH)),
+        self.window.move(math.floor(monitor_size.width() / 2 - (1.5 * WIDTH) - 24),
                          math.floor(monitor_size.height() / 2 - HEIGHT / 2 - 31))
         self.setWindowTitle('Pac-Man Leaner Analytics')
         self.agent_interface = agent_instance
-        self.diagram_width = 450
+        self.diagram_width = 300
         self.diagram_height = 350
         self.neural_network = None
         self.visualizer = None
         self.tabs = QTabWidget()
+
+        # Network labels
+        self.input_labels = ['Blinky X', 'Blinky Y', 'Inky X', 'Inky Y', 'Pinky X', 'Pinky y',
+                             'Clyde X', 'Clyde Y', 'Nearest Pellet X', 'Nearest Pellet Y',
+                             'Power Pellet X', 'Power Pellet Y', 'Active Power Pellet']
+        self.output_labels = ['Up', 'Down', 'Left', 'Right']
 
         # State Variables
         self.running = False
@@ -91,8 +97,7 @@ class Analytics(QMainWindow):
     def initialize_structure(self):
         if self.neural_network is not None:
             for i in range(len(self.neural_network.layers)):
-                x_space = self.diagram_width / (len(self.neural_network.layers) + 1)
-                x = ((self.diagram_width / (len(self.neural_network.layers) + 1)) * (i + 1))
+                x = (((self.diagram_width + 110) / (len(self.neural_network.layers) + 1)) * (i + 1) - 65)
                 for j in range(len(self.neural_network.layers[i].nodes)):
                     y = ((self.diagram_height / (len(self.neural_network.layers[i].nodes) + 1)) * (j + 1))
                     self.neural_network.layers[i].nodes[j].set_position(x, y)
@@ -139,19 +144,23 @@ class Analytics(QMainWindow):
                 if self.decision == 'UP':
                     self.up_plot.update_points(self.ghosts, self.nearest_pellet, self.nearest_p_pellet, self.p_active,
                                                self.decision_type)
-                    self.up_plot.update_plot()
+                    if self.tabs.currentIndex() == 1:
+                        self.up_plot.update_plot()
                 elif self.decision == 'DOWN':
                     self.down_plot.update_points(self.ghosts, self.nearest_pellet, self.nearest_p_pellet, self.p_active,
                                                  self.decision_type)
-                    self.down_plot.update_plot()
+                    if self.tabs.currentIndex() == 1:
+                        self.down_plot.update_plot()
                 elif self.decision == 'LEFT':
                     self.left_plot.update_points(self.ghosts, self.nearest_pellet, self.nearest_p_pellet, self.p_active,
                                                  self.decision_type)
-                    self.left_plot.update_plot()
+                    if self.tabs.currentIndex() == 1:
+                        self.left_plot.update_plot()
                 elif self.decision == 'RIGHT':
                     self.right_plot.update_points(self.ghosts, self.nearest_pellet, self.nearest_p_pellet, self.p_active,
                                                   self.decision_type)
-                    self.right_plot.update_plot()
+                    if self.tabs.currentIndex() == 1:
+                        self.right_plot.update_plot()
 
             self.ghosts = self.agent_interface.get_ghost_coords()
             self.nearest_pellet = self.agent_interface.get_nearest_pellet_coords()
@@ -205,23 +214,84 @@ class Analytics(QMainWindow):
             print("Invalid Entry: Please enter a target high score")
 
     def learningRateButton(self):
-        if self.learning_rate_input.text() != "":
-            if not self.running:
-                self.learning_rate = self.learning_rate_input.text()
-                self.learning_rate = float(self.learning_rate)
-                if self.learning_rate < 1.0:
-                    self.learning_rate_label.setText("Learning Rate: " + self.learning_rate_input.text())
-                    self.help_text_label.setText("")
-                    self.agent_interface.set_learning_rate(self.learning_rate)
-                else:  # I do not know enough about learning rate to know if we want to require it be under 1, just did to have a test
-                    self.help_text_label.setText("Invalid Learning Rate")
-                self.learning_rate_input.setText("")
-            else:
-                print("You must stop the sim to enter a new learning rate")
-                self.help_text_label.setText("The Learning Rate cannot be changed while the game is running")
-                self.learning_rate_input.setText("")
+        if not self.running:
+            self.learning_rate = float(self.learning_rate_slider.value()/1000000)
+            if self.learning_rate < 1.0:
+                self.learning_rate_label.setText("Learning Rate: " + "{:.6f}".format(self.learning_rate))
+                self.help_text_label.setText("")
+                self.agent_interface.set_learning_rate(self.learning_rate)
+            else:  # I do not know enough about learning rate to know if we want to require it be under 1, just did to have a test
+                self.help_text_label.setText("Invalid Learning Rate")
         else:
-            print("Invalid Entry: Please enter a learning rate")
+            print("You must stop the sim to enter a new learning rate")
+            self.help_text_label.setText("The Learning Rate cannot be changed while the game is running")
+
+    def slider_valuechange(self):
+        if not self.running:
+            learning_val = float(self.learning_rate_slider.value()/1000000)
+            self.learning_rate_label.setText("Learning Rate: " + "{:.6f}".format(learning_val))
+
+
+    def toggle_state(self, button):
+        if button.text() == "Centered Start Position":
+            if button.isChecked():
+                self.agent_interface.set_game_start_pos({
+                    'player_start': vec(13, 23),
+                    'player_respawn': vec(13, 23),
+                    'blinky': BLINKY_START_POS,
+                    'inky': INKY_START_POS,
+                    'pinky': PINKY_START_POS,
+                    'clyde': CLYDE_START_POS
+                })
+            else:
+                self.agent_interface.set_game_start_pos({
+                    'player_start': PLAYER_START_POS,
+                    'player_respawn': PLAYER_RESPAWN_POS,
+                    'blinky': BLINKY_START_POS,
+                    'inky': INKY_START_POS,
+                    'pinky': PINKY_START_POS,
+                    'clyde': CLYDE_START_POS
+                })
+        if button.text() == "Default Start Position":
+            if button.isChecked():
+                self.agent_interface.set_game_start_pos({
+                    'player_start': PLAYER_START_POS,
+                    'player_respawn': PLAYER_RESPAWN_POS,
+                    'blinky': BLINKY_START_POS,
+                    'inky': INKY_START_POS,
+                    'pinky': PINKY_START_POS,
+                    'clyde': CLYDE_START_POS
+                })
+            else:
+                self.agent_interface.set_game_start_pos({
+                    'player_start': vec(13, 23),
+                    'player_respawn': vec(13, 23),
+                    'blinky': BLINKY_START_POS,
+                    'inky': INKY_START_POS,
+                    'pinky': PINKY_START_POS,
+                    'clyde': CLYDE_START_POS
+                })
+
+    def check_state(self, button):
+        if button.text() == "Show Power Pellet Active":
+            self.up_plot.show_p_active = not self.up_plot.show_p_active
+            self.down_plot.show_p_active = not self.down_plot.show_p_active
+            self.left_plot.show_p_active = not self.left_plot.show_p_active
+            self.right_plot.show_p_active = not self.right_plot.show_p_active
+        elif button.text() == "Show Power Pellet Inactive":
+            self.up_plot.show_p_inactive = not self.up_plot.show_p_inactive
+            self.down_plot.show_p_inactive = not self.down_plot.show_p_inactive
+            self.left_plot.show_p_inactive = not self.left_plot.show_p_inactive
+            self.right_plot.show_p_inactive = not self.right_plot.show_p_inactive
+        elif button.text() == "Show Random Decisions":
+            self.up_plot.show_rand = not self.up_plot.show_rand
+            self.down_plot.show_rand = not self.down_plot.show_rand
+            self.left_plot.show_rand = not self.left_plot.show_rand
+            self.right_plot.show_rand = not self.right_plot.show_rand
+        self.up_plot.update_plot()
+        self.down_plot.update_plot()
+        self.left_plot.update_plot()
+        self.right_plot.update_plot()
 
     def load_screen(self):
         # Initialize layout
@@ -265,16 +335,20 @@ class Analytics(QMainWindow):
         left_layout.addLayout(hlayout1)
         left_layout.addSpacing(10)
 
-        # Create the Learning Rate input box and button
+        # Create the Learning Rate slider and button
         hlayout2 = QHBoxLayout()
-        self.learning_rate_input = QLineEdit(self.window)
-        self.learning_rate_input.setMinimumSize(300, 30)
-        self.learning_rate_input.setStyleSheet(QLINE_STYLE)
-        self.learning_rate_button = QPushButton('Set Learning Rate', self.window)
+        self.learning_rate_slider = QSlider(Qt.Horizontal)
+        self.learning_rate_slider.setMinimum(0)
+        self.learning_rate_slider.setMaximum(10000)
+        self.learning_rate_slider.setValue(5)
+        self.learning_rate_slider.setTickInterval(1)
+        self.learning_rate_slider.setMinimumSize(100, 30)
+        self.learning_rate_slider.valueChanged.connect(self.slider_valuechange)
+        self.learning_rate_button = QPushButton('Set Learning Rate')
         self.learning_rate_button.setMinimumSize(180, 30)
         self.learning_rate_button.clicked.connect(self.learningRateButton)
         self.learning_rate_button.setStyleSheet(BUTTON_STYLE)
-        hlayout2.addWidget(self.learning_rate_input)
+        hlayout2.addWidget(self.learning_rate_slider)
         hlayout2.addSpacing(5)
         hlayout2.addWidget(self.learning_rate_button)
         left_layout.addLayout(hlayout2)
@@ -293,6 +367,20 @@ class Analytics(QMainWindow):
         left_layout.addWidget(self.helpPanelWidget)
         left_layout.addSpacing(20)
 
+        # Create Options
+        options_layout = QVBoxLayout()
+        self.start_symm = QRadioButton('Centered Start Position')
+        self.start_symm.setStyleSheet(TEXT_STYLE)
+        self.start_symm.toggled.connect(lambda:self.toggle_state(self.start_symm))
+        self.start_default = QRadioButton('Default Start Position')
+        self.start_default.setStyleSheet(TEXT_STYLE)
+        self.start_default.toggled.connect(lambda: self.toggle_state(self.start_default))
+
+        options_layout.addWidget(self.start_symm)
+        options_layout.addWidget(self.start_default)
+        left_layout.addLayout(options_layout)
+        left_layout.addSpacing(20)
+
         # Create the Button for the Begin button to start the game (sim)
         self.begin_button = QPushButton('Start Learning Agent', self.window)
         self.begin_button.setStyleSheet(BUTTON_STYLE)
@@ -307,9 +395,37 @@ class Analytics(QMainWindow):
         self.visualization_label.setStyleSheet(TITLE_STYLE)
         right_layout.addWidget(self.visualization_label)
 
+        # Visualizer Layout
+        vis_layout = QHBoxLayout()
+        input_label_layout = QVBoxLayout()
+        input_label_layout.addSpacing(25)
+        output_label_layout = QVBoxLayout()
+        output_label_layout.addSpacing(45)
+
+        for i_label in self.input_labels:
+            qlabel = QLabel(i_label)
+            qlabel.setStyleSheet(TEXT_STYLE)
+            input_label_layout.addWidget(qlabel)
+            input_label_layout.addSpacing(2 * int((self.diagram_height - 20) / (14 * len(self.input_labels))))
+
+        for o_label in self.output_labels:
+            qlabel = QLabel(o_label)
+            qlabel.setStyleSheet(TEXT_STYLE)
+            output_label_layout.addWidget(qlabel)
+            output_label_layout.addSpacing(2 * int((self.diagram_height - 20) / (14 * len(self.input_labels))))
+
+        input_label_layout.addSpacing(10)
+        output_label_layout.addSpacing(30)
+
         # Initialize the Visualizer
         self.visualizer = Visualizer(self.neural_network, self.diagram_width, self.diagram_height, self.agent_interface)
-        right_layout.addWidget(self.visualizer)
+        vis_layout.addLayout(input_label_layout)
+        vis_layout.addSpacing(2)
+        vis_layout.addWidget(self.visualizer)
+        vis_layout.addSpacing(2)
+        vis_layout.addLayout(output_label_layout)
+        vis_layout.addSpacing(6)
+        right_layout.addLayout(vis_layout)
         right_layout.addSpacing(20)
 
         # Create and add Qvalue Table
@@ -345,16 +461,67 @@ class Analytics(QMainWindow):
     def explainAI_tab_UI(self):
         explainAITab = QWidget()
         explainAI_tab_layout = QVBoxLayout()
+        main_layout = QHBoxLayout()
         plots_layout = QGridLayout()
-        plots_layout.addWidget(self.up_plot.plot_widget, 0, 0)
-        plots_layout.addWidget(self.down_plot.plot_widget, 0, 1)
-        plots_layout.addWidget(self.left_plot.plot_widget, 1, 0)
-        plots_layout.addWidget(self.right_plot.plot_widget, 1, 1)
-        """
-        Explainability implementation here
-        """
-        # plots_layout.addWidget(up_plot_widget, 0, 1)
-        explainAI_tab_layout.addLayout(plots_layout)
+
+        up_layout = QVBoxLayout()
+        up_inner_layout = QHBoxLayout()
+        self.up_label = QLabel("UP")
+        self.up_label.setStyleSheet(TITLE_STYLE)
+        up_layout.addWidget(self.up_label)
+        up_layout.addLayout(up_inner_layout)
+        up_inner_layout.addWidget(self.up_plot.plot_widget)
+
+        down_layout = QVBoxLayout()
+        down_inner_layout = QHBoxLayout()
+        self.down_label = QLabel("DOWN")
+        self.down_label.setStyleSheet(TITLE_STYLE)
+        down_layout.addWidget(self.down_label)
+        down_layout.addLayout(down_inner_layout)
+        down_inner_layout.addWidget(self.down_plot.plot_widget)
+
+        left_layout = QVBoxLayout()
+        left_inner_layout = QHBoxLayout()
+        self.left_label = QLabel("LEFT")
+        self.left_label.setStyleSheet(TITLE_STYLE)
+        left_layout.addWidget(self.left_label)
+        left_layout.addLayout(left_inner_layout)
+        left_inner_layout.addWidget(self.left_plot.plot_widget)
+
+        right_layout = QVBoxLayout()
+        right_inner_layout = QHBoxLayout()
+        self.right_label = QLabel("RIGHT")
+        self.right_label.setStyleSheet(TITLE_STYLE)
+        right_layout.addWidget(self.right_label)
+        right_layout.addLayout(right_inner_layout)
+        right_inner_layout.addWidget(self.right_plot.plot_widget)
+
+        side_panel_layout = QVBoxLayout()
+        checkbox_layout = QVBoxLayout()
+        self.show_p_pellet_active = QCheckBox("Show Power Pellet Active")
+        self.show_p_pellet_active.setStyleSheet(TEXT_STYLE)
+        self.show_p_pellet_active.toggled.connect(lambda:self.check_state(self.show_p_pellet_active))
+        self.show_p_pellet_inactive = QCheckBox("Show Power Pellet Inactive")
+        self.show_p_pellet_inactive.setChecked(True)
+        self.show_p_pellet_inactive.setStyleSheet(TEXT_STYLE)
+        self.show_p_pellet_active.toggled.connect(lambda:self.check_state(self.show_p_pellet_inactive))
+        self.show_rand_decisions = QCheckBox("Show Random Decisions")
+        self.show_rand_decisions.setStyleSheet(TEXT_STYLE)
+        self.show_rand_decisions.toggled.connect(lambda:self.check_state(self.show_rand_decisions))
+        checkbox_layout.addWidget(self.show_p_pellet_active)
+        checkbox_layout.addWidget(self.show_p_pellet_inactive)
+        checkbox_layout.addWidget(self.show_rand_decisions)
+        side_panel_layout.addLayout(checkbox_layout)
+
+        plots_layout.addLayout(up_layout, 0, 0)
+        plots_layout.addLayout(down_layout, 0, 1)
+        plots_layout.addLayout(left_layout, 1, 0)
+        plots_layout.addLayout(right_layout, 1, 1)
+
+        main_layout.addLayout(plots_layout)
+        main_layout.addLayout(side_panel_layout)
+
+        explainAI_tab_layout.addLayout(main_layout)
         explainAITab.setLayout(explainAI_tab_layout)
         return explainAITab
 
@@ -395,9 +562,9 @@ class Visualizer(QWidget):
         self.title = "Visualizer"
         self.width = width
         self.height = height
-        self.node_size = int(self.height / 13)
+        self.node_size = int(self.height / 18)
         self.base_color = (51, 199, 255)
-        self.color_val_param = 1
+        self.color_val_param = 0.3
         self.thickness_param = 3
         self.base_line_thickness_param = 1
 
@@ -461,7 +628,7 @@ class Visualizer(QWidget):
         return QPen(QColor(90, 90, 90), thickness)
 
     def minimumSizeHint(self):
-        return QSize(450, 350)
+        return QSize(300, 350)
 
     def sizeHint(self):
         return QSize(500, 350)
@@ -489,11 +656,11 @@ class PlotStruct():
         self.show_p_active = False
         self.point_size = 10
         self.base_opacity = 90
-        # i don't think this is working yet
-        self.plot_limit = 36
+        self.plot_limit = 156
         self.pac_spot = {
             'pos': [0, 0],
-            'size': 20,
+            'pen': {'color': (225, 190, 5, 255),  'width': 0},
+            'size': 18,
             'brush': pg.mkBrush(225, 190, 5, 255)
         }
         self.pellet_brush = pg.mkBrush(220, 220, 220, self.base_opacity)
@@ -511,8 +678,8 @@ class PlotStruct():
         self.plot_item = pg.ScatterPlotItem()
         self.plot_item.addPoints([self.pac_spot])
         self.plot_widget = pg.PlotWidget()
-        self.plot_widget.setXRange(-20, 20)
-        self.plot_widget.setYRange(-20, 20)
+        self.plot_widget.setXRange(-30, 30)
+        self.plot_widget.setYRange(-30, 30)
         self.plot_widget.addItem(self.plot_item)
         self.plot_ref = None
 
@@ -520,31 +687,37 @@ class PlotStruct():
         blinky_spot = {
             'pos': [ghosts[0].x, ghosts[0].y],
             'size': self.point_size,
+            'pen': {'color': (255, 0, 0, self.base_opacity),  'width': 0},
             'brush': self.blinky_brush
         }
         pinky_spot = {
             'pos': [ghosts[1].x, ghosts[1].y],
             'size': self.point_size,
+            'pen': {'color': (255, 184, 255, self.base_opacity),  'width': 0},
             'brush': self.pinky_brush
         }
         inky_spot = {
             'pos': [ghosts[2].x, ghosts[2].y],
             'size': self.point_size,
+            'pen': {'color': (0, 255, 255, self.base_opacity),  'width': 0},
             'brush': self.inky_brush
         }
         clyde_spot = {
             'pos': [ghosts[3].x, ghosts[3].y],
             'size': self.point_size,
+            'pen': {'color': (255, 184, 82, self.base_opacity),  'width': 0},
             'brush': self.clyde_brush
         }
         pellet_spot = {
             'pos': [nearest_pellet[0], nearest_pellet[1]],
             'size': self.point_size,
+            'pen': {'color': (220, 220, 220, self.base_opacity),  'width': 0},
             'brush': self.pellet_brush
         }
         p_pellet_spot = {
             'pos': [nearest_p_pellet[0], nearest_p_pellet[1]],
             'size': self.point_size,
+            'pen': {'color': (142, 240, 67, self.base_opacity),  'width': 0},
             'brush': self.p_pellet_brush
         }
 
@@ -572,7 +745,6 @@ class PlotStruct():
                     self.inactive_exploitation_points = self.inactive_exploitation_points[6:]
 
     def update_plot(self):
-
         plot_points = []
         if self.show_p_active:
             plot_points.extend(self.active_exploitation_points)
@@ -585,5 +757,5 @@ class PlotStruct():
                 plot_points.extend(self.active_exploration_points)
 
         plot_points.append(self.pac_spot)
-        self.plot_item.addPoints(plot_points)
+        self.plot_item.setData(plot_points)
         self.plot_widget.addItem(self.plot_item)
