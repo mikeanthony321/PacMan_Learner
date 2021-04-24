@@ -1,12 +1,16 @@
 import sys, math, time, threading
+
+from PyQt5 import QtCore
+
 from api.agent_analytics_frame import AgentAnalyticsFrameAPI
 from network_diagram import NeuralNetwork, Layer
 from settings import *
 from frame_styles import *
+from frame_text import *
 from PyQt5.QtWidgets import QGridLayout, QVBoxLayout, QMainWindow, QLineEdit, QTabWidget, QPushButton, \
     QTableView, QTableWidget, QDesktopWidget, QTableWidgetItem, QWidget, QCheckBox, QRadioButton, QHBoxLayout, QLabel, \
-    QApplication, QSlider, QHeaderView, QFrame
-from PyQt5.QtCore import QTimer, Qt, QSize, QPoint
+    QApplication, QSlider, QHeaderView, QFrame, QSizePolicy, QScrollArea, QToolButton
+from PyQt5.QtCore import QTimer, Qt, QSize, QPoint, QParallelAnimationGroup, QAbstractAnimation, QPropertyAnimation
 from PyQt5.QtGui import QFont, QPixmap, QPainter, QBrush, QPen, QColor, QRadialGradient
 from pyqtgraph import PlotWidget, plot
 import pyqtgraph as pg
@@ -40,6 +44,8 @@ class Analytics(QMainWindow):
         self.agent_interface = agent_instance
         self.diagram_width = 300
         self.diagram_height = 350
+        self.vis_tab_x_scale = 2
+        self.vis_tab_y_scale = 1.5
         self.neural_network = None
         self.visualizer = None
         self.tabs = QTabWidget()
@@ -123,6 +129,7 @@ class Analytics(QMainWindow):
         else:
             print("Neural Network object has not been initialized")
 
+
     def update(self):
         for i in range(len(self.neural_network.layers)):
             activation_vals = self.agent_interface.get_activation_vals(i)
@@ -168,7 +175,10 @@ class Analytics(QMainWindow):
 
         self.p_active = self.agent_interface.get_power_pellet_active_status()
 
-        self.visualizer.update_diagram(self.neural_network)
+        if self.tabs.currentIndex() == 0:
+            self.visualizer.update_diagram(self.neural_network)
+        elif self.tabs.currentIndex() == 2:
+            self.tab_vis.update_diagram(self.neural_network)
         self.update_table()
 
     def showTime(self):
@@ -231,6 +241,56 @@ class Analytics(QMainWindow):
             learning_val = float(self.learning_rate_slider.value()/1000000)
             self.learning_rate_label.setText("Learning Rate: " + "{:.6f}".format(learning_val))
 
+    def on_position_changed(self, p):
+        for i in range(len(self.neural_network.layers)):
+            x = ((((self.diagram_width + 110) / (len(self.neural_network.layers) + 1)) * (i + 1) - 65) * self.vis_tab_x_scale)
+            for j in range(len(self.neural_network.layers[i].nodes)):
+                y = (((self.diagram_height / (len(self.neural_network.layers[i].nodes) + 1)) * (j + 1)) * self.vis_tab_y_scale)
+                if x + int(100 / 6) >= p.x() > x - int(100 / 6) and y + int(100 / 6) >= p.y() > y - int(100 / 6):
+                    if i == 0:
+                        if j == 0:
+                            string = "Input Layer: Blinky X" + "\nActivation Value: {:.6f}"
+                        elif j == 1:
+                            string = "Input Layer: Blinky Y" + "\nActivation Value: {:.6f}"
+                        elif j == 2:
+                            string = "Input Layer: Inky X" + "\nActivation Value: {:.6f}"
+                        elif j == 3:
+                            string = "Input Layer: Inky Y" + "\nActivation Value: {:.6f}"
+                        elif j == 4:
+                            string = "Input Layer: Pinky X" + "\nActivation Value: {:.6f}"
+                        elif j == 5:
+                            string = "Input Layer: Pinky Y" + "\nActivation Value: {:.6f}"
+                        elif j == 6:
+                            string = "Input Layer: Clyde X" + "\nActivation Value: {:.6f}"
+                        elif j == 7:
+                            string = "Input Layer: Clyde Y" + "\nActivation Value: {:.6f}"
+                        elif j == 8:
+                            string = "Input Layer: Nearest Pellet X" + "\nActivation Value: {:.6f}"
+                        elif j == 9:
+                            string = "Input Layer: Nearest Pellet Y" + "\nActivation Value: {:.6f}"
+                        elif j == 10:
+                            string = "Input Layer: Nearest Power Pellet X" + "\nActivation Value: {:.6f}"
+                        elif j == 11:
+                            string = "Input Layer: Nearest Power Pellet Y" + "\nActivation Value: {:.6f}"
+                        elif j == 12:
+                            string = "Input Layer: Power Pellet Currently Active" + "\nActivation Value: {:.6f}"
+                    elif i == 1:
+                        string = "Hidden Layer 1: Node " + str(j) + "\nActivation Value: {:.6f}"
+                    elif i == 2:
+                        string = "Hidden Layer 2: Node " + str(j) + "\nActivation Value: {:.6f}"
+                    elif i == 3:
+                        string = "Hidden Layer 3: Node " + str(j) + "\nActivation Value: {:.6f}"
+                    elif i == 4:
+                        if j == 0:
+                            string = "Output Layer: Up"+ "\nActivation Value: {:.6f}"
+                        elif j == 1:
+                            string = "Output Layer: Down" + "\nActivation Value: {:.6f}"
+                        elif j == 2:
+                            string = "Output Layer: Left" + "\nActivation Value: {:.6f}"
+                        elif j == 3:
+                            string = "Output Layer: Right" + "\nActivation Value: {:.6f}"
+                    self.hover_tracker.widget.setToolTip(string.format(
+                            self.neural_network.layers[i].nodes[j].activation_value))
 
     def toggle_state(self, button):
         if button.text() == "Centered Start Position":
@@ -298,9 +358,11 @@ class Analytics(QMainWindow):
         self.center_widget = QWidget()
         layout = QVBoxLayout()
         self.tabs.setStyleSheet(QTAB_STYLE)
-
         self.tabs.addTab(self.main_tab_UI(), "Start")
         self.tabs.addTab(self.explainAI_tab_UI(), "Model Insights")
+        self.tabs.addTab(self.network_tab_UI(), "Network")
+        self.tabs.addTab(self.advanced_options_tab_UI(), "Options")
+        self.tabs.addTab(self.about_tab_UI(), "About")
         layout.addWidget(self.tabs)
         self.center_widget.setLayout(layout)
         self.window.setCentralWidget(self.center_widget)
@@ -318,6 +380,17 @@ class Analytics(QMainWindow):
         self.setup_label = QLabel('Learning Parameters')
         self.setup_label.setStyleSheet(TITLE_STYLE)
         left_layout.addWidget(self.setup_label)
+        left_layout.addSpacing(5)
+
+        # Create dropdown menu
+        infobox = CollapsibleBox(subtitle='Information')
+        b_layout = QVBoxLayout()
+        text = QLabel(main_info_text)
+        text.setWordWrap(True)
+        text.setStyleSheet(TEXT_STYLE)
+        b_layout.addWidget(text)
+        infobox.setContentLayout(b_layout)
+        left_layout.addWidget(infobox)
         left_layout.addSpacing(20)
 
         # Create the Target High Score input box and button
@@ -325,10 +398,12 @@ class Analytics(QMainWindow):
         self.tar_high_score_input = QLineEdit(self.window)
         self.tar_high_score_input.setMinimumSize(300, 30)
         self.tar_high_score_input.setStyleSheet(QLINE_STYLE)
+        self.tar_high_score_input.setText("400")
         self.tar_high_score_button = QPushButton('Set Target High Score', self.window)
         self.tar_high_score_button.clicked.connect(self.highScoreButton)
         self.tar_high_score_button.setMinimumSize(180, 30)
         self.tar_high_score_button.setStyleSheet(BUTTON_STYLE)
+        self.tar_high_score_button.setToolTip(target_high_score_tooltip)
         hlayout1.addWidget(self.tar_high_score_input, 1)
         hlayout1.addSpacing(5)
         hlayout1.addWidget(self.tar_high_score_button)
@@ -340,14 +415,15 @@ class Analytics(QMainWindow):
         self.learning_rate_slider = QSlider(Qt.Horizontal)
         self.learning_rate_slider.setMinimum(0)
         self.learning_rate_slider.setMaximum(10000)
-        self.learning_rate_slider.setValue(5)
-        self.learning_rate_slider.setTickInterval(1)
+        self.learning_rate_slider.setValue(500)
+        self.learning_rate_slider.setTickInterval(5)
         self.learning_rate_slider.setMinimumSize(100, 30)
         self.learning_rate_slider.valueChanged.connect(self.slider_valuechange)
         self.learning_rate_button = QPushButton('Set Learning Rate')
         self.learning_rate_button.setMinimumSize(180, 30)
         self.learning_rate_button.clicked.connect(self.learningRateButton)
         self.learning_rate_button.setStyleSheet(BUTTON_STYLE)
+        self.learning_rate_button.setToolTip(learning_rate_tooltip)
         hlayout2.addWidget(self.learning_rate_slider)
         hlayout2.addSpacing(5)
         hlayout2.addWidget(self.learning_rate_button)
@@ -525,6 +601,29 @@ class Analytics(QMainWindow):
         explainAITab.setLayout(explainAI_tab_layout)
         return explainAITab
 
+    def network_tab_UI(self):
+        networkTab = QWidget()
+        network_tab_layout = QVBoxLayout()
+        self.tab_vis = Visualizer(self.neural_network, 600, 550, self.agent_interface,  x_scale=2, y_scale=1.5)
+        self.tab_vis.setStyleSheet(WIDGET_STYLE)
+        self.hover_tracker = HoverTracker(self.tab_vis)
+        self.hover_tracker.positionChanged.connect(self.on_position_changed)
+        network_tab_layout.addWidget(self.tab_vis)
+        networkTab.setLayout(network_tab_layout)
+        return networkTab
+
+    def advanced_options_tab_UI(self):
+        advancedOptionsTab = QWidget()
+        advanced_options_tab_layout = QVBoxLayout()
+        advancedOptionsTab.setLayout(advanced_options_tab_layout)
+        return advancedOptionsTab
+
+    def about_tab_UI(self):
+        aboutTab = QWidget()
+        about_tab_layout = QVBoxLayout()
+        aboutTab.setLayout(about_tab_layout)
+        return aboutTab
+
     def createTable(self):
         self.q_value_table = QTableWidget(self.table_rows, self.table_col, self.window)
         self.q_value_table.setHorizontalHeaderLabels(["Up", "Down", "Left", "Right"])
@@ -556,7 +655,7 @@ class Analytics(QMainWindow):
 
 
 class Visualizer(QWidget):
-    def __init__(self, network_diagram, width, height, interface):
+    def __init__(self, network_diagram, width, height, interface, x_scale=1, y_scale=1):
         super().__init__()
         # Initialize the diagram
         self.title = "Visualizer"
@@ -567,6 +666,8 @@ class Visualizer(QWidget):
         self.color_val_param = 0.3
         self.thickness_param = 3
         self.base_line_thickness_param = 1
+        self.x_scale = x_scale
+        self.y_scale = y_scale
 
         # Set the network
         self.network = network_diagram
@@ -589,18 +690,18 @@ class Visualizer(QWidget):
                 if i > 0:
                     for k in range(len(self.network.layers[i - 1].nodes)):
                         painter.setPen(self.transformConnection(self.network.layers[i].nodes[j].connections[k].weight))
-                        painter.drawLine((self.network.layers[i].nodes[j].x + math.floor((self.node_size / 2))),
-                                         (self.network.layers[i].nodes[j].y + math.floor((self.node_size / 2))),
-                                         (self.network.layers[i - 1].nodes[k].x + math.floor((self.node_size / 2))),
-                                         (self.network.layers[i - 1].nodes[k].y + math.floor((self.node_size / 2))))
+                        painter.drawLine((int(self.network.layers[i].nodes[j].x * self.x_scale) + math.floor((self.node_size / 2))),
+                                         (int(self.network.layers[i].nodes[j].y * self.y_scale) + math.floor((self.node_size / 2))),
+                                         (int(self.network.layers[i - 1].nodes[k].x * self.x_scale)+ math.floor((self.node_size / 2))),
+                                         (int(self.network.layers[i - 1].nodes[k].y * self.y_scale)+ math.floor((self.node_size / 2))))
 
         # Draw nodes
         painter.setPen(QPen(self.transformColor(-0.5, 1), 1))
         for a in range(len(self.network.layers)):
             for b in range(len(self.network.layers[a].nodes)):
                 radialGradient = QRadialGradient(
-                    QPoint((self.network.layers[a].nodes[b].x + math.floor(self.node_size / 2)),
-                           self.network.layers[a].nodes[b].y + math.floor(self.node_size / 2)), 40)
+                    QPoint((int(self.network.layers[a].nodes[b].x * self.x_scale)+ math.floor(self.node_size / 2)),
+                           int(self.network.layers[a].nodes[b].y * self.y_scale) + math.floor(self.node_size / 2)), 40)
 
                 node_color_1 = self.transformColor(self.network.layers[a].nodes[b].get_activation_value(), 0.5)
                 node_color_2 = self.transformColor(self.network.layers[a].nodes[b].get_activation_value(), -1)
@@ -610,8 +711,9 @@ class Visualizer(QWidget):
                 radialGradient.setColorAt(0.5, node_color_2)
                 radialGradient.setColorAt(1.0, node_color_3)
                 painter.setBrush(QBrush(radialGradient))
-                painter.drawEllipse(self.network.layers[a].nodes[b].x, self.network.layers[a].nodes[b].y,
-                                    self.node_size, self.node_size)
+                painter.drawEllipse(int(self.network.layers[a].nodes[b].x * self.x_scale),
+                                    int(self.network.layers[a].nodes[b].y * self.y_scale), self.node_size,
+                                    self.node_size)
 
     def transformColor(self, val, param):
         r = max(min(math.floor((self.base_color[0] + (self.base_color[1] * val * self.color_val_param * param))), 255),
@@ -628,10 +730,10 @@ class Visualizer(QWidget):
         return QPen(QColor(90, 90, 90), thickness)
 
     def minimumSizeHint(self):
-        return QSize(300, 350)
+        return QSize(self.width, self.height)
 
     def sizeHint(self):
-        return QSize(500, 350)
+        return QSize(self.width, self.height)
 
     def update_diagram(self, network_diagram):
         self.network = network_diagram
@@ -659,9 +761,9 @@ class PlotStruct():
         self.plot_limit = 156
         self.pac_spot = {
             'pos': [0, 0],
-            'pen': {'color': (225, 190, 5, 255),  'width': 0},
+            'pen': {'color': (245, 210, 5, 255),  'width': 0},
             'size': 18,
-            'brush': pg.mkBrush(225, 190, 5, 255)
+            'brush': pg.mkBrush(235, 200, 5, 255)
         }
         self.pellet_brush = pg.mkBrush(220, 220, 220, self.base_opacity)
         self.p_pellet_brush = pg.mkBrush(142, 240, 67, self.base_opacity)
@@ -759,3 +861,107 @@ class PlotStruct():
         plot_points.append(self.pac_spot)
         self.plot_item.setData(plot_points)
         self.plot_widget.addItem(self.plot_item)
+
+class CollapsibleBox(QWidget):
+    def __init__(self, title=None, subtitle=None, parent=None):
+        super(CollapsibleBox, self).__init__(parent)
+
+        self.hlayout = QHBoxLayout()
+
+        if title is not None:
+            self.title_label = QLabel(title)
+            self.title_label.setStyleSheet(TITLE_STYLE)
+            self.hlayout.addWidget(self.title_label)
+            self.hlayout.addSpacing(5)
+        elif subtitle is not None:
+            self.title_label = QLabel(subtitle)
+            self.title_label.setStyleSheet(TEXT_STYLE)
+            self.hlayout.addWidget(self.title_label)
+            self.hlayout.addSpacing(5)
+
+        self.toggle_button = QToolButton(checkable=True, checked=False)
+        self.toggle_button.setStyleSheet(TEXT_STYLE)
+        self.toggle_button.setStyleSheet("QToolButton { border: none; }")
+        self.toggle_button.setToolButtonStyle(
+            Qt.ToolButtonTextBesideIcon
+        )
+        self.toggle_button.setArrowType(Qt.DownArrow)
+        self.toggle_button.pressed.connect(self.on_pressed)
+
+        self.toggle_animation = QtCore.QParallelAnimationGroup(self)
+
+        self.content_area = QScrollArea(maximumHeight=0, minimumHeight=0)
+        self.content_area.setSizePolicy(
+            QSizePolicy.Expanding, QSizePolicy.Fixed
+        )
+        self.content_area.setFrameShape(QFrame.NoFrame)
+
+        lay = QVBoxLayout(self)
+        lay.setSpacing(0)
+        lay.setContentsMargins(0, 0, 0, 0)
+        self.hlayout.addWidget(self.toggle_button)
+        self.hlayout.addStretch(5)
+        lay.addLayout(self.hlayout)
+        lay.addWidget(self.content_area)
+
+        self.toggle_animation.addAnimation(
+            QPropertyAnimation(self, b"minimumHeight")
+        )
+        self.toggle_animation.addAnimation(
+            QPropertyAnimation(self, b"maximumHeight")
+        )
+        self.toggle_animation.addAnimation(
+            QPropertyAnimation(self.content_area, b"maximumHeight")
+        )
+
+    @QtCore.pyqtSlot()
+    def on_pressed(self):
+        checked = self.toggle_button.isChecked()
+        self.toggle_button.setArrowType(
+            Qt.UpArrow if not checked else Qt.DownArrow
+        )
+        self.toggle_animation.setDirection(
+            QAbstractAnimation.Forward
+            if not checked
+            else QAbstractAnimation.Backward
+        )
+        self.toggle_animation.start()
+
+    def setContentLayout(self, layout):
+        lay = self.content_area.layout()
+        del lay
+        self.content_area.setLayout(layout)
+        collapsed_height = (
+            self.sizeHint().height() - self.content_area.maximumHeight()
+        )
+        content_height = layout.sizeHint().height()
+        for i in range(self.toggle_animation.animationCount()):
+            animation = self.toggle_animation.animationAt(i)
+            animation.setDuration(500)
+            animation.setStartValue(collapsed_height)
+            animation.setEndValue(collapsed_height + content_height)
+
+        content_animation = self.toggle_animation.animationAt(
+            self.toggle_animation.animationCount() - 1
+        )
+        content_animation.setDuration(500)
+        content_animation.setStartValue(0)
+        content_animation.setEndValue(content_height)
+
+class HoverTracker(QtCore.QObject):
+    positionChanged = QtCore.pyqtSignal(QPoint)
+
+    def __init__(self, widget):
+        super().__init__(widget)
+        self._widget = widget
+        self.widget.setMouseTracking(True)
+        self.widget.installEventFilter(self)
+
+    @property
+    def widget(self):
+        return self._widget
+
+    def eventFilter(self, obj, event):
+        if obj is self.widget and event.type() == QtCore.QEvent.MouseMove:
+            self.positionChanged.emit(event.pos())
+        return super().eventFilter(obj, event)

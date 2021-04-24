@@ -198,7 +198,8 @@ class Player:
     def reset(self):
         self.deaths += 1
         self.stop()
-        self.teleport(self.respawn_pos)
+        # set to vector to avoid wrong respawn bug
+        self.teleport(vec(13, 23))
 
     def teleport(self, pos):
         self.grid_pos = pos
