@@ -73,7 +73,8 @@ class LearnerAgent(AgentAnalyticsFrameAPI):
         self.choose_action(decision)
         self.prev_decision = decision
 
-        self.memory.add(self.current_state.unsqueeze(0), torch.tensor([[decision.value]]), torch.tensor([[self.api.getReward()]]), state.unsqueeze(0))
+        self.memory.add(self.current_state.unsqueeze(0), torch.tensor([[decision.value]]),
+                        torch.tensor([[self.api.getReward()]]), state.unsqueeze(0))
 
         if self.memory.can_provide_sample(s.REPLAY_BATCH_SIZE) and safe_batch(): 
             torch.autograd.set_detect_anomaly(True)
@@ -138,7 +139,7 @@ class LearnerAgent(AgentAnalyticsFrameAPI):
         tensor = torch.Tensor([ghost_list[0][0], ghost_list[0][1], ghost_list[1][0], ghost_list[1][1],
                                ghost_list[2][0], ghost_list[2][1], ghost_list[3][0], ghost_list[3][1],
                                pellet_tuple[0], pellet_tuple[1], power_tuple[0], power_tuple[1],
-                               1 if power_active else 0])
+                               10 if power_active else -10])
         return tensor
 
     def init_learning_rate(self):

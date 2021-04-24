@@ -1,6 +1,7 @@
 import sys
 import copy
 import random
+import numpy as np
 from api.game_agent import GameAgentAPI
 from agent import LearnerAgent
 from player import *
@@ -310,9 +311,8 @@ class Pacman(GameAgentAPI):
             if len([c for c in self.cells.map if c.hasCoin]) == 1:
                 reward += Q_LEVEL_PASSED
         for ghost in self.ghosts:
-            if ghost.check_collision(self.player.get_bounds(), self.player.get_grid_pos()):
-                reward += Q_CONSUME if ghost.power_pellet_active else Q_DIED
-                break
+            distance = np.linalg.norm(np.array(ghost.get_grid_pos()) - np.array(self.player.get_grid_pos()))
+            reward += (Q_PROXIMITY_FACTOR / (distance + 1)) * (1 if ghost.power_pellet_active else -1)
 
-        print(reward)
+        #print(reward)
         return reward
