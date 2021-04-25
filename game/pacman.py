@@ -23,6 +23,7 @@ class Pacman(GameAgentAPI):
         self.running = True
         self.app_state = 'title'
         self.tar_high_score = None
+
         self.cells = CellMap()
 
         self.player_start = PLAYER_START_POS
@@ -32,6 +33,12 @@ class Pacman(GameAgentAPI):
         self.pinky_start = PINKY_START_POS
         self.clyde_start = CLYDE_START_POS
         self.tar_high_score = 0
+        self.ghosts = []
+
+        self.ghosts.append(Ghost(self, self.screen, True, "Blinky", vec(12, 11), BLINKY_SPRITE_POS, self.sprites))
+        self.ghosts.append(Ghost(self, self.screen, False, "Inky", vec(15, 11), INKY_SPRITE_POS, self.sprites))
+        self.ghosts.append(Ghost(self, self.screen, False, "Pinky", vec(12, 17), PINKY_SPRITE_POS, self.sprites))
+        self.ghosts.append(Ghost(self, self.screen, False, "Clyde", vec(15, 17), CLYDE_SPRITE_POS, self.sprites))
 
         self.power_pellet_timer = POWER_PELLET_TIMER
         self.idle_timer = 0
@@ -159,12 +166,12 @@ class Pacman(GameAgentAPI):
         # When Pacman hits a Super Coin, the player pow pel status
         # flips to true and back to false upon collecting the next coin.
         # This is managed during coin collection in player.py
+            self.player.power_pellet_timer()
 
             self.player.power_pellet_timer()
 
             if self.player.power_pellet_active:
                 self.set_ghost_power_pellet_status(True)
-
             else:
                 self.set_ghost_power_pellet_status(False)
 
@@ -178,6 +185,12 @@ class Pacman(GameAgentAPI):
 
         #if self.analytics.getRestart() == True:
         #    self.reset_level()
+        Analytics.update_frame()
+
+    def game_events(self):
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                self.running = False
 
 
     def game_events(self):
@@ -236,7 +249,7 @@ class Pacman(GameAgentAPI):
     def set_ghost_power_pellet_status(self, status):
         for i in range(len(self.ghosts)):
             self.ghosts[i].set_power_pellet_status(status)
-
+            
     def ghost_reset(self):
         for i in range(len(self.ghosts)):
             self.ghosts[i].reset(i)
@@ -257,6 +270,7 @@ class Pacman(GameAgentAPI):
         self.pinky_start = pos_dict['pinky']
         self.clyde_start = pos_dict['clyde']
         self.set_game_objects()
+
 
     def getAvailableActions(self):
         available_actions = []
