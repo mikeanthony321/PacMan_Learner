@@ -56,12 +56,12 @@ class LearnerAgent(AgentAnalyticsFrameAPI):
         self.prev_decision = None
 
     def reset_agent(self):
-        print("hit")
         self.policy_net = Network(self.api)
         self.target_net = Network(self.api)
         self.target_net.load_state_dict(self.policy_net.state_dict())
         self.target_net.eval()
-
+        
+        self.learning_rate = None
         self.memory = ReplayMemory(s.REPLAY_MEMORY_SIZE)
         self.current_state = self.get_game_vals()
         self.prev_decision = None
