@@ -616,7 +616,8 @@ class Analytics(QMainWindow):
         self.show_p_pellet_active.toggled.connect(lambda: self.check_state(self.show_p_pellet_active))
         self.show_p_pellet_inactive = QCheckBox("Show Power Pellet Inactive")
         self.show_p_pellet_inactive.setStyleSheet(TEXT_STYLE)
-        self.show_p_pellet_active.toggled.connect(lambda: self.check_state(self.show_p_pellet_inactive))
+        self.show_p_pellet_inactive.toggled.connect(lambda: self.check_state(self.show_p_pellet_inactive))
+        self.show_p_pellet_inactive.click()
         self.show_rand_decisions = QCheckBox("Show Random Decisions")
         self.show_rand_decisions.setStyleSheet(TEXT_STYLE)
         self.show_rand_decisions.toggled.connect(lambda: self.check_state(self.show_rand_decisions))
@@ -839,11 +840,11 @@ class BorderWidget(QFrame):
         return QSize(550, 100)
 
 
-class PlotStruct():
+class PlotStruct:
 
     def __init__(self):
         self.show_rand = False
-        self.show_p_inactive = True
+        self.show_p_inactive = False
         self.show_p_active = False
         self.avg_display = True
         self.current_display = False
@@ -940,7 +941,6 @@ class PlotStruct():
                     self.active_exploration_decisions_counter)
                 self.active_exploration_decisions_counter += 1
                 if self.active_exploration_decisions_counter == self.decisions_window:
-                    print("check")
                     self.active_exploration_avg_points = self.add_avg_point(
                         self.active_exploration_avg, self.active_exploration_avg_points)
                     self.active_exploration_decisions_counter = 0
@@ -955,7 +955,6 @@ class PlotStruct():
                     self.active_exploitation_decisions_counter)
                 self.active_exploitation_decisions_counter += 1
                 if self.active_exploitation_decisions_counter == self.decisions_window:
-                    print("check")
                     self.active_exploitation_avg_points = self.add_avg_point(
                         self.active_exploitation_avg, self.active_exploitation_avg_points)
                     self.active_exploitation_decisions_counter = 0
@@ -973,7 +972,6 @@ class PlotStruct():
                 if self.inactive_exploration_decisions_counter == self.decisions_window:
                     self.inactive_exploration_avg_points = self.add_avg_point(
                         self.inactive_exploration_avg, self.inactive_exploration_avg_points)
-                    print("check")
                     self.inactive_exploration_decisions_counter = 0
                     self.inactive_exploration_avg = []
                 if len(self.inactive_exploration_points) >= self.plot_limit:
@@ -986,7 +984,6 @@ class PlotStruct():
                     self.inactive_exploitation_decisions_counter)
                 self.inactive_exploitation_decisions_counter += 1
                 if self.inactive_exploitation_decisions_counter == self.decisions_window:
-                    print("check")
                     self.inactive_exploitation_avg_points = self.add_avg_point(
                         self.inactive_exploitation_avg, self.inactive_exploitation_avg_points)
                     self.inactive_exploitation_decisions_counter = 0
@@ -1076,7 +1073,6 @@ class PlotStruct():
         }
         point_list.extend(
             [blinky_spot, pinky_spot, inky_spot, clyde_spot, pellet_spot, p_pellet_spot])
-        print(point_list)
 
         return point_list
 
