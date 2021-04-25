@@ -120,7 +120,6 @@ class LearnerAgent(AgentAnalyticsFrameAPI):
 
         self.current_state = state
 
-
     def choose_action(self, decision):
         if decision is Actions.UP:
             self.decision = "UP"

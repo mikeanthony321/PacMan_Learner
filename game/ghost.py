@@ -268,7 +268,6 @@ class Ghost(pygame.sprite.Sprite):
         elif index == 3:
             self.grid_pos = vec(15, 17)
 
-
         # pixel position of center of ghost
         self.pixel_pos = vec(self.grid_pos.x * CELL_W + (CELL_W // 2),
                              self.grid_pos.y * CELL_H + (CELL_H // 2) + PAD_TOP)

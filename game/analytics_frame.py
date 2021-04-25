@@ -186,6 +186,11 @@ class Analytics(QMainWindow):
 
             self.update_table()
 
+
+
+
+
+
     def showTime(self):
         if self.running:
             self.timer_sec += 1
