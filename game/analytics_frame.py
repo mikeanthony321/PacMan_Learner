@@ -56,6 +56,8 @@ class Analytics(QMainWindow):
                              'Power Pellet X', 'Power Pellet Y', 'Active Power Pellet']
         self.output_labels = ['Up', 'Down', 'Left', 'Right']
 
+        self.input_qlabels = []
+
         # State Variables
         self.running = False
         self.tar_high_score = None
@@ -129,7 +131,6 @@ class Analytics(QMainWindow):
         else:
             print("Neural Network object has not been initialized")
 
-
     def update(self):
         for i in range(len(self.neural_network.layers)):
             activation_vals = self.agent_interface.get_activation_vals(i)
@@ -141,7 +142,6 @@ class Analytics(QMainWindow):
                             self.neural_network.layers[i].nodes[j].connections[k].set_weight(weights[j][k])
                 self.neural_network.layers[i].nodes[j].set_activation_value(
                     0 if activation_vals is None else activation_vals[j])
-
 
         if self.agent_interface.get_logic_count() != self.decision_count:
             self.decision_count = self.agent_interface.get_logic_count()
@@ -164,22 +164,27 @@ class Analytics(QMainWindow):
                     if self.tabs.currentIndex() == 1:
                         self.left_plot.update_plot()
                 elif self.decision == 'RIGHT':
-                    self.right_plot.update_points(self.ghosts, self.nearest_pellet, self.nearest_p_pellet, self.p_active,
+                    self.right_plot.update_points(self.ghosts, self.nearest_pellet, self.nearest_p_pellet,
+                                                  self.p_active,
                                                   self.decision_type)
                     if self.tabs.currentIndex() == 1:
                         self.right_plot.update_plot()
 
+                if self.tabs.currentIndex() == 2:
+                    self.update_network_tab(
+                        self.ghosts, self.nearest_pellet, self.nearest_p_pellet, self.p_active, self.decision)
+
             self.ghosts = self.agent_interface.get_ghost_coords()
             self.nearest_pellet = self.agent_interface.get_nearest_pellet_coords()
             self.nearest_p_pellet = self.agent_interface.get_nearest_power_pellet_coords()
+            self.p_active = self.agent_interface.get_power_pellet_active_status()
 
-        self.p_active = self.agent_interface.get_power_pellet_active_status()
+            if self.tabs.currentIndex() == 0:
+                self.visualizer.update_diagram(self.neural_network)
+            elif self.tabs.currentIndex() == 2:
+                self.tab_vis.update_diagram(self.neural_network)
 
-        if self.tabs.currentIndex() == 0:
-            self.visualizer.update_diagram(self.neural_network)
-        elif self.tabs.currentIndex() == 2:
-            self.tab_vis.update_diagram(self.neural_network)
-        self.update_table()
+            self.update_table()
 
     def showTime(self):
         if self.running:
@@ -225,7 +230,7 @@ class Analytics(QMainWindow):
 
     def learningRateButton(self):
         if not self.running:
-            self.learning_rate = float(self.learning_rate_slider.value()/1000000)
+            self.learning_rate = float(self.learning_rate_slider.value() / 1000000)
             if self.learning_rate < 1.0:
                 self.learning_rate_label.setText("Learning Rate: " + "{:.6f}".format(self.learning_rate))
                 self.help_text_label.setText("")
@@ -238,14 +243,16 @@ class Analytics(QMainWindow):
 
     def slider_valuechange(self):
         if not self.running:
-            learning_val = float(self.learning_rate_slider.value()/1000000)
+            learning_val = float(self.learning_rate_slider.value() / 1000000)
             self.learning_rate_label.setText("Learning Rate: " + "{:.6f}".format(learning_val))
 
     def on_position_changed(self, p):
         for i in range(len(self.neural_network.layers)):
-            x = ((((self.diagram_width + 110) / (len(self.neural_network.layers) + 1)) * (i + 1) - 65) * self.vis_tab_x_scale)
+            x = ((((self.diagram_width + 110) / (len(self.neural_network.layers) + 1)) * (
+                        i + 1) - 65) * self.vis_tab_x_scale)
             for j in range(len(self.neural_network.layers[i].nodes)):
-                y = (((self.diagram_height / (len(self.neural_network.layers[i].nodes) + 1)) * (j + 1)) * self.vis_tab_y_scale)
+                y = (((self.diagram_height / (len(self.neural_network.layers[i].nodes) + 1)) * (
+                            j + 1)) * self.vis_tab_y_scale)
                 if x + int(100 / 6) >= p.x() > x - int(100 / 6) and y + int(100 / 6) >= p.y() > y - int(100 / 6):
                     if i == 0:
                         if j == 0:
@@ -282,7 +289,7 @@ class Analytics(QMainWindow):
                         string = "Hidden Layer 3: Node " + str(j) + "\nActivation Value: {:.6f}"
                     elif i == 4:
                         if j == 0:
-                            string = "Output Layer: Up"+ "\nActivation Value: {:.6f}"
+                            string = "Output Layer: Up" + "\nActivation Value: {:.6f}"
                         elif j == 1:
                             string = "Output Layer: Down" + "\nActivation Value: {:.6f}"
                         elif j == 2:
@@ -290,7 +297,7 @@ class Analytics(QMainWindow):
                         elif j == 3:
                             string = "Output Layer: Right" + "\nActivation Value: {:.6f}"
                     self.hover_tracker.widget.setToolTip(string.format(
-                            self.neural_network.layers[i].nodes[j].activation_value))
+                        self.neural_network.layers[i].nodes[j].activation_value))
 
     def toggle_state(self, button):
         if button.text() == "Centered Start Position":
@@ -332,18 +339,48 @@ class Analytics(QMainWindow):
                     'clyde': CLYDE_START_POS
                 })
 
+    def toggle_p_pellet_active(self):
+        self.up_plot.show_p_active = not self.up_plot.show_p_active
+        self.down_plot.show_p_active = not self.down_plot.show_p_active
+        self.left_plot.show_p_active = not self.left_plot.show_p_active
+        self.right_plot.show_p_active = not self.right_plot.show_p_active
+        self.up_plot.update_plot()
+        self.down_plot.update_plot()
+        self.left_plot.update_plot()
+        self.right_plot.update_plot()
+
+    def toggle_p_pellet_inactive(self):
+        self.up_plot.show_p_inactive = not self.up_plot.show_p_inactive
+        self.down_plot.show_p_inactive = not self.down_plot.show_p_inactive
+        self.left_plot.show_p_inactive = not self.left_plot.show_p_inactive
+        self.right_plot.show_p_inactive = not self.right_plot.show_p_inactive
+        self.up_plot.update_plot()
+        self.down_plot.update_plot()
+        self.left_plot.update_plot()
+        self.right_plot.update_plot()
+
+    def toggle_rand_decisions(self):
+        self.up_plot.show_rand = not self.up_plot.show_rand
+        self.down_plot.show_rand = not self.down_plot.show_rand
+        self.left_plot.show_rand = not self.left_plot.show_rand
+        self.right_plot.show_rand = not self.right_plot.show_rand
+        self.up_plot.update_plot()
+        self.down_plot.update_plot()
+        self.left_plot.update_plot()
+        self.right_plot.update_plot()
+
     def check_state(self, button):
         if button.text() == "Show Power Pellet Active":
             self.up_plot.show_p_active = not self.up_plot.show_p_active
             self.down_plot.show_p_active = not self.down_plot.show_p_active
             self.left_plot.show_p_active = not self.left_plot.show_p_active
             self.right_plot.show_p_active = not self.right_plot.show_p_active
-        elif button.text() == "Show Power Pellet Inactive":
+        if button.text() == "Show Power Pellet Inactive":
             self.up_plot.show_p_inactive = not self.up_plot.show_p_inactive
             self.down_plot.show_p_inactive = not self.down_plot.show_p_inactive
             self.left_plot.show_p_inactive = not self.left_plot.show_p_inactive
             self.right_plot.show_p_inactive = not self.right_plot.show_p_inactive
-        elif button.text() == "Show Random Decisions":
+        if button.text() == "Show Random Decisions":
             self.up_plot.show_rand = not self.up_plot.show_rand
             self.down_plot.show_rand = not self.down_plot.show_rand
             self.left_plot.show_rand = not self.left_plot.show_rand
@@ -447,7 +484,7 @@ class Analytics(QMainWindow):
         options_layout = QVBoxLayout()
         self.start_symm = QRadioButton('Centered Start Position')
         self.start_symm.setStyleSheet(TEXT_STYLE)
-        self.start_symm.toggled.connect(lambda:self.toggle_state(self.start_symm))
+        self.start_symm.toggled.connect(lambda: self.toggle_state(self.start_symm))
         self.start_default = QRadioButton('Default Start Position')
         self.start_default.setStyleSheet(TEXT_STYLE)
         self.start_default.toggled.connect(lambda: self.toggle_state(self.start_default))
@@ -482,13 +519,13 @@ class Analytics(QMainWindow):
             qlabel = QLabel(i_label)
             qlabel.setStyleSheet(TEXT_STYLE)
             input_label_layout.addWidget(qlabel)
-            input_label_layout.addSpacing(2 * int((self.diagram_height - 20) / (14 * len(self.input_labels))))
+            input_label_layout.addSpacing(2)
 
         for o_label in self.output_labels:
             qlabel = QLabel(o_label)
             qlabel.setStyleSheet(TEXT_STYLE)
             output_label_layout.addWidget(qlabel)
-            output_label_layout.addSpacing(2 * int((self.diagram_height - 20) / (14 * len(self.input_labels))))
+            output_label_layout.addSpacing(1)
 
         input_label_layout.addSpacing(10)
         output_label_layout.addSpacing(30)
@@ -576,14 +613,13 @@ class Analytics(QMainWindow):
         checkbox_layout = QVBoxLayout()
         self.show_p_pellet_active = QCheckBox("Show Power Pellet Active")
         self.show_p_pellet_active.setStyleSheet(TEXT_STYLE)
-        self.show_p_pellet_active.toggled.connect(lambda:self.check_state(self.show_p_pellet_active))
+        self.show_p_pellet_active.toggled.connect(lambda: self.check_state(self.show_p_pellet_active))
         self.show_p_pellet_inactive = QCheckBox("Show Power Pellet Inactive")
-        self.show_p_pellet_inactive.setChecked(True)
         self.show_p_pellet_inactive.setStyleSheet(TEXT_STYLE)
-        self.show_p_pellet_active.toggled.connect(lambda:self.check_state(self.show_p_pellet_inactive))
+        self.show_p_pellet_active.toggled.connect(lambda: self.check_state(self.show_p_pellet_inactive))
         self.show_rand_decisions = QCheckBox("Show Random Decisions")
         self.show_rand_decisions.setStyleSheet(TEXT_STYLE)
-        self.show_rand_decisions.toggled.connect(lambda:self.check_state(self.show_rand_decisions))
+        self.show_rand_decisions.toggled.connect(lambda: self.check_state(self.show_rand_decisions))
         checkbox_layout.addWidget(self.show_p_pellet_active)
         checkbox_layout.addWidget(self.show_p_pellet_inactive)
         checkbox_layout.addWidget(self.show_rand_decisions)
@@ -604,13 +640,63 @@ class Analytics(QMainWindow):
     def network_tab_UI(self):
         networkTab = QWidget()
         network_tab_layout = QVBoxLayout()
-        self.tab_vis = Visualizer(self.neural_network, 600, 550, self.agent_interface,  x_scale=2, y_scale=1.5)
+        vis_layout = QHBoxLayout()
+        input_label_layout = QVBoxLayout()
+        input_label_layout.addSpacing(35)
+        input_layout = QVBoxLayout()
+        input_layout.addSpacing(35)
+        output_label_layout = QVBoxLayout()
+        output_label_layout.addSpacing(65)
+
+        for i_label in self.input_labels:
+            qlabel = QLabel(i_label)
+            qlabel.setStyleSheet(TEXT_STYLE)
+            input_label_layout.addWidget(qlabel)
+            qlabel2 = QLabel('')
+            qlabel2.setStyleSheet(TEXT_STYLE)
+            input_layout.addWidget(qlabel2)
+            self.input_qlabels.append(qlabel2)
+
+        for o_label in self.output_labels:
+            qlabel = QLabel(o_label)
+            qlabel.setStyleSheet(TEXT_STYLE)
+            output_label_layout.addWidget(qlabel)
+
+        input_label_layout.addSpacing(115)
+        input_layout.addSpacing(115)
+        output_label_layout.addSpacing(140)
+        self.tab_vis = Visualizer(self.neural_network, 600, 550, self.agent_interface, x_scale=2, y_scale=1.5)
+        vis_layout.addLayout(input_label_layout)
+        vis_layout.addSpacing(2)
+        vis_layout.addLayout(input_layout)
+        vis_layout.addSpacing(2)
+        vis_layout.addWidget(self.tab_vis)
+        vis_layout.addSpacing(2)
+        vis_layout.addLayout(output_label_layout)
+        vis_layout.addSpacing(6)
         self.tab_vis.setStyleSheet(WIDGET_STYLE)
         self.hover_tracker = HoverTracker(self.tab_vis)
         self.hover_tracker.positionChanged.connect(self.on_position_changed)
-        network_tab_layout.addWidget(self.tab_vis)
+        network_tab_layout.addLayout(vis_layout)
         networkTab.setLayout(network_tab_layout)
         return networkTab
+
+    def update_network_tab(self, ghosts, nearest_pellet, nearest_p_pellet, p_active, decision):
+
+        self.input_qlabels[0].setText("{:.0f}".format(ghosts[0].x))
+        self.input_qlabels[1].setText("{:.0f}".format(ghosts[0].y))
+        self.input_qlabels[2].setText("{:.0f}".format(ghosts[1].x))
+        self.input_qlabels[3].setText("{:.0f}".format(ghosts[1].y))
+        self.input_qlabels[4].setText("{:.0f}".format(ghosts[2].x))
+        self.input_qlabels[5].setText("{:.0f}".format(ghosts[2].y))
+        self.input_qlabels[6].setText("{:.0f}".format(ghosts[3].x))
+        self.input_qlabels[7].setText("{:.0f}".format(ghosts[3].y))
+        self.input_qlabels[8].setText("{:.0f}".format(nearest_pellet[0]))
+        self.input_qlabels[9].setText("{:.0f}".format(nearest_pellet[1]))
+        self.input_qlabels[10].setText("{:.0f}".format(nearest_p_pellet[0]))
+        self.input_qlabels[11].setText("{:.0f}".format(nearest_p_pellet[1]))
+        self.input_qlabels[12].setText(str(p_active))
+
 
     def advanced_options_tab_UI(self):
         advancedOptionsTab = QWidget()
@@ -690,17 +776,20 @@ class Visualizer(QWidget):
                 if i > 0:
                     for k in range(len(self.network.layers[i - 1].nodes)):
                         painter.setPen(self.transformConnection(self.network.layers[i].nodes[j].connections[k].weight))
-                        painter.drawLine((int(self.network.layers[i].nodes[j].x * self.x_scale) + math.floor((self.node_size / 2))),
-                                         (int(self.network.layers[i].nodes[j].y * self.y_scale) + math.floor((self.node_size / 2))),
-                                         (int(self.network.layers[i - 1].nodes[k].x * self.x_scale)+ math.floor((self.node_size / 2))),
-                                         (int(self.network.layers[i - 1].nodes[k].y * self.y_scale)+ math.floor((self.node_size / 2))))
+                        painter.drawLine(
+                            (int(self.network.layers[i].nodes[j].x * self.x_scale) + math.floor((self.node_size / 2))),
+                            (int(self.network.layers[i].nodes[j].y * self.y_scale) + math.floor((self.node_size / 2))),
+                            (int(self.network.layers[i - 1].nodes[k].x * self.x_scale) + math.floor(
+                                (self.node_size / 2))),
+                            (int(self.network.layers[i - 1].nodes[k].y * self.y_scale) + math.floor(
+                                (self.node_size / 2))))
 
         # Draw nodes
         painter.setPen(QPen(self.transformColor(-0.5, 1), 1))
         for a in range(len(self.network.layers)):
             for b in range(len(self.network.layers[a].nodes)):
                 radialGradient = QRadialGradient(
-                    QPoint((int(self.network.layers[a].nodes[b].x * self.x_scale)+ math.floor(self.node_size / 2)),
+                    QPoint((int(self.network.layers[a].nodes[b].x * self.x_scale) + math.floor(self.node_size / 2)),
                            int(self.network.layers[a].nodes[b].y * self.y_scale) + math.floor(self.node_size / 2)), 40)
 
                 node_color_1 = self.transformColor(self.network.layers[a].nodes[b].get_activation_value(), 0.5)
@@ -756,12 +845,16 @@ class PlotStruct():
         self.show_rand = False
         self.show_p_inactive = True
         self.show_p_active = False
+        self.avg_display = True
+        self.current_display = False
         self.point_size = 10
         self.base_opacity = 90
-        self.plot_limit = 156
+        self.plot_limit = 120
+        self.decisions_window = 14
+
         self.pac_spot = {
             'pos': [0, 0],
-            'pen': {'color': (245, 210, 5, 255),  'width': 0},
+            'pen': {'color': (245, 210, 5, 255), 'width': 0},
             'size': 18,
             'brush': pg.mkBrush(235, 200, 5, 255)
         }
@@ -777,6 +870,21 @@ class PlotStruct():
         self.active_exploitation_points = []
         self.active_exploration_points = []
 
+        self.inactive_exploitation_avg = []
+        self.inactive_exploration_avg = []
+        self.active_exploitation_avg = []
+        self.active_exploration_avg = []
+
+        self.inactive_exploitation_avg_points = []
+        self.inactive_exploration_avg_points = []
+        self.active_exploitation_avg_points = []
+        self.active_exploration_avg_points = []
+
+        self.inactive_exploitation_decisions_counter = 0
+        self.inactive_exploration_decisions_counter = 0
+        self.active_exploitation_decisions_counter = 0
+        self.active_exploration_decisions_counter = 0
+
         self.plot_item = pg.ScatterPlotItem()
         self.plot_item.addPoints([self.pac_spot])
         self.plot_widget = pg.PlotWidget()
@@ -789,37 +897,37 @@ class PlotStruct():
         blinky_spot = {
             'pos': [ghosts[0].x, ghosts[0].y],
             'size': self.point_size,
-            'pen': {'color': (255, 0, 0, self.base_opacity),  'width': 0},
+            'pen': {'color': (255, 0, 0, self.base_opacity), 'width': 0},
             'brush': self.blinky_brush
         }
-        pinky_spot = {
+        inky_spot = {
             'pos': [ghosts[1].x, ghosts[1].y],
             'size': self.point_size,
-            'pen': {'color': (255, 184, 255, self.base_opacity),  'width': 0},
-            'brush': self.pinky_brush
+            'pen': {'color': (0, 255, 255, self.base_opacity), 'width': 0},
+            'brush': self.inky_brush
         }
-        inky_spot = {
+        pinky_spot = {
             'pos': [ghosts[2].x, ghosts[2].y],
             'size': self.point_size,
-            'pen': {'color': (0, 255, 255, self.base_opacity),  'width': 0},
-            'brush': self.inky_brush
+            'pen': {'color': (255, 184, 255, self.base_opacity), 'width': 0},
+            'brush': self.pinky_brush
         }
         clyde_spot = {
             'pos': [ghosts[3].x, ghosts[3].y],
             'size': self.point_size,
-            'pen': {'color': (255, 184, 82, self.base_opacity),  'width': 0},
+            'pen': {'color': (255, 184, 82, self.base_opacity), 'width': 0},
             'brush': self.clyde_brush
         }
         pellet_spot = {
             'pos': [nearest_pellet[0], nearest_pellet[1]],
             'size': self.point_size,
-            'pen': {'color': (220, 220, 220, self.base_opacity),  'width': 0},
+            'pen': {'color': (220, 220, 220, self.base_opacity), 'width': 0},
             'brush': self.pellet_brush
         }
         p_pellet_spot = {
             'pos': [nearest_p_pellet[0], nearest_p_pellet[1]],
             'size': self.point_size,
-            'pen': {'color': (142, 240, 67, self.base_opacity),  'width': 0},
+            'pen': {'color': (142, 240, 67, self.base_opacity), 'width': 0},
             'brush': self.p_pellet_brush
         }
 
@@ -827,40 +935,200 @@ class PlotStruct():
             if decision_type == "EXPLORATION":
                 self.active_exploration_points.extend(
                     [blinky_spot, pinky_spot, inky_spot, clyde_spot, pellet_spot, p_pellet_spot])
+                self.active_exploration_avg = self.update_avg(
+                    self.active_exploration_avg, ghosts, nearest_pellet, nearest_p_pellet,
+                    self.active_exploration_decisions_counter)
+                self.active_exploration_decisions_counter += 1
+                if self.active_exploration_decisions_counter == self.decisions_window:
+                    print("check")
+                    self.active_exploration_avg_points = self.add_avg_point(
+                        self.active_exploration_avg, self.active_exploration_avg_points)
+                    self.active_exploration_decisions_counter = 0
+                    self.active_exploration_avg = []
                 if len(self.active_exploration_points) >= self.plot_limit:
                     self.active_exploration_points = self.active_exploration_points[6:]
             else:
                 self.active_exploitation_points.extend(
                     [blinky_spot, pinky_spot, inky_spot, clyde_spot, pellet_spot, p_pellet_spot])
+                self.active_exploitation_avg = self.update_avg(
+                    self.active_exploitation_avg, ghosts, nearest_pellet, nearest_p_pellet,
+                    self.active_exploitation_decisions_counter)
+                self.active_exploitation_decisions_counter += 1
+                if self.active_exploitation_decisions_counter == self.decisions_window:
+                    print("check")
+                    self.active_exploitation_avg_points = self.add_avg_point(
+                        self.active_exploitation_avg, self.active_exploitation_avg_points)
+                    self.active_exploitation_decisions_counter = 0
+                    self.active_exploitation_avg = []
                 if len(self.active_exploitation_points) >= self.plot_limit:
                     self.active_exploitation_points = self.active_exploitation_points[6:]
         else:
             if decision_type == "EXPLORATION":
                 self.inactive_exploration_points.extend(
                     [blinky_spot, pinky_spot, inky_spot, clyde_spot, pellet_spot, p_pellet_spot])
+                self.inactive_exploration_avg = self.update_avg(
+                    self.inactive_exploration_avg, ghosts, nearest_pellet, nearest_p_pellet,
+                    self.inactive_exploration_decisions_counter)
+                self.inactive_exploration_decisions_counter += 1
+                if self.inactive_exploration_decisions_counter == self.decisions_window:
+                    self.inactive_exploration_avg_points = self.add_avg_point(
+                        self.inactive_exploration_avg, self.inactive_exploration_avg_points)
+                    print("check")
+                    self.inactive_exploration_decisions_counter = 0
+                    self.inactive_exploration_avg = []
                 if len(self.inactive_exploration_points) >= self.plot_limit:
                     self.inactive_exploration_points = self.inactive_exploration_points[6:]
             else:
                 self.inactive_exploitation_points.extend(
                     [blinky_spot, pinky_spot, inky_spot, clyde_spot, pellet_spot, p_pellet_spot])
+                self.inactive_exploitation_avg = self.update_avg(
+                    self.inactive_exploitation_avg, ghosts, nearest_pellet, nearest_p_pellet,
+                    self.inactive_exploitation_decisions_counter)
+                self.inactive_exploitation_decisions_counter += 1
+                if self.inactive_exploitation_decisions_counter == self.decisions_window:
+                    print("check")
+                    self.inactive_exploitation_avg_points = self.add_avg_point(
+                        self.inactive_exploitation_avg, self.inactive_exploitation_avg_points)
+                    self.inactive_exploitation_decisions_counter = 0
+                    self.inactive_exploitation_avg = []
                 if len(self.inactive_exploitation_points) >= self.plot_limit:
                     self.inactive_exploitation_points = self.inactive_exploitation_points[6:]
 
+
+    def update_avg(self, avg_list, ghosts, nearest_pellet, nearest_p_pellet, counter):
+        if counter == 0:
+            avg_list.append(ghosts[0].x)
+            avg_list.append(ghosts[0].y)
+            avg_list.append(ghosts[1].x)
+            avg_list.append(ghosts[1].y)
+            avg_list.append(ghosts[2].x)
+            avg_list.append(ghosts[2].y)
+            avg_list.append(ghosts[3].x)
+            avg_list.append(ghosts[3].y)
+            avg_list.append(nearest_pellet[0])
+            avg_list.append(nearest_pellet[1])
+            avg_list.append(nearest_p_pellet[0])
+            avg_list.append(nearest_p_pellet[1])
+        elif 0 < counter <= self.decisions_window:
+            avg_list[0] = (avg_list[0] * ((counter - 1)/ counter)) + \
+                          (ghosts[0].x * (1 / counter))
+            avg_list[1] = (avg_list[1] * ((counter - 1) / counter)) + \
+                          (ghosts[0].y * (1 / counter))
+            avg_list[2] = (avg_list[2] * ((counter - 1) / counter)) + \
+                          (ghosts[1].x * (1 / counter))
+            avg_list[3] = (avg_list[3] * ((counter - 1) / counter)) + \
+                          (ghosts[1].y * (1 / counter))
+            avg_list[4] = (avg_list[4] * ((counter - 1) / counter)) + \
+                          (ghosts[2].x * (1 / counter))
+            avg_list[5] = (avg_list[5] * ((counter - 1) / counter)) + \
+                          (ghosts[2].y * (1 / counter))
+            avg_list[6] = (avg_list[6] * ((counter - 1) / counter)) + \
+                          (ghosts[3].x * (1 / counter))
+            avg_list[7] = (avg_list[7] * ((counter - 1) / counter)) + \
+                          (ghosts[3].y * (1 / counter))
+            avg_list[8] = (avg_list[8] * ((counter - 1) / counter)) + \
+                          (nearest_pellet[0] * (1 / counter))
+            avg_list[9] = (avg_list[9] * ((counter - 1) / counter)) + \
+                          (nearest_pellet[1] * (1 / counter))
+            avg_list[10] = (avg_list[10] * ((counter - 1) / counter)) + \
+                           (nearest_p_pellet[0] * (1 / counter))
+            avg_list[11] = (avg_list[11] * ((counter - 1) / counter)) + \
+                           (nearest_p_pellet[1] * (1 / counter))
+
+        return avg_list
+
+    def add_avg_point(self, avg_list, point_list):
+        blinky_spot = {
+            'pos': [avg_list[0], avg_list[1]],
+            'size': self.point_size,
+            'pen': {'color': (255, 0, 0, self.base_opacity), 'width': 0},
+            'brush': self.blinky_brush
+        }
+        inky_spot = {
+            'pos': [avg_list[2], avg_list[3]],
+            'size': self.point_size,
+            'pen': {'color': (0, 255, 255, self.base_opacity), 'width': 0},
+            'brush': self.inky_brush
+        }
+        pinky_spot = {
+            'pos': [avg_list[4], avg_list[5]],
+            'size': self.point_size,
+            'pen': {'color': (255, 184, 255, self.base_opacity), 'width': 0},
+            'brush': self.pinky_brush
+        }
+        clyde_spot = {
+            'pos': [avg_list[6], avg_list[7]],
+            'size': self.point_size,
+            'pen': {'color': (255, 184, 82, self.base_opacity), 'width': 0},
+            'brush': self.clyde_brush
+        }
+        pellet_spot = {
+            'pos': [avg_list[8], avg_list[9]],
+            'size': self.point_size,
+            'pen': {'color': (220, 220, 220, self.base_opacity), 'width': 0},
+            'brush': self.pellet_brush
+        }
+        p_pellet_spot = {
+            'pos': [avg_list[10], avg_list[11]],
+            'size': self.point_size,
+            'pen': {'color': (142, 240, 67, self.base_opacity), 'width': 0},
+            'brush': self.p_pellet_brush
+        }
+        point_list.extend(
+            [blinky_spot, pinky_spot, inky_spot, clyde_spot, pellet_spot, p_pellet_spot])
+        print(point_list)
+
+        return point_list
+
     def update_plot(self):
         plot_points = []
-        if self.show_p_active:
-            plot_points.extend(self.active_exploitation_points)
-        if self.show_p_inactive:
-            plot_points.extend(self.inactive_exploitation_points)
-        if self.show_rand:
-            if self.show_p_inactive:
+        if self.avg_display:
+            if self.show_p_active and self.show_p_inactive and self.show_rand:
+                plot_points.extend(self.active_exploitation_avg_points)
+                plot_points.extend(self.inactive_exploitation_avg_points)
                 plot_points.extend(self.inactive_exploration_points)
-            if self.show_p_active:
                 plot_points.extend(self.active_exploration_points)
+            elif self.show_p_active and self.show_p_inactive and not self.show_rand:
+                plot_points.extend(self.active_exploitation_avg_points)
+                plot_points.extend(self.inactive_exploitation_avg_points)
+            elif self.show_p_active and not self.show_p_inactive and self.show_rand:
+                plot_points.extend(self.active_exploitation_avg_points)
+                plot_points.extend(self.active_exploration_points)
+            elif not self.show_p_active and self.show_p_inactive and self.show_rand:
+                plot_points.extend(self.inactive_exploitation_avg_points)
+                plot_points.extend(self.inactive_exploration_points)
+            elif self.show_p_active and not self.show_p_inactive and not self.show_rand:
+                plot_points.extend(self.active_exploitation_avg_points)
+            elif not self.show_p_active and self.show_p_inactive and not self.show_rand:
+                plot_points.extend(self.inactive_exploitation_avg_points)
+            else:
+                plot_points = []
+        elif self.current_display:
+            if self.show_p_active and self.show_p_inactive and self.show_rand:
+                plot_points.extend(self.active_exploitation_avg_points)
+                plot_points.extend(self.inactive_exploitation_avg_points)
+                plot_points.extend(self.inactive_exploration_points)
+                plot_points.extend(self.active_exploration_points)
+            elif self.show_p_active and self.show_p_inactive and not self.show_rand:
+                plot_points.extend(self.active_exploitation_avg_points)
+                plot_points.extend(self.inactive_exploitation_avg_points)
+            elif self.show_p_active and not self.show_p_inactive and self.show_rand:
+                plot_points.extend(self.active_exploitation_avg_points)
+                plot_points.extend(self.active_exploration_points)
+            elif not self.show_p_active and self.show_p_inactive and self.show_rand:
+                plot_points.extend(self.inactive_exploitation_avg_points)
+                plot_points.extend(self.inactive_exploration_points)
+            elif self.show_p_active and not self.show_p_inactive and not self.show_rand:
+                plot_points.extend(self.active_exploitation_avg_points)
+            elif not self.show_p_active and self.show_p_inactive and not self.show_rand:
+                plot_points.extend(self.inactive_exploitation_avg_points)
+            else:
+                plot_points = []
 
         plot_points.append(self.pac_spot)
         self.plot_item.setData(plot_points)
         self.plot_widget.addItem(self.plot_item)
+
 
 class CollapsibleBox(QWidget):
     def __init__(self, title=None, subtitle=None, parent=None):
@@ -932,7 +1200,7 @@ class CollapsibleBox(QWidget):
         del lay
         self.content_area.setLayout(layout)
         collapsed_height = (
-            self.sizeHint().height() - self.content_area.maximumHeight()
+                self.sizeHint().height() - self.content_area.maximumHeight()
         )
         content_height = layout.sizeHint().height()
         for i in range(self.toggle_animation.animationCount()):
@@ -947,6 +1215,7 @@ class CollapsibleBox(QWidget):
         content_animation.setDuration(500)
         content_animation.setStartValue(0)
         content_animation.setEndValue(content_height)
+
 
 class HoverTracker(QtCore.QObject):
     positionChanged = QtCore.pyqtSignal(QPoint)

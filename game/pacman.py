@@ -149,6 +149,7 @@ class Pacman(GameAgentAPI):
                 self.idle_timer = 0
                 if random.random() < DECISION_FREQUENCY:
                     LearnerAgent.run_decision()
+                    Analytics.update_frame()
             else:
                 self.idle_timer += 1
 
@@ -177,7 +178,7 @@ class Pacman(GameAgentAPI):
 
         #if self.analytics.getRestart() == True:
         #    self.reset_level()
-        Analytics.update_frame()
+
 
     def game_events(self):
         for event in pygame.event.get():
@@ -231,9 +232,6 @@ class Pacman(GameAgentAPI):
                 # Returns true when a collision occurs and a Power Pellet is not active
                 if self.ghosts[i].check_collision(self.player.get_bounds(), self.player.get_grid_pos()):
                     self.player.set_alive_status(False)
-
-        if not self.player.get_alive_status():
-            Analytics.analytics_instance.setRunning(False)
 
     def set_ghost_power_pellet_status(self, status):
         for i in range(len(self.ghosts)):
