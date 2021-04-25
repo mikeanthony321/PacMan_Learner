@@ -91,7 +91,6 @@ class Pacman(GameAgentAPI):
         self.player.set_alive_status(True)
         self.player.set_game_over_status(False)
         self.ghost_reset()
-        #self.analytics.setRestart(False)
 
     def score_reset(self):
         if self.player.score >= int(HIGH_SCORE):
@@ -138,6 +137,11 @@ class Pacman(GameAgentAPI):
 # -- -- -- GAME FUNCTIONS -- -- -- #
 
     def game_update(self):
+        # Check whether the stop button has been pressed
+        if not Analytics.get_running_state():
+            LearnerAgent.reset()
+            self.stop_simulation()
+
         self.set_pac_pos()
         self.check_ghost_pac_collision()
 
@@ -155,6 +159,7 @@ class Pacman(GameAgentAPI):
 
                 if random.random() < DECISION_FREQUENCY:
                     LearnerAgent.run_decision()
+                    Analytics.update_frame()
             else:
                 self.idle_timer += 1
 
@@ -174,10 +179,6 @@ class Pacman(GameAgentAPI):
             if self.player.get_alive_status():
                 for i in range(len(self.ghosts)):
                     self.ghosts[i].update()
-
-        #if self.analytics.getRestart() == True:
-        #    self.reset_level()
-        Analytics.update_frame()
 
     def game_events(self):
         for event in pygame.event.get():
@@ -222,7 +223,6 @@ class Pacman(GameAgentAPI):
 
     def set_pac_pos(self):
         for i in range(len(self.ghosts)):
-            #self.ghosts[i].set_pacman_pos(self.player.get_presence())
             self.ghosts[i].set_pacman_pos(self.player.get_grid_pos())
 
     def check_ghost_pac_collision(self):
@@ -232,9 +232,6 @@ class Pacman(GameAgentAPI):
                 if self.ghosts[i].check_collision(self.player.get_bounds(), self.player.get_grid_pos()):
                     self.player.set_alive_status(False)
 
-        if not self.player.get_alive_status():
-            Analytics.analytics_instance.setRunning(False)
-
     def set_ghost_power_pellet_status(self, status):
         for i in range(len(self.ghosts)):
             self.ghosts[i].set_power_pellet_status(status)
@@ -243,6 +240,12 @@ class Pacman(GameAgentAPI):
     def ghost_reset(self):
         for i in range(len(self.ghosts)):
             self.ghosts[i].reset(i)
+
+    def stop_simulation(self):
+        # Does not currently set Pac-man to original spawn, just randomizes so will need to account
+        # for this once we've decided what spawning options we want
+        self.reset_level()
+        self.app_state = "title"
 
 # -- -- -- AGENT API FUNCTIONS -- -- -- #
 

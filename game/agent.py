@@ -37,6 +37,10 @@ class LearnerAgent(AgentAnalyticsFrameAPI):
         thread = threading.Thread(target=LearnerAgent.agent_instance.decide)
         thread.start()
 
+    @staticmethod
+    def reset():
+        LearnerAgent.agent_instance.reset_agent()
+
     def __init__(self, pacman_inst, learning_strat):
         self.api = pacman_inst
         self.learning_strat = learning_strat
@@ -52,6 +56,7 @@ class LearnerAgent(AgentAnalyticsFrameAPI):
         self.prev_decision = None
 
     def reset_agent(self):
+        print("hit")
         self.policy_net = Network(self.api)
         self.target_net = Network(self.api)
         self.target_net.load_state_dict(self.policy_net.state_dict())
@@ -127,7 +132,6 @@ class LearnerAgent(AgentAnalyticsFrameAPI):
             toggle_safe_batch()
 
         self.current_state = state
-        #Analytics.update_frame()
 
 
     def choose_action(self, decision):
