@@ -179,8 +179,9 @@ class Analytics(QMainWindow):
                             self.right_plot.update_plot()
 
                     if self.tabs.currentIndex() == 2:
-                        self.update_network_tab(
-                            self.ghosts, self.nearest_pellet, self.nearest_p_pellet, self.p_active, self.decision)
+                        self.input_qlabels = self.update_network_labels(
+                            self.ghosts, self.nearest_pellet, self.nearest_p_pellet, self.p_active)
+                        self.pac_sprites = self.update_network_icons(self.decision)
 
                 self.ghosts = self.agent_interface.get_ghost_coords()
                 self.nearest_pellet = self.agent_interface.get_nearest_pellet_coords()
@@ -205,8 +206,12 @@ class Analytics(QMainWindow):
     def formatTime(self):
         if self.timer_sec < 10:
             self.timer_label.setText("%d:0%d" % (self.timer_min, self.timer_sec))
+            self.timer2_label.setText("%d:0%d" % (self.timer_min, self.timer_sec))
+            self.timer3_label.setText("%d:0%d" % (self.timer_min, self.timer_sec))
         else:
             self.timer_label.setText("%d:%d" % (self.timer_min, self.timer_sec))
+            self.timer2_label.setText("%d:%d" % (self.timer_min, self.timer_sec))
+            self.timer3_label.setText("%d:%d" % (self.timer_min, self.timer_sec))
 
     # -- -- -- BUTTON FUNCTIONS -- -- -- #
     def beginButton(self):
@@ -516,16 +521,6 @@ class Analytics(QMainWindow):
         left_layout.addSpacing(20)
         left_layout.addStretch()
 
-        # cool thought but it did not work
-        """
-        self.pauseUIbutton = QPushButton('Pause UI')
-        self.pauseUIbutton.setStyleSheet(BUTTON_STYLE)
-        self.pauseUIbutton.setMinimumSize(130, 30)
-        left_layout.addWidget(self.pauseUIbutton)
-        self.begin_button.clicked.connect(self.pauseUI)
-        left_layout.addStretch()
-        """
-
         # Right Panel Title
         self.visualization_label = QLabel('Neural Network Activity', self.window)
         self.visualization_label.setStyleSheet(TITLE_STYLE)
@@ -660,7 +655,18 @@ class Analytics(QMainWindow):
         checkbox_layout.addWidget(self.show_p_pellet_active)
         checkbox_layout.addWidget(self.show_p_pellet_inactive)
         checkbox_layout.addWidget(self.show_rand_decisions)
+        timer2_layout = QHBoxLayout()
+        time_label = QLabel('Running time')
+        time_label.setStyleSheet(TEXT_STYLE)
+        timer2_layout.addWidget(time_label)
+        self.timer2_label = QLabel('0:00', self.window)
+        self.timer2_label.setStyleSheet(TEXT_STYLE)
+        self.timer2_label.setAlignment(Qt.AlignRight)
+        timer2_layout.addWidget(self.timer2_label)
+        timer2_layout.addSpacing(5)
         side_panel_layout.addLayout(checkbox_layout)
+        side_panel_layout.addStretch()
+        side_panel_layout.addLayout(timer2_layout)
 
         plots_layout.addLayout(up_layout, 0, 0)
         plots_layout.addLayout(down_layout, 0, 1)
@@ -679,6 +685,7 @@ class Analytics(QMainWindow):
     def network_tab_UI(self):
         networkTab = QWidget()
         network_tab_layout = QVBoxLayout()
+        network_tab_outer_layout = QVBoxLayout()
         network_tab_layout.addSpacing(20)
         vis_layout = QHBoxLayout()
         input_label_layout = QVBoxLayout()
@@ -686,7 +693,19 @@ class Analytics(QMainWindow):
         input_layout = QVBoxLayout()
         input_layout.addSpacing(45)
         output_label_layout = QVBoxLayout()
-        output_label_layout.addSpacing(72)
+        output_label_layout.addSpacing(112)
+
+        title_layout = QHBoxLayout()
+        input_title = QLabel('Network Inputs')
+        input_title.setStyleSheet(TITLE_STYLE)
+        input_title.setAlignment(QtCore.Qt.AlignCenter)
+        title_layout.addWidget(input_title)
+        title_layout.addSpacing(20)
+        output_title = QLabel('Network Outputs')
+        output_title.setStyleSheet(TITLE_STYLE)
+        output_title.setAlignment(QtCore.Qt.AlignRight)
+        title_layout.addWidget(output_title)
+        title_layout.addSpacing(40)
 
         for i_label in self.input_labels:
             qlabel = QLabel(i_label + ": ")
@@ -768,7 +787,7 @@ class Analytics(QMainWindow):
         sprite_i_layout.addStretch()
 
         sprite_o_layout = QVBoxLayout()
-        sprite_o_layout.addSpacing(50)
+        sprite_o_layout.addSpacing(85)
         sprite_o_layout.addWidget(self.pac_sprites[0])
         self.pac_sprites[0].setHidden(True)
         sprite_o_layout.addSpacing(106)
@@ -780,11 +799,11 @@ class Analytics(QMainWindow):
         sprite_o_layout.addSpacing(106)
         sprite_o_layout.addWidget(self.pac_sprites[3])
         self.pac_sprites[3].setHidden(True)
-        sprite_o_layout.addSpacing(110)
+        sprite_o_layout.addSpacing(75)
 
-        input_label_layout.addSpacing(115)
-        input_layout.addSpacing(115)
-        output_label_layout.addSpacing(130)
+        input_label_layout.addSpacing(25)
+        input_layout.addSpacing(25)
+        output_label_layout.addSpacing(22)
         self.tab_vis = Visualizer(self.neural_network, 600, 550, self.agent_interface, x_scale=2, y_scale=1.5)
         vis_layout.addSpacing(50)
         vis_layout.addLayout(input_label_layout)
@@ -803,48 +822,70 @@ class Analytics(QMainWindow):
         self.hover_tracker = HoverTracker(self.tab_vis)
         self.hover_tracker.positionChanged.connect(self.on_position_changed)
         network_tab_layout.addLayout(vis_layout)
-        networkTab.setLayout(network_tab_layout)
+        timer3_layout = QHBoxLayout()
+        time_label = QLabel('Running time')
+        time_label.setStyleSheet(TEXT_STYLE)
+        timer3_layout.addWidget(time_label)
+        self.timer3_label = QLabel('0:00', self.window)
+        self.timer3_label.setStyleSheet(TEXT_STYLE)
+        self.timer3_label.setAlignment(Qt.AlignRight)
+        timer3_layout.addWidget(self.timer3_label)
+        timer3_layout.addSpacing(5)
+        network_tab_outer_layout.addLayout(title_layout)
+        network_tab_outer_layout.addLayout(network_tab_layout)
+        network_tab_outer_layout.addStretch()
+        network_tab_outer_layout.addLayout(timer3_layout)
+        network_tab_outer_layout.addSpacing(10)
+        networkTab.setLayout(network_tab_outer_layout)
         return networkTab
 
 # needs fixing
-    def update_network_tab(self, ghosts, nearest_pellet, nearest_p_pellet, p_active, decision):
-        # this part also causes crashes
-        self.input_qlabels[0].setText("{:.0f}".format(ghosts[0].x))
-        self.input_qlabels[1].setText("{:.0f}".format(-ghosts[0].y))
-        self.input_qlabels[2].setText("{:.0f}".format(ghosts[1].x))
-        self.input_qlabels[3].setText("{:.0f}".format(-ghosts[1].y))
-        self.input_qlabels[4].setText("{:.0f}".format(ghosts[2].x))
-        self.input_qlabels[5].setText("{:.0f}".format(-ghosts[2].y))
-        self.input_qlabels[6].setText("{:.0f}".format(ghosts[3].x))
-        self.input_qlabels[7].setText("{:.0f}".format(-ghosts[3].y))
-        self.input_qlabels[8].setText("{:.0f}".format(nearest_pellet[0]))
-        self.input_qlabels[9].setText("{:.0f}".format(-nearest_pellet[1]))
-        self.input_qlabels[10].setText("{:.0f}".format(nearest_p_pellet[0]))
-        self.input_qlabels[11].setText("{:.0f}".format(-nearest_p_pellet[1]))
-        self.input_qlabels[12].setText(str(p_active))
+    def update_network_labels(self, ghosts, nearest_pellet, nearest_p_pellet, p_active):
 
-        """
+        labels = self.input_qlabels
+
+        labels[0].setText("{:.0f}".format(ghosts[0].x))
+        labels[1].setText("{:.0f}".format(-ghosts[0].y))
+        labels[2].setText("{:.0f}".format(ghosts[1].x))
+        labels[3].setText("{:.0f}".format(-ghosts[1].y))
+        labels[4].setText("{:.0f}".format(ghosts[2].x))
+        labels[5].setText("{:.0f}".format(-ghosts[2].y))
+        labels[6].setText("{:.0f}".format(ghosts[3].x))
+        labels[7].setText("{:.0f}".format(-ghosts[3].y))
+        labels[8].setText("{:.0f}".format(nearest_pellet[0]))
+        labels[9].setText("{:.0f}".format(-nearest_pellet[1]))
+        labels[10].setText("{:.0f}".format(nearest_p_pellet[0]))
+        labels[11].setText("{:.0f}".format(-nearest_p_pellet[1]))
+        labels[12].setText(str(p_active))
+
+        return labels
+
+    def update_network_icons(self, decision):
+
+        icons = self.pac_sprites
+
         if decision == 'UP':
-            self.pac_sprites[0].setHidden(False)
-            self.pac_sprites[1].setHidden(True)
-            self.pac_sprites[2].setHidden(True)
-            self.pac_sprites[3].setHidden(True)
+            icons[0].setHidden(False)
+            icons[1].setHidden(True)
+            icons[2].setHidden(True)
+            icons[3].setHidden(True)
         elif decision == 'DOWN':
-            self.pac_sprites[0].setHidden(True)
-            self.pac_sprites[1].setHidden(False)
-            self.pac_sprites[2].setHidden(True)
-            self.pac_sprites[3].setHidden(True)
+            icons[0].setHidden(True)
+            icons[1].setHidden(False)
+            icons[2].setHidden(True)
+            icons[3].setHidden(True)
         elif decision == 'LEFT':
-            self.pac_sprites[0].setHidden(True)
-            self.pac_sprites[1].setHidden(True)
-            self.pac_sprites[2].setHidden(False)
-            self.pac_sprites[3].setHidden(True)
+            icons[0].setHidden(True)
+            icons[1].setHidden(True)
+            icons[2].setHidden(False)
+            icons[3].setHidden(True)
         elif decision == 'RIGHT':
-            self.pac_sprites[0].setHidden(True)
-            self.pac_sprites[1].setHidden(True)
-            self.pac_sprites[2].setHidden(True)
-            self.pac_sprites[3].setHidden(False)
-        """
+            icons[0].setHidden(True)
+            icons[1].setHidden(True)
+            icons[2].setHidden(True)
+            icons[3].setHidden(False)
+
+        return icons
 
     def advanced_options_tab_UI(self):
         advancedOptionsTab = QWidget()
@@ -974,16 +1015,6 @@ class Visualizer(QWidget):
     def update_diagram(self, network_diagram):
         self.network = network_diagram
         self.repaint()
-
-# a potential way to remedy the crashes on the network tab, in progress
-class PacIcon(QLabel):
-    def __init__(self):
-        super().__init__()
-        self.show = False
-
-    def paintEvent(self, event):
-        painter = QPainter(self)
-
 
 
 class BorderWidget(QFrame):
