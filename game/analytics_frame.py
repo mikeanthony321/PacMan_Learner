@@ -207,11 +207,11 @@ class Analytics(QMainWindow):
         if self.timer_sec < 10:
             self.timer_label.setText("%d:0%d" % (self.timer_min, self.timer_sec))
             self.timer2_label.setText("%d:0%d" % (self.timer_min, self.timer_sec))
-            self.timer3_label.setText("%d:0%d" % (self.timer_min, self.timer_sec))
+            #self.timer3_label.setText("%d:0%d" % (self.timer_min, self.timer_sec))
         else:
             self.timer_label.setText("%d:%d" % (self.timer_min, self.timer_sec))
             self.timer2_label.setText("%d:%d" % (self.timer_min, self.timer_sec))
-            self.timer3_label.setText("%d:%d" % (self.timer_min, self.timer_sec))
+            #self.timer3_label.setText("%d:%d" % (self.timer_min, self.timer_sec))
 
     # -- -- -- BUTTON FUNCTIONS -- -- -- #
     def beginButton(self):
@@ -407,8 +407,8 @@ class Analytics(QMainWindow):
         self.tabs.setStyleSheet(QTAB_STYLE)
         self.tabs.addTab(self.main_tab_UI(), "Start")
         self.tabs.addTab(self.explainAI_tab_UI(), "Model Insights")
-        self.tabs.addTab(self.network_tab_UI(), "Network")
-        self.tabs.addTab(self.advanced_options_tab_UI(), "Options")
+        #self.tabs.addTab(self.network_tab_UI(), "Network")
+        #self.tabs.addTab(self.advanced_options_tab_UI(), "Options")
         self.tabs.addTab(self.about_tab_UI(), "About")
         layout.addWidget(self.tabs)
         self.center_widget.setLayout(layout)
@@ -434,6 +434,8 @@ class Analytics(QMainWindow):
         text = QLabel(main_info_text)
         text.setWordWrap(True)
         text.setStyleSheet(TEXT_STYLE)
+        text.setAlignment(QtCore.Qt.AlignTop)
+        text.setMinimumSize(400, 40)
         b_layout.addWidget(text)
         infobox.setContentLayout(b_layout)
         left_layout.addWidget(infobox)
@@ -659,12 +661,51 @@ class Analytics(QMainWindow):
         time_label = QLabel('Running time')
         time_label.setStyleSheet(TEXT_STYLE)
         timer2_layout.addWidget(time_label)
-        self.timer2_label = QLabel('0:00', self.window)
+        self.timer2_label = QLabel('0:00')
         self.timer2_label.setStyleSheet(TEXT_STYLE)
         self.timer2_label.setAlignment(Qt.AlignRight)
         timer2_layout.addWidget(self.timer2_label)
         timer2_layout.addSpacing(5)
         side_panel_layout.addLayout(checkbox_layout)
+        legend_layout = QHBoxLayout()
+        legend_i_layout = QVBoxLayout()
+        legend_widget = LegendWidget()
+        legend_layout.addWidget(legend_widget)
+        b_label = QLabel('Pac-Man')
+        b_label.setStyleSheet(TEXT_STYLE)
+        legend_i_layout.addWidget(b_label)
+        b_label = QLabel('Blinky')
+        b_label.setStyleSheet(TEXT_STYLE)
+        legend_i_layout.addWidget(b_label)
+        b_label = QLabel('Inky')
+        b_label.setStyleSheet(TEXT_STYLE)
+        legend_i_layout.addWidget(b_label)
+        b_label = QLabel('Pinky')
+        b_label.setStyleSheet(TEXT_STYLE)
+        legend_i_layout.addWidget(b_label)
+        b_label = QLabel('Clyde')
+        b_label.setStyleSheet(TEXT_STYLE)
+        legend_i_layout.addWidget(b_label)
+        b_label = QLabel('Nearest Pellet')
+        b_label.setStyleSheet(TEXT_STYLE)
+        legend_i_layout.addWidget(b_label)
+        b_label = QLabel('Nearest Power Pellet')
+        b_label.setStyleSheet(TEXT_STYLE)
+        legend_i_layout.addWidget(b_label)
+        legend_layout.addLayout(legend_i_layout)
+        legend_layout.addStretch()
+        side_panel_layout.addLayout(legend_layout)
+
+        infobox = CollapsibleBox()
+        b_layout = QVBoxLayout()
+        text = QLabel(plot_tab_text)
+        text.setWordWrap(True)
+        text.setStyleSheet(TEXT_STYLE)
+        text.setAlignment(QtCore.Qt.AlignTop)
+        text.setMinimumSize(200, 250)
+        b_layout.addWidget(text)
+        infobox.setContentLayout(b_layout)
+        side_panel_layout.addWidget(infobox)
         side_panel_layout.addStretch()
         side_panel_layout.addLayout(timer2_layout)
 
@@ -674,8 +715,9 @@ class Analytics(QMainWindow):
         plots_layout.addLayout(right_layout, 1, 1)
 
         main_layout.addLayout(plots_layout)
-        main_layout.addSpacing(40)
+        main_layout.addSpacing(20)
         main_layout.addLayout(side_panel_layout)
+        main_layout.addSpacing(20)
 
         explainAI_tab_layout.addLayout(main_layout)
         explainAI_tab_layout.addSpacing(20)
@@ -928,6 +970,49 @@ class Analytics(QMainWindow):
     def setRunning(self, isRunning):
         self.running = isRunning
 
+class LegendWidget(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.pac_brush = pg.mkBrush(245, 210, 5, 255)
+        self.pellet_brush = pg.mkBrush(220, 220, 220, 0)
+        self.p_pellet_brush = pg.mkBrush(142, 240, 67, 0)
+        self.blinky_brush = pg.mkBrush(255, 0, 0, 255)
+        self.pinky_brush = pg.mkBrush(255, 184, 255, 255)
+        self.inky_brush = pg.mkBrush(0, 255, 255, 255)
+        self.clyde_brush = pg.mkBrush(255, 184, 82, 255)
+        self.initUI()
+
+    def initUI(self):
+        layout = QVBoxLayout()
+        self.setLayout(layout)
+
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        painter.setBrush(self.pac_brush)
+        painter.setPen(QPen(QColor(255, 225, 15), 1))
+        painter.drawEllipse(2, 5, 10, 10)
+        painter.setBrush(self.blinky_brush)
+        painter.setPen(QPen(QColor(255, 0, 0, 255), 0))
+        painter.drawEllipse(2, 30, 10, 10)
+        painter.setBrush(self.inky_brush)
+        painter.setPen(QPen(QColor(0, 255, 255), 0))
+        painter.drawEllipse(2, 55, 10, 10)
+        painter.setBrush(self.pinky_brush)
+        painter.setPen(QPen(QColor(255, 184, 255), 0))
+        painter.drawEllipse(2, 80, 10, 10)
+        painter.setBrush(self.clyde_brush)
+        painter.setPen(QPen(QColor(255, 184, 82), 0))
+        painter.drawEllipse(2, 105, 10, 10)
+        painter.setBrush(self.pellet_brush)
+        painter.setPen(QPen(QColor(220, 220, 220), 0))
+        painter.drawEllipse(2, 130, 10, 10)
+        painter.setBrush(self.p_pellet_brush)
+        painter.setPen(QPen(QColor(142, 240, 67), 2))
+        painter.drawEllipse(2, 155, 10, 10)
+
+    def minimumSizeHint(self):
+        return QSize(20, 170)
+
 class Visualizer(QWidget):
     def __init__(self, network_diagram, width, height, interface, x_scale=1, y_scale=1):
         super().__init__()
@@ -937,7 +1022,7 @@ class Visualizer(QWidget):
         self.height = height
         self.node_size = int(self.height / 18)
         self.base_color = (51, 199, 255)
-        self.color_val_param = 0.5
+        self.color_val_param = 1
         self.thickness_param = 3
         self.base_line_thickness_param = 1
         self.x_scale = x_scale
@@ -981,8 +1066,8 @@ class Visualizer(QWidget):
                            int(self.network.layers[a].nodes[b].y * self.y_scale) + math.floor(self.node_size / 2)), 40)
 
                 node_color_1 = self.transformColor(self.network.layers[a].nodes[b].get_activation_value(), 0.5)
-                node_color_2 = self.transformColor(self.network.layers[a].nodes[b].get_activation_value(), -1)
-                node_color_3 = self.transformColor(self.network.layers[a].nodes[b].get_activation_value(), -1.5)
+                node_color_2 = self.transformColor(self.network.layers[a].nodes[b].get_activation_value(), 0.75)
+                node_color_3 = self.transformColor(self.network.layers[a].nodes[b].get_activation_value(), 1.25)
 
                 radialGradient.setColorAt(0.1, node_color_1)
                 radialGradient.setColorAt(0.5, node_color_2)
