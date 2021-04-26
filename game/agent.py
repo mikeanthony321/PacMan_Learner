@@ -7,7 +7,7 @@ from analytics_frame import Analytics
 from api.agent_analytics_frame import AgentAnalyticsFrameAPI
 import random
 import math
-
+import copy
 import numpy as np
 import torch
 import torch.nn as nn
@@ -32,6 +32,10 @@ class LearnerAgent(AgentAnalyticsFrameAPI):
             LearnerAgent.agent_instance = LearnerAgent(game_inst, EpsilonGreedyStrategy(s.EPSILON_START, s.EPSILON_END, s.EPSILON_DECAY))
 
     @staticmethod
+    def reset():
+        LearnerAgent.agent_instance.reset_agent()
+
+    @staticmethod
     def run_decision():
         thread = threading.Thread(target=LearnerAgent.agent_instance.decide)
         thread.start()
@@ -52,32 +56,45 @@ class LearnerAgent(AgentAnalyticsFrameAPI):
         self.decision = None
         self.decision_type = ""
         self.decision_count = 0
+        self.learning_rate = None
+        self.prev_decision = None
+
+    def reset_agent(self):
+        self.policy_net = Network(self.api)
+        self.target_net = Network(self.api)
+        self.target_net.load_state_dict(self.policy_net.state_dict())
+        self.target_net.eval()
+
+        self.learning_rate = None
+        self.memory = ReplayMemory(s.REPLAY_MEMORY_SIZE)
+        self.current_state = self.get_game_vals()
+        self.prev_decision = None
 
     def decide(self):
         state = self.get_game_vals()
         rate = self.learning_strat.get_rate()
         
         decision = None
-        available_actions = self.api.getAvailableActions()
 
         if random.random() > rate:
             with torch.no_grad():
                 output = self.policy_net(state).tolist()
-                best_decision = (0, -1)
-                for action in available_actions:
+                best_decision = (Actions.UP, -1000000)
+                for action in self.api.getAvailableActions(None):
                     if output[action.value] > best_decision[1]:
                         best_decision = (action, output[action.value])
                 decision = best_decision[0]
                 self.decision_type = "EXPLOITATION"
                 print("Calculated (exploitation) decision: " + str(decision))
         else:
-            decision = random.choice(available_actions)
+            decision = random.choice(self.api.getAvailableActions(self.prev_decision))
             self.decision_type = "EXPLORATION"
             print("Random (exploration) decision: " + str(decision))
 
         self.choose_action(decision)
-
-        self.memory.add(self.current_state.unsqueeze(0), torch.tensor([[decision.value]]), torch.tensor([[self.api.getReward()]]), state.unsqueeze(0))
+        self.prev_decision = decision
+        self.memory.add(self.current_state.unsqueeze(0), torch.tensor([[decision.value]]),
+                        torch.tensor([[self.api.getReward()]]), state.unsqueeze(0))
 
         if self.memory.can_provide_sample(s.REPLAY_BATCH_SIZE) and safe_batch(): 
             torch.autograd.set_detect_anomaly(True)
@@ -108,7 +125,8 @@ class LearnerAgent(AgentAnalyticsFrameAPI):
             
             loss = F.smooth_l1_loss(state_action_values.clone(), expected_state_action_values).clone()
 
-            optimizer = optim.RMSprop(self.policy_net.parameters())
+            optimizer = optim.RMSprop(self.policy_net.parameters(),
+                                      lr=self.init_learning_rate() if self.learning_rate is None else self.learning_rate)
 
             optimizer.zero_grad()
             loss.backward()   # BUG: this fails after a few runs
@@ -144,13 +162,16 @@ class LearnerAgent(AgentAnalyticsFrameAPI):
         tensor = torch.Tensor([ghost_list[0][0], ghost_list[0][1], ghost_list[1][0], ghost_list[1][1],
                                ghost_list[2][0], ghost_list[2][1], ghost_list[3][0], ghost_list[3][1],
                                pellet_tuple[0], pellet_tuple[1], power_tuple[0], power_tuple[1],
-                               1 if power_active else 0])
+                               10 if power_active else -10])
         self.ghost_list = ghost_list
         self.pellet_tuple = pellet_tuple
         self.power_tuple = power_tuple
         self.power_active = power_active
         return tensor
 
+    def init_learning_rate(self):
+        self.learning_rate = Analytics.analytics_instance.learning_rate
+        return self.learning_rate
 # -- -- -- AGENT API FUNCTIONS -- -- -- #
 
     def get_network_structure(self):
@@ -217,7 +238,7 @@ class Network(nn.Module):
         self.h1 = nn.Linear(10, 10)
         self.h2 = nn.Linear(10, 8)
         self.output = nn.Linear(8, 4)
-        self.squishifier = nn.ReLU()
+        self.squishifier = nn.Tanh()
         self.api = pacmanInst
 
         self.full_node_dist = []
@@ -245,13 +266,15 @@ class ReplayMemory:
     def __init__(self, capacity):
         self.capacity = capacity
         self.memory = deque(maxlen=capacity)
+        self.push_count = 0
 
     def add(self,state, action, reward, next_state):
         #TODO: add a push counter?
         if len(self.memory) >= self.capacity:
-            self.memory.append(None)
+            self.memory[self.push_count % self.capacity] = EXPERIENCE(state,action,reward,next_state)
         else:
             self.memory.append(EXPERIENCE(state,action,reward,next_state))
+        self.push_count += 1
         
     def sample(self, batch_size):
         sampled_exp = random.sample(self.memory, batch_size)

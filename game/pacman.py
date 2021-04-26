@@ -1,5 +1,6 @@
 import sys
 import copy
+import numpy as np
 import random
 from api.game_agent import GameAgentAPI
 from agent import LearnerAgent
@@ -43,6 +44,10 @@ class Pacman(GameAgentAPI):
         self.power_pellet_timer = POWER_PELLET_TIMER
         self.idle_timer = 0
         self.set_game_objects()
+        self.move_history = []
+
+        for i in range(IDLE_HISTORY_LENGTH):
+            self.move_history.append(None)
 
     def set_game_objects(self):
         self.player = Player(self, self.screen, self.player_start, self.player_respawn, self.sprites)
@@ -96,7 +101,7 @@ class Pacman(GameAgentAPI):
     def reset_level(self):
         self.cells = CellMap()
         self.score_reset()
-        self.player.reset()
+        self.player.reset(self.player_respawn)
         self.player.set_alive_status(True)
         self.player.set_game_over_status(False)
         self.ghost_reset()
@@ -147,6 +152,13 @@ class Pacman(GameAgentAPI):
 # -- -- -- GAME FUNCTIONS -- -- -- #
 
     def game_update(self):
+        # Check whether the stop button has been pressed
+        if not Analytics.get_running_state():
+            LearnerAgent.reset()
+            self.stop_simulation()
+
+        self.set_pac_pos()
+        self.check_ghost_pac_collision()
         if not self.player.get_game_over_status():
             player_pos = copy.deepcopy(self.player.get_grid_pos())
             self.player.update()
@@ -154,6 +166,11 @@ class Pacman(GameAgentAPI):
             # Alert the AI if a new grid square has been entered
             if (self.player.get_grid_pos() != player_pos) or self.idle_timer >= MAX_IDLE_ALLOWANCE:
                 self.idle_timer = 0
+
+                for i in range(len(self.move_history) - 1):
+                    self.move_history[i] = copy.deepcopy(self.move_history[i + 1])
+                self.move_history[len(self.move_history) - 1] = self.player.get_grid_pos()
+
                 if random.random() < DECISION_FREQUENCY:
                     LearnerAgent.run_decision()
                     Analytics.update_frame()
@@ -166,8 +183,6 @@ class Pacman(GameAgentAPI):
         # When Pacman hits a Super Coin, the player pow pel status
         # flips to true and back to false upon collecting the next coin.
         # This is managed during coin collection in player.py
-            self.player.power_pellet_timer()
-
             self.player.power_pellet_timer()
 
             if self.player.power_pellet_active:
@@ -254,6 +269,12 @@ class Pacman(GameAgentAPI):
         for i in range(len(self.ghosts)):
             self.ghosts[i].reset(i)
 
+    def stop_simulation(self):
+        # Does not currently set Pac-man to original spawn, just randomizes so will need to account
+        # for this once we've decided what spawning options we want
+        self.reset_level()
+        self.app_state = "title"
+
 # -- -- -- AGENT API FUNCTIONS -- -- -- #
 
     def gameStart(self):
@@ -264,7 +285,7 @@ class Pacman(GameAgentAPI):
 
     def set_start_pos(self, pos_dict):
         self.player_start = pos_dict['player_start']
-        self.player_respawn= pos_dict['player_respawn']
+        self.player_respawn = pos_dict['player_respawn']
         self.blinky_start = pos_dict['blinky']
         self.inky_start = pos_dict['inky']
         self.pinky_start = pos_dict['pinky']
@@ -272,12 +293,13 @@ class Pacman(GameAgentAPI):
         self.set_game_objects()
 
 
-    def getAvailableActions(self):
+    def getAvailableActions(self, prev_decision):
         available_actions = []
         player_x, player_y = self.player.get_grid_pos()
-        for action, x, y in [(Actions.UP, 0, -1), (Actions.DOWN, 0, 1), (Actions.LEFT, -1, 0), (Actions.RIGHT, 1, 0)]:
+        for action, x, y, opposite in [(Actions.UP, 0, -1, Actions.DOWN), (Actions.DOWN, 0, 1, Actions.UP),
+                                       (Actions.LEFT, -1, 0, Actions.RIGHT), (Actions.RIGHT, 1, 0, Actions.LEFT)]:
             cell = next((c for c in self.cells.map if c.pos == (player_x + x, player_y + y)), None)
-            if (cell is not None) and (not cell.hasWall):
+            if (cell is not None) and (not cell.hasWall) and (prev_decision is not opposite):
                 available_actions.append(action)
         return available_actions
 
@@ -332,12 +354,17 @@ class Pacman(GameAgentAPI):
         player_in_coin_cell = player_cell is not None and player_cell.hasCoin
         pellet_count = len([c for c in self.cells.map if not c.hasWall and not c.hasCoin])
 
-        reward += Q_MOVE
+        for i in range(1, len(self.move_history)):
+            if (self.move_history[i] is not None) and (self.move_history[i] == self.move_history[0]):
+                reward -= Q_IDLE_PENALTY
+
         if player_in_coin_cell:
             reward += Q_PELLET_FUNC(pellet_count)
             if len([c for c in self.cells.map if c.hasCoin]) == 1:
                 reward += Q_LEVEL_PASSED
-        if not self.player.get_alive_status():
-            reward += Q_DIED
+
+        for ghost in self.ghosts:
+            distance = np.linalg.norm(np.array(ghost.get_grid_pos()) - np.array(self.player.get_grid_pos()))
+            reward += (Q_PROXIMITY_FACTOR / (distance + 1)) * (1 if ghost.power_pellet_active else -1)
 
         return reward

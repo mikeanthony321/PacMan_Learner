@@ -66,10 +66,10 @@ WIDGET_STYLE = """
                     }
                     
                     QLabel{
-                    font: italic 12px "Consolas";
+                    font: italic 11px "Consolas";
                     color: white;
                     background: rgb(40, 40, 40); 
-                    padding: 5px 0px 5px 0px
+                    padding: 4px 0px 5px 0px
                     }
                     
                     

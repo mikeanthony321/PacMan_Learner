@@ -10,7 +10,7 @@ from frame_text import *
 from PyQt5.QtWidgets import QGridLayout, QVBoxLayout, QMainWindow, QLineEdit, QTabWidget, QPushButton, \
     QTableView, QTableWidget, QDesktopWidget, QTableWidgetItem, QWidget, QCheckBox, QRadioButton, QHBoxLayout, QLabel, \
     QApplication, QSlider, QHeaderView, QFrame, QSizePolicy, QScrollArea, QToolButton
-from PyQt5.QtCore import QTimer, Qt, QSize, QPoint, QParallelAnimationGroup, QAbstractAnimation, QPropertyAnimation
+from PyQt5.QtCore import QTimer, QRect, Qt, QSize, QPoint, QParallelAnimationGroup, QAbstractAnimation, QPropertyAnimation
 from PyQt5.QtGui import QFont, QPixmap, QPainter, QBrush, QPen, QColor, QRadialGradient
 from pyqtgraph import PlotWidget, plot
 import pyqtgraph as pg
@@ -20,11 +20,16 @@ class Analytics(QMainWindow):
     # __metaclass__ = AgentAnalyticsFrameAPI
 
     analytics_instance = None
+    running_state = False
 
     @staticmethod
     def create_analytics_instance(monitor_size, agent_instance):
         if Analytics.analytics_instance is None:
             Analytics.analytics_instance = Analytics(monitor_size, agent_instance)
+
+    @staticmethod
+    def get_running_state():
+        return Analytics.running_state
 
     @staticmethod
     def update_frame():
@@ -57,9 +62,11 @@ class Analytics(QMainWindow):
         self.output_labels = ['Up', 'Down', 'Left', 'Right']
 
         self.input_qlabels = []
+        self.pac_sprites = []
 
         # State Variables
         self.running = False
+        self.guimode = True
         self.tar_high_score = None
         self.learning_rate = None
         self.timer_min = 0
@@ -132,64 +139,59 @@ class Analytics(QMainWindow):
             print("Neural Network object has not been initialized")
 
     def update(self):
-        for i in range(len(self.neural_network.layers)):
-            activation_vals = self.agent_interface.get_activation_vals(i)
-            for j in range(len(self.neural_network.layers[i].nodes)):
-                if i > 0:
-                    weights = self.agent_interface.get_weights(i - 1)
-                    for k in range(len(self.neural_network.layers[i - 1].nodes)):
-                        if weights is not None:
-                            self.neural_network.layers[i].nodes[j].connections[k].set_weight(weights[j][k])
-                self.neural_network.layers[i].nodes[j].set_activation_value(
-                    0 if activation_vals is None else activation_vals[j])
+        if self.guimode:
+            for i in range(len(self.neural_network.layers)):
+                activation_vals = self.agent_interface.get_activation_vals(i)
+                for j in range(len(self.neural_network.layers[i].nodes)):
+                    if i > 0:
+                        weights = self.agent_interface.get_weights(i - 1)
+                        for k in range(len(self.neural_network.layers[i - 1].nodes)):
+                            if weights is not None:
+                                self.neural_network.layers[i].nodes[j].connections[k].set_weight(weights[j][k])
+                    self.neural_network.layers[i].nodes[j].set_activation_value(
+                        0 if activation_vals is None else activation_vals[j])
 
-        if self.agent_interface.get_logic_count() != self.decision_count:
-            self.decision_count = self.agent_interface.get_logic_count()
-            self.decision, self.decision_type = self.agent_interface.get_decision()
-            # update
-            if self.decision_count >= 2:
-                if self.decision == 'UP':
-                    self.up_plot.update_points(self.ghosts, self.nearest_pellet, self.nearest_p_pellet, self.p_active,
-                                               self.decision_type)
-                    if self.tabs.currentIndex() == 1:
-                        self.up_plot.update_plot()
-                elif self.decision == 'DOWN':
-                    self.down_plot.update_points(self.ghosts, self.nearest_pellet, self.nearest_p_pellet, self.p_active,
-                                                 self.decision_type)
-                    if self.tabs.currentIndex() == 1:
-                        self.down_plot.update_plot()
-                elif self.decision == 'LEFT':
-                    self.left_plot.update_points(self.ghosts, self.nearest_pellet, self.nearest_p_pellet, self.p_active,
-                                                 self.decision_type)
-                    if self.tabs.currentIndex() == 1:
-                        self.left_plot.update_plot()
-                elif self.decision == 'RIGHT':
-                    self.right_plot.update_points(self.ghosts, self.nearest_pellet, self.nearest_p_pellet,
-                                                  self.p_active,
-                                                  self.decision_type)
-                    if self.tabs.currentIndex() == 1:
-                        self.right_plot.update_plot()
+            if self.agent_interface.get_logic_count() != self.decision_count:
+                self.decision_count = self.agent_interface.get_logic_count()
+                self.decision, self.decision_type = self.agent_interface.get_decision()
+                # update
+                if self.decision_count >= 2:
+                    if self.decision == 'UP':
+                        self.up_plot.update_points(self.ghosts, self.nearest_pellet, self.nearest_p_pellet, self.p_active,
+                                                   self.decision_type)
+                        if self.tabs.currentIndex() == 1:
+                            self.up_plot.update_plot()
+                    elif self.decision == 'DOWN':
+                        self.down_plot.update_points(self.ghosts, self.nearest_pellet, self.nearest_p_pellet, self.p_active,
+                                                     self.decision_type)
+                        if self.tabs.currentIndex() == 1:
+                            self.down_plot.update_plot()
+                    elif self.decision == 'LEFT':
+                        self.left_plot.update_points(self.ghosts, self.nearest_pellet, self.nearest_p_pellet, self.p_active,
+                                                     self.decision_type)
+                        if self.tabs.currentIndex() == 1:
+                            self.left_plot.update_plot()
+                    elif self.decision == 'RIGHT':
+                        self.right_plot.update_points(self.ghosts, self.nearest_pellet, self.nearest_p_pellet,
+                                                      self.p_active,
+                                                      self.decision_type)
+                        if self.tabs.currentIndex() == 1:
+                            self.right_plot.update_plot()
 
-                if self.tabs.currentIndex() == 2:
-                    self.update_network_tab(
-                        self.ghosts, self.nearest_pellet, self.nearest_p_pellet, self.p_active, self.decision)
+                    if self.tabs.currentIndex() == 2:
+                        self.update_network_tab(
+                            self.ghosts, self.nearest_pellet, self.nearest_p_pellet, self.p_active, self.decision)
 
-            self.ghosts = self.agent_interface.get_ghost_coords()
-            self.nearest_pellet = self.agent_interface.get_nearest_pellet_coords()
-            self.nearest_p_pellet = self.agent_interface.get_nearest_power_pellet_coords()
-            self.p_active = self.agent_interface.get_power_pellet_active_status()
+                self.ghosts = self.agent_interface.get_ghost_coords()
+                self.nearest_pellet = self.agent_interface.get_nearest_pellet_coords()
+                self.nearest_p_pellet = self.agent_interface.get_nearest_power_pellet_coords()
+                self.p_active = self.agent_interface.get_power_pellet_active_status()
 
-            if self.tabs.currentIndex() == 0:
-                self.visualizer.update_diagram(self.neural_network)
-            elif self.tabs.currentIndex() == 2:
-                self.tab_vis.update_diagram(self.neural_network)
-
-            self.update_table()
-
-
-
-
-
+                if self.tabs.currentIndex() == 0:
+                    self.visualizer.update_diagram(self.neural_network)
+                elif self.tabs.currentIndex() == 2:
+                    self.tab_vis.update_diagram(self.neural_network)
+                self.update_table()
 
     def showTime(self):
         if self.running:
@@ -211,6 +213,7 @@ class Analytics(QMainWindow):
         if self.tar_high_score is not None and self.learning_rate is not None:
             self.timer.start(1000)
             self.running = True
+            Analytics.running_state = True
             self.agent_interface.start_sim()
             self.help_text_label.setText("")
         else:
@@ -245,6 +248,21 @@ class Analytics(QMainWindow):
         else:
             print("You must stop the sim to enter a new learning rate")
             self.help_text_label.setText("The Learning Rate cannot be changed while the game is running")
+
+    def stopButton(self):
+        if(self.running):
+            self.timer_ms = 0
+            self.timer_sec = 0
+            self.timer_min = 0
+            self.tar_high_score = None
+            self.learning_rate = None
+            self.tar_high_score_label.setText("Target High Score: " + self.tar_high_score_input.text())
+            # todo: This may need to change as Sydney altered learning rate input to be a slider
+            self.learning_rate_label.setText("Learning Rate: " + self.learning_rate_input.text())
+            self.running = False
+            Analytics.running_state = False
+            # todo: We may also want to either clear the table / nn or leave it so they retain last values
+            # until the sim is restarted so the user can click on for information
 
     def slider_valuechange(self):
         if not self.running:
@@ -324,6 +342,7 @@ class Analytics(QMainWindow):
                     'pinky': PINKY_START_POS,
                     'clyde': CLYDE_START_POS
                 })
+
         if button.text() == "Default Start Position":
             if button.isChecked():
                 self.agent_interface.set_game_start_pos({
@@ -344,35 +363,6 @@ class Analytics(QMainWindow):
                     'clyde': CLYDE_START_POS
                 })
 
-    def toggle_p_pellet_active(self):
-        self.up_plot.show_p_active = not self.up_plot.show_p_active
-        self.down_plot.show_p_active = not self.down_plot.show_p_active
-        self.left_plot.show_p_active = not self.left_plot.show_p_active
-        self.right_plot.show_p_active = not self.right_plot.show_p_active
-        self.up_plot.update_plot()
-        self.down_plot.update_plot()
-        self.left_plot.update_plot()
-        self.right_plot.update_plot()
-
-    def toggle_p_pellet_inactive(self):
-        self.up_plot.show_p_inactive = not self.up_plot.show_p_inactive
-        self.down_plot.show_p_inactive = not self.down_plot.show_p_inactive
-        self.left_plot.show_p_inactive = not self.left_plot.show_p_inactive
-        self.right_plot.show_p_inactive = not self.right_plot.show_p_inactive
-        self.up_plot.update_plot()
-        self.down_plot.update_plot()
-        self.left_plot.update_plot()
-        self.right_plot.update_plot()
-
-    def toggle_rand_decisions(self):
-        self.up_plot.show_rand = not self.up_plot.show_rand
-        self.down_plot.show_rand = not self.down_plot.show_rand
-        self.left_plot.show_rand = not self.left_plot.show_rand
-        self.right_plot.show_rand = not self.right_plot.show_rand
-        self.up_plot.update_plot()
-        self.down_plot.update_plot()
-        self.left_plot.update_plot()
-        self.right_plot.update_plot()
 
     def check_state(self, button):
         if button.text() == "Show Power Pellet Active":
@@ -395,6 +385,16 @@ class Analytics(QMainWindow):
         self.left_plot.update_plot()
         self.right_plot.update_plot()
 
+    # doesn't work
+    """
+    def pauseUI(self):
+        if self.guimode:
+            self.pauseUIbutton.setText('Pause UI')
+        else:
+            self.pauseUIbutton.setText('Resume UI')
+        self.guimode = not self.guimode
+    """
+
     def load_screen(self):
         # Initialize layout
         self.center_widget = QWidget()
@@ -411,7 +411,6 @@ class Analytics(QMainWindow):
         self.window.show()
 
     def main_tab_UI(self):
-
         # Set up layout for main tab
         mainTab = QWidget()
         main_tab_layout = QHBoxLayout()
@@ -490,6 +489,7 @@ class Analytics(QMainWindow):
         self.start_symm = QRadioButton('Centered Start Position')
         self.start_symm.setStyleSheet(TEXT_STYLE)
         self.start_symm.toggled.connect(lambda: self.toggle_state(self.start_symm))
+        self.start_symm.click()
         self.start_default = QRadioButton('Default Start Position')
         self.start_default.setStyleSheet(TEXT_STYLE)
         self.start_default.toggled.connect(lambda: self.toggle_state(self.start_default))
@@ -506,7 +506,25 @@ class Analytics(QMainWindow):
         left_layout.addWidget(self.begin_button)
         self.begin_button.clicked.connect(self.beginButton)
         left_layout.addSpacing(20)
+
+        # Create the Stop button to terminate the simulation
+        self.stop_button = QPushButton('Stop Learning Agent', self.window)
+        self.stop_button.setStyleSheet(BUTTON_STYLE)
+        self.stop_button.setMinimumSize(130, 30)
+        left_layout.addWidget(self.stop_button)
+        self.stop_button.clicked.connect(self.stopButton)
+        left_layout.addSpacing(20)
         left_layout.addStretch()
+
+        # cool thought but it did not work
+        """
+        self.pauseUIbutton = QPushButton('Pause UI')
+        self.pauseUIbutton.setStyleSheet(BUTTON_STYLE)
+        self.pauseUIbutton.setMinimumSize(130, 30)
+        left_layout.addWidget(self.pauseUIbutton)
+        self.begin_button.clicked.connect(self.pauseUI)
+        left_layout.addStretch()
+        """
 
         # Right Panel Title
         self.visualization_label = QLabel('Neural Network Activity', self.window)
@@ -523,6 +541,7 @@ class Analytics(QMainWindow):
         for i_label in self.input_labels:
             qlabel = QLabel(i_label)
             qlabel.setStyleSheet(TEXT_STYLE)
+            qlabel.setAlignment(QtCore.Qt.AlignRight)
             input_label_layout.addWidget(qlabel)
             input_label_layout.addSpacing(2)
 
@@ -586,33 +605,45 @@ class Analytics(QMainWindow):
         up_inner_layout = QHBoxLayout()
         self.up_label = QLabel("UP")
         self.up_label.setStyleSheet(TITLE_STYLE)
+        self.up_label.setAlignment(QtCore.Qt.AlignCenter)
         up_layout.addWidget(self.up_label)
         up_layout.addLayout(up_inner_layout)
+        up_inner_layout.addSpacing(40)
         up_inner_layout.addWidget(self.up_plot.plot_widget)
+        up_inner_layout.addSpacing(40)
 
         down_layout = QVBoxLayout()
         down_inner_layout = QHBoxLayout()
         self.down_label = QLabel("DOWN")
         self.down_label.setStyleSheet(TITLE_STYLE)
+        self.down_label.setAlignment(QtCore.Qt.AlignCenter)
         down_layout.addWidget(self.down_label)
         down_layout.addLayout(down_inner_layout)
+        down_inner_layout.addSpacing(40)
         down_inner_layout.addWidget(self.down_plot.plot_widget)
+        down_inner_layout.addSpacing(40)
 
         left_layout = QVBoxLayout()
         left_inner_layout = QHBoxLayout()
         self.left_label = QLabel("LEFT")
         self.left_label.setStyleSheet(TITLE_STYLE)
+        self.left_label.setAlignment(QtCore.Qt.AlignCenter)
         left_layout.addWidget(self.left_label)
         left_layout.addLayout(left_inner_layout)
+        left_inner_layout.addSpacing(40)
         left_inner_layout.addWidget(self.left_plot.plot_widget)
+        left_inner_layout.addSpacing(40)
 
         right_layout = QVBoxLayout()
         right_inner_layout = QHBoxLayout()
         self.right_label = QLabel("RIGHT")
         self.right_label.setStyleSheet(TITLE_STYLE)
+        self.right_label.setAlignment(QtCore.Qt.AlignCenter)
         right_layout.addWidget(self.right_label)
         right_layout.addLayout(right_inner_layout)
+        right_inner_layout.addSpacing(40)
         right_inner_layout.addWidget(self.right_plot.plot_widget)
+        right_inner_layout.addSpacing(40)
 
         side_panel_layout = QVBoxLayout()
         checkbox_layout = QVBoxLayout()
@@ -637,49 +668,137 @@ class Analytics(QMainWindow):
         plots_layout.addLayout(right_layout, 1, 1)
 
         main_layout.addLayout(plots_layout)
+        main_layout.addSpacing(40)
         main_layout.addLayout(side_panel_layout)
 
         explainAI_tab_layout.addLayout(main_layout)
+        explainAI_tab_layout.addSpacing(20)
         explainAITab.setLayout(explainAI_tab_layout)
         return explainAITab
 
     def network_tab_UI(self):
         networkTab = QWidget()
         network_tab_layout = QVBoxLayout()
+        network_tab_layout.addSpacing(20)
         vis_layout = QHBoxLayout()
         input_label_layout = QVBoxLayout()
-        input_label_layout.addSpacing(35)
+        input_label_layout.addSpacing(45)
         input_layout = QVBoxLayout()
-        input_layout.addSpacing(35)
+        input_layout.addSpacing(45)
         output_label_layout = QVBoxLayout()
-        output_label_layout.addSpacing(65)
+        output_label_layout.addSpacing(72)
 
         for i_label in self.input_labels:
-            qlabel = QLabel(i_label)
+            qlabel = QLabel(i_label + ": ")
             qlabel.setStyleSheet(TEXT_STYLE)
+            qlabel.setAlignment(QtCore.Qt.AlignRight)
             input_label_layout.addWidget(qlabel)
             qlabel2 = QLabel('')
             qlabel2.setStyleSheet(TEXT_STYLE)
+            qlabel2.setAlignment(QtCore.Qt.AlignRight)
+            qlabel2.setFixedWidth(50)
             input_layout.addWidget(qlabel2)
             self.input_qlabels.append(qlabel2)
 
         for o_label in self.output_labels:
             qlabel = QLabel(o_label)
             qlabel.setStyleSheet(TEXT_STYLE)
+            qlabel.setAlignment(QtCore.Qt.AlignLeft)
+            qlabel.setFixedWidth(40)
             output_label_layout.addWidget(qlabel)
+
+
+        sprites = QPixmap('res/sprites.png')
+
+        blinky_rect = QRect(2, 64, 16, 16)
+        blinky_p = sprites.copy(blinky_rect)
+        blinky_label = QLabel()
+        blinky_label.setPixmap(blinky_p)
+        blinky_label.setFixedWidth(16)
+        inky_rect = QRect(2, 96, 16, 16)
+        inky_p = sprites.copy(inky_rect)
+        inky_label = QLabel()
+        inky_label.setPixmap(inky_p)
+        inky_label.setFixedWidth(16)
+        pinky_rect = QRect(2, 80, 16, 16)
+        pinky_p = sprites.copy(pinky_rect)
+        pinky_label = QLabel()
+        pinky_label.setPixmap(pinky_p)
+        pinky_label.setFixedWidth(16)
+        clyde_rect = QRect(2, 112, 16, 16)
+        clyde_p = sprites.copy(clyde_rect)
+        clyde_label = QLabel()
+        clyde_label.setPixmap(clyde_p)
+        clyde_label.setFixedWidth(16)
+
+        pac_up_rect = QRect(18, 32, 16, 16)
+        pac_up = sprites.copy(pac_up_rect)
+        pac_up_label = QLabel()
+        pac_up_label.setPixmap(pac_up)
+        pac_up_label.setFixedWidth(16)
+        self.pac_sprites.append(pac_up_label)
+        pac_down_rect = QRect(18, 48, 16, 16)
+        pac_down = sprites.copy(pac_down_rect)
+        pac_down_label = QLabel()
+        pac_down_label.setPixmap(pac_down)
+        pac_down_label.setFixedWidth(16)
+        self.pac_sprites.append(pac_down_label)
+        pac_left_rect = QRect(18, 16, 16, 16)
+        pac_left = sprites.copy(pac_left_rect)
+        pac_left_label = QLabel()
+        pac_left_label.setPixmap(pac_left)
+        pac_left_label.setFixedWidth(16)
+        self.pac_sprites.append(pac_left_label)
+        pac_right_rect = QRect(18, 0, 16, 16)
+        pac_right = sprites.copy(pac_right_rect)
+        pac_right_label = QLabel()
+        pac_right_label.setPixmap(pac_right)
+        pac_right_label.setFixedWidth(16)
+        self.pac_sprites.append(pac_right_label)
+
+        sprite_i_layout = QVBoxLayout()
+        sprite_i_layout.addSpacing(64)
+        sprite_i_layout.addWidget(blinky_label)
+        sprite_i_layout.addSpacing(52)
+        sprite_i_layout.addWidget(inky_label)
+        sprite_i_layout.addSpacing(52)
+        sprite_i_layout.addWidget(pinky_label)
+        sprite_i_layout.addSpacing(52)
+        sprite_i_layout.addWidget(clyde_label)
+        sprite_i_layout.addStretch()
+
+        sprite_o_layout = QVBoxLayout()
+        sprite_o_layout.addSpacing(50)
+        sprite_o_layout.addWidget(self.pac_sprites[0])
+        self.pac_sprites[0].setHidden(True)
+        sprite_o_layout.addSpacing(106)
+        sprite_o_layout.addWidget(self.pac_sprites[1])
+        self.pac_sprites[1].setHidden(True)
+        sprite_o_layout.addSpacing(106)
+        sprite_o_layout.addWidget(self.pac_sprites[2])
+        self.pac_sprites[2].setHidden(True)
+        sprite_o_layout.addSpacing(106)
+        sprite_o_layout.addWidget(self.pac_sprites[3])
+        self.pac_sprites[3].setHidden(True)
+        sprite_o_layout.addSpacing(110)
 
         input_label_layout.addSpacing(115)
         input_layout.addSpacing(115)
-        output_label_layout.addSpacing(140)
+        output_label_layout.addSpacing(130)
         self.tab_vis = Visualizer(self.neural_network, 600, 550, self.agent_interface, x_scale=2, y_scale=1.5)
+        vis_layout.addSpacing(50)
         vis_layout.addLayout(input_label_layout)
-        vis_layout.addSpacing(2)
+        vis_layout.addSpacing(10)
         vis_layout.addLayout(input_layout)
-        vis_layout.addSpacing(2)
+        vis_layout.addSpacing(10)
+        vis_layout.addLayout(sprite_i_layout)
+        vis_layout.addSpacing(10)
         vis_layout.addWidget(self.tab_vis)
-        vis_layout.addSpacing(2)
-        vis_layout.addLayout(output_label_layout)
+        vis_layout.addStretch()
+        vis_layout.addLayout(sprite_o_layout)
         vis_layout.addSpacing(6)
+        vis_layout.addLayout(output_label_layout)
+        vis_layout.addSpacing(80)
         self.tab_vis.setStyleSheet(WIDGET_STYLE)
         self.hover_tracker = HoverTracker(self.tab_vis)
         self.hover_tracker.positionChanged.connect(self.on_position_changed)
@@ -687,22 +806,45 @@ class Analytics(QMainWindow):
         networkTab.setLayout(network_tab_layout)
         return networkTab
 
+# needs fixing
     def update_network_tab(self, ghosts, nearest_pellet, nearest_p_pellet, p_active, decision):
-
+        # this part also causes crashes
         self.input_qlabels[0].setText("{:.0f}".format(ghosts[0].x))
-        self.input_qlabels[1].setText("{:.0f}".format(ghosts[0].y))
+        self.input_qlabels[1].setText("{:.0f}".format(-ghosts[0].y))
         self.input_qlabels[2].setText("{:.0f}".format(ghosts[1].x))
-        self.input_qlabels[3].setText("{:.0f}".format(ghosts[1].y))
+        self.input_qlabels[3].setText("{:.0f}".format(-ghosts[1].y))
         self.input_qlabels[4].setText("{:.0f}".format(ghosts[2].x))
-        self.input_qlabels[5].setText("{:.0f}".format(ghosts[2].y))
+        self.input_qlabels[5].setText("{:.0f}".format(-ghosts[2].y))
         self.input_qlabels[6].setText("{:.0f}".format(ghosts[3].x))
-        self.input_qlabels[7].setText("{:.0f}".format(ghosts[3].y))
+        self.input_qlabels[7].setText("{:.0f}".format(-ghosts[3].y))
         self.input_qlabels[8].setText("{:.0f}".format(nearest_pellet[0]))
-        self.input_qlabels[9].setText("{:.0f}".format(nearest_pellet[1]))
+        self.input_qlabels[9].setText("{:.0f}".format(-nearest_pellet[1]))
         self.input_qlabels[10].setText("{:.0f}".format(nearest_p_pellet[0]))
-        self.input_qlabels[11].setText("{:.0f}".format(nearest_p_pellet[1]))
+        self.input_qlabels[11].setText("{:.0f}".format(-nearest_p_pellet[1]))
         self.input_qlabels[12].setText(str(p_active))
 
+        """
+        if decision == 'UP':
+            self.pac_sprites[0].setHidden(False)
+            self.pac_sprites[1].setHidden(True)
+            self.pac_sprites[2].setHidden(True)
+            self.pac_sprites[3].setHidden(True)
+        elif decision == 'DOWN':
+            self.pac_sprites[0].setHidden(True)
+            self.pac_sprites[1].setHidden(False)
+            self.pac_sprites[2].setHidden(True)
+            self.pac_sprites[3].setHidden(True)
+        elif decision == 'LEFT':
+            self.pac_sprites[0].setHidden(True)
+            self.pac_sprites[1].setHidden(True)
+            self.pac_sprites[2].setHidden(False)
+            self.pac_sprites[3].setHidden(True)
+        elif decision == 'RIGHT':
+            self.pac_sprites[0].setHidden(True)
+            self.pac_sprites[1].setHidden(True)
+            self.pac_sprites[2].setHidden(True)
+            self.pac_sprites[3].setHidden(False)
+        """
 
     def advanced_options_tab_UI(self):
         advancedOptionsTab = QWidget()
@@ -745,7 +887,6 @@ class Analytics(QMainWindow):
     def setRunning(self, isRunning):
         self.running = isRunning
 
-
 class Visualizer(QWidget):
     def __init__(self, network_diagram, width, height, interface, x_scale=1, y_scale=1):
         super().__init__()
@@ -755,7 +896,7 @@ class Visualizer(QWidget):
         self.height = height
         self.node_size = int(self.height / 18)
         self.base_color = (51, 199, 255)
-        self.color_val_param = 0.3
+        self.color_val_param = 0.5
         self.thickness_param = 3
         self.base_line_thickness_param = 1
         self.x_scale = x_scale
@@ -834,6 +975,16 @@ class Visualizer(QWidget):
         self.network = network_diagram
         self.repaint()
 
+# a potential way to remedy the crashes on the network tab, in progress
+class PacIcon(QLabel):
+    def __init__(self):
+        super().__init__()
+        self.show = False
+
+    def paintEvent(self, event):
+        painter = QPainter(self)
+
+
 
 class BorderWidget(QFrame):
 
@@ -853,19 +1004,19 @@ class PlotStruct:
         self.show_p_active = False
         self.avg_display = True
         self.current_display = False
-        self.point_size = 10
+        self.point_size = 8
         self.base_opacity = 90
         self.plot_limit = 120
-        self.decisions_window = 14
+        self.decisions_window = 20
 
         self.pac_spot = {
             'pos': [0, 0],
-            'pen': {'color': (245, 210, 5, 255), 'width': 0},
-            'size': 18,
-            'brush': pg.mkBrush(235, 200, 5, 255)
+            'pen': {'color': (255, 225, 15, 255), 'width': 1},
+            'size': 10,
+            'brush': pg.mkBrush(245, 210, 5, 255)
         }
-        self.pellet_brush = pg.mkBrush(220, 220, 220, self.base_opacity)
-        self.p_pellet_brush = pg.mkBrush(142, 240, 67, self.base_opacity)
+        self.pellet_brush = pg.mkBrush(220, 220, 220, 0)
+        self.p_pellet_brush = pg.mkBrush(142, 240, 67, 0)
         self.blinky_brush = pg.mkBrush(255, 0, 0, self.base_opacity)
         self.pinky_brush = pg.mkBrush(255, 184, 255, self.base_opacity)
         self.inky_brush = pg.mkBrush(0, 255, 255, self.base_opacity)
@@ -896,44 +1047,61 @@ class PlotStruct:
         self.plot_widget = pg.PlotWidget()
         self.plot_widget.setXRange(-30, 30)
         self.plot_widget.setYRange(-30, 30)
+        self.plot_widget.hideButtons()
+        self.plot_widget.showAxis('right')
+        self.plot_widget.showAxis('top')
+        self.plot_widget.showGrid(x=True, y=True, alpha=0.5)
+        self.plot_widget.getAxis('left').setStyle(showValues=False)
+        self.plot_widget.getAxis('bottom').setStyle(showValues=False)
+        self.plot_widget.getAxis('top').setStyle(showValues=False)
+        self.plot_widget.getAxis('right').setStyle(showValues=False)
+        self.plot_widget.getAxis('left').setTickSpacing(levels=[(3, -1.25)])
+        self.plot_widget.getAxis('top').setTickSpacing(levels=[(3, -1.25)])
+        self.plot_widget.getAxis('right').setTickSpacing(levels=[(3, 1.25)])
+        self.plot_widget.getAxis('bottom').setTickSpacing(levels=[(3, 1.25)])
+        self.plot_widget.getAxis('left').setPen(QPen(QColor(0, 0, 210), 1, Qt.SolidLine))
+        self.plot_widget.getAxis('top').setPen(QPen(QColor(0, 0, 210), 1, Qt.SolidLine))
+        self.plot_widget.getAxis('bottom').setPen(QPen(QColor(0, 0, 210), 1, Qt.SolidLine))
+        self.plot_widget.getAxis('right').setPen(QPen(QColor(0, 0, 210), 1, Qt.SolidLine))
+        self.plot_widget.setBackground(QColor(0, 0, 0))
         self.plot_widget.addItem(self.plot_item)
         self.plot_ref = None
 
     def update_points(self, ghosts, nearest_pellet, nearest_p_pellet, p_active, decision_type):
         blinky_spot = {
-            'pos': [ghosts[0].x, ghosts[0].y],
+            'pos': [ghosts[0].x, -ghosts[0].y],
             'size': self.point_size,
             'pen': {'color': (255, 0, 0, self.base_opacity), 'width': 0},
             'brush': self.blinky_brush
         }
         inky_spot = {
-            'pos': [ghosts[1].x, ghosts[1].y],
+            'pos': [ghosts[1].x, -ghosts[1].y],
             'size': self.point_size,
             'pen': {'color': (0, 255, 255, self.base_opacity), 'width': 0},
             'brush': self.inky_brush
         }
         pinky_spot = {
-            'pos': [ghosts[2].x, ghosts[2].y],
+            'pos': [ghosts[2].x, -ghosts[2].y],
             'size': self.point_size,
             'pen': {'color': (255, 184, 255, self.base_opacity), 'width': 0},
             'brush': self.pinky_brush
         }
         clyde_spot = {
-            'pos': [ghosts[3].x, ghosts[3].y],
+            'pos': [ghosts[3].x, -ghosts[3].y],
             'size': self.point_size,
             'pen': {'color': (255, 184, 82, self.base_opacity), 'width': 0},
             'brush': self.clyde_brush
         }
         pellet_spot = {
-            'pos': [nearest_pellet[0], nearest_pellet[1]],
+            'pos': [nearest_pellet[0], -nearest_pellet[1]],
             'size': self.point_size,
-            'pen': {'color': (220, 220, 220, self.base_opacity), 'width': 0},
+            'pen': {'color': (220, 220, 220, self.base_opacity), 'width': 2},
             'brush': self.pellet_brush
         }
         p_pellet_spot = {
-            'pos': [nearest_p_pellet[0], nearest_p_pellet[1]],
+            'pos': [nearest_p_pellet[0], -nearest_p_pellet[1]],
             'size': self.point_size,
-            'pen': {'color': (142, 240, 67, self.base_opacity), 'width': 0},
+            'pen': {'color': (142, 240, 67, self.base_opacity), 'width': 2},
             'brush': self.p_pellet_brush
         }
 
@@ -1000,42 +1168,42 @@ class PlotStruct:
     def update_avg(self, avg_list, ghosts, nearest_pellet, nearest_p_pellet, counter):
         if counter == 0:
             avg_list.append(ghosts[0].x)
-            avg_list.append(ghosts[0].y)
+            avg_list.append(-ghosts[0].y)
             avg_list.append(ghosts[1].x)
-            avg_list.append(ghosts[1].y)
+            avg_list.append(-ghosts[1].y)
             avg_list.append(ghosts[2].x)
-            avg_list.append(ghosts[2].y)
+            avg_list.append(-ghosts[2].y)
             avg_list.append(ghosts[3].x)
-            avg_list.append(ghosts[3].y)
+            avg_list.append(-ghosts[3].y)
             avg_list.append(nearest_pellet[0])
-            avg_list.append(nearest_pellet[1])
+            avg_list.append(-nearest_pellet[1])
             avg_list.append(nearest_p_pellet[0])
-            avg_list.append(nearest_p_pellet[1])
+            avg_list.append(-nearest_p_pellet[1])
         elif 0 < counter <= self.decisions_window:
             avg_list[0] = (avg_list[0] * ((counter - 1)/ counter)) + \
                           (ghosts[0].x * (1 / counter))
             avg_list[1] = (avg_list[1] * ((counter - 1) / counter)) + \
-                          (ghosts[0].y * (1 / counter))
+                          (-ghosts[0].y * (1 / counter))
             avg_list[2] = (avg_list[2] * ((counter - 1) / counter)) + \
                           (ghosts[1].x * (1 / counter))
             avg_list[3] = (avg_list[3] * ((counter - 1) / counter)) + \
-                          (ghosts[1].y * (1 / counter))
+                          (-ghosts[1].y * (1 / counter))
             avg_list[4] = (avg_list[4] * ((counter - 1) / counter)) + \
                           (ghosts[2].x * (1 / counter))
             avg_list[5] = (avg_list[5] * ((counter - 1) / counter)) + \
-                          (ghosts[2].y * (1 / counter))
+                          (-ghosts[2].y * (1 / counter))
             avg_list[6] = (avg_list[6] * ((counter - 1) / counter)) + \
                           (ghosts[3].x * (1 / counter))
             avg_list[7] = (avg_list[7] * ((counter - 1) / counter)) + \
-                          (ghosts[3].y * (1 / counter))
+                          (-ghosts[3].y * (1 / counter))
             avg_list[8] = (avg_list[8] * ((counter - 1) / counter)) + \
                           (nearest_pellet[0] * (1 / counter))
             avg_list[9] = (avg_list[9] * ((counter - 1) / counter)) + \
-                          (nearest_pellet[1] * (1 / counter))
+                          (-nearest_pellet[1] * (1 / counter))
             avg_list[10] = (avg_list[10] * ((counter - 1) / counter)) + \
                            (nearest_p_pellet[0] * (1 / counter))
             avg_list[11] = (avg_list[11] * ((counter - 1) / counter)) + \
-                           (nearest_p_pellet[1] * (1 / counter))
+                           (-nearest_p_pellet[1] * (1 / counter))
 
         return avg_list
 
@@ -1067,17 +1235,20 @@ class PlotStruct:
         pellet_spot = {
             'pos': [avg_list[8], avg_list[9]],
             'size': self.point_size,
-            'pen': {'color': (220, 220, 220, self.base_opacity), 'width': 0},
+            'pen': {'color': (220, 220, 220, self.base_opacity), 'width': 2},
             'brush': self.pellet_brush
         }
         p_pellet_spot = {
             'pos': [avg_list[10], avg_list[11]],
             'size': self.point_size,
-            'pen': {'color': (142, 240, 67, self.base_opacity), 'width': 0},
+            'pen': {'color': (142, 240, 67, self.base_opacity), 'width': 2},
             'brush': self.p_pellet_brush
         }
         point_list.extend(
             [blinky_spot, pinky_spot, inky_spot, clyde_spot, pellet_spot, p_pellet_spot])
+
+        if len(point_list) >= self.plot_limit:
+            point_list = point_list[6:]
 
         return point_list
 
@@ -1087,17 +1258,17 @@ class PlotStruct:
             if self.show_p_active and self.show_p_inactive and self.show_rand:
                 plot_points.extend(self.active_exploitation_avg_points)
                 plot_points.extend(self.inactive_exploitation_avg_points)
-                plot_points.extend(self.inactive_exploration_points)
-                plot_points.extend(self.active_exploration_points)
+                plot_points.extend(self.inactive_exploration_avg_points)
+                plot_points.extend(self.active_exploration_avg_points)
             elif self.show_p_active and self.show_p_inactive and not self.show_rand:
                 plot_points.extend(self.active_exploitation_avg_points)
                 plot_points.extend(self.inactive_exploitation_avg_points)
             elif self.show_p_active and not self.show_p_inactive and self.show_rand:
                 plot_points.extend(self.active_exploitation_avg_points)
-                plot_points.extend(self.active_exploration_points)
+                plot_points.extend(self.active_exploration_avg_points)
             elif not self.show_p_active and self.show_p_inactive and self.show_rand:
                 plot_points.extend(self.inactive_exploitation_avg_points)
-                plot_points.extend(self.inactive_exploration_points)
+                plot_points.extend(self.inactive_exploration_avg_points)
             elif self.show_p_active and not self.show_p_inactive and not self.show_rand:
                 plot_points.extend(self.active_exploitation_avg_points)
             elif not self.show_p_active and self.show_p_inactive and not self.show_rand:
@@ -1106,23 +1277,23 @@ class PlotStruct:
                 plot_points = []
         elif self.current_display:
             if self.show_p_active and self.show_p_inactive and self.show_rand:
-                plot_points.extend(self.active_exploitation_avg_points)
-                plot_points.extend(self.inactive_exploitation_avg_points)
+                plot_points.extend(self.active_exploitation_points)
+                plot_points.extend(self.inactive_exploitation_points)
                 plot_points.extend(self.inactive_exploration_points)
                 plot_points.extend(self.active_exploration_points)
             elif self.show_p_active and self.show_p_inactive and not self.show_rand:
-                plot_points.extend(self.active_exploitation_avg_points)
-                plot_points.extend(self.inactive_exploitation_avg_points)
+                plot_points.extend(self.active_exploitation_points)
+                plot_points.extend(self.inactive_exploitation_points)
             elif self.show_p_active and not self.show_p_inactive and self.show_rand:
-                plot_points.extend(self.active_exploitation_avg_points)
+                plot_points.extend(self.active_exploitation_points)
                 plot_points.extend(self.active_exploration_points)
             elif not self.show_p_active and self.show_p_inactive and self.show_rand:
-                plot_points.extend(self.inactive_exploitation_avg_points)
+                plot_points.extend(self.inactive_exploitation_points)
                 plot_points.extend(self.inactive_exploration_points)
             elif self.show_p_active and not self.show_p_inactive and not self.show_rand:
-                plot_points.extend(self.active_exploitation_avg_points)
+                plot_points.extend(self.active_exploitation_points)
             elif not self.show_p_active and self.show_p_inactive and not self.show_rand:
-                plot_points.extend(self.inactive_exploitation_avg_points)
+                plot_points.extend(self.inactive_exploitation_points)
             else:
                 plot_points = []
 

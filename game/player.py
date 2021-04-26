@@ -1,5 +1,5 @@
 from settings import *
-
+import random
 vec = pygame.math.Vector2
 
 
@@ -26,6 +26,7 @@ class Player:
         # 2D vector (x, y) | Pacman's current cell | Pacman's presence cell
         self.grid_pos = pos
         self.respawn_pos = respawn_pos
+        self.rand_respawn = True
         self.presence_pos = self.grid_pos
 
         # 2D vector (x, y) | Pacman's current pixel position (center)
@@ -195,14 +196,27 @@ class Player:
                              ((self.grid_pos[0] + self.direction.x) * CELL_W,
                               (self.grid_pos[1] + self.direction.y) * CELL_H + PAD_TOP, CELL_W, CELL_H), 2)
 
-    def reset(self):
+    def reset(self, vec):
         self.deaths += 1
         self.stop()
-        # set to vector to avoid wrong respawn bug
-        self.teleport(vec(13, 23))
 
-    def teleport(self, pos):
-        self.grid_pos = pos
+        if self.rand_respawn:
+            xpos, ypos = self.setRandomSpawnLocation()
+            self.teleport(xpos, ypos)
+        else:
+            self.teleport(vec.x, vec.y)
+
+
+
+    def setRandomSpawnLocation(self):
+        while(True):
+            xPos = random.choice([random.randint(0, 8), random.randint(19, 27)])
+            yPos = random.choice([random.randint(0, 10), random.randint(18, 30)])
+            if GRID[yPos][xPos] == 1:
+                return xPos, yPos
+
+    def teleport(self, x_pos, y_pos):
+        self.grid_pos = vec(x_pos, y_pos)
         self.sprite_pos = vec(self.grid_pos.x * CELL_W,
                               self.grid_pos.y * CELL_H + PAD_TOP)
         self.pixel_pos = vec(self.grid_pos.x * CELL_W + (CELL_W // 2),
