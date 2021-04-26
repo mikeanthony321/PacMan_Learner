@@ -7,6 +7,14 @@ BUTTON_STYLE = """
                         }
                 QPushButton:disabled{ background-color: lightgrey; }
                 QPushButton:pressed{ background-color: grey; }
+                
+                
+                QToolTip { 
+                background-color: white; 
+                color: black; 
+                border: white solid 1px
+                }
+                
 
                 """
 TITLE_STYLE = """
@@ -18,6 +26,13 @@ TEXT_STYLE = """
                     font: 14px "Consolas";
                     color: white;
                     background: black;
+                    
+                    QToolTip { 
+                    background-color: white; 
+                    color: black; 
+                    border: white solid 1px
+                    }
+                
                     """
 TABLE_STYLE = """ 
                     QTableView{
@@ -56,6 +71,15 @@ WIDGET_STYLE = """
                     background: rgb(40, 40, 40); 
                     padding: 5px 0px 5px 0px
                     }
+                    
+                    
+                    QToolTip { 
+                    background: rgb(40, 40, 40); 
+                    font: italic 12px "Consolas";
+                    color: white; 
+                    border:1px inset rgb(225, 190, 5);
+                    }
+                
                     """
 QTAB_STYLE = """
                 QTabBar::tab {
@@ -81,7 +105,15 @@ QTAB_STYLE = """
                 """
 
 QLINE_STYLE = """
-            QLineEdit {
-            border: 1px inset blue;
-            }
-            """
+                QLineEdit {
+                border: 1px inset blue;
+                }
+                """
+
+TOOLTIP_STYLE = """
+                QToolTip { 
+                background-color: white; 
+                color: black; 
+                border: white solid 1px
+                }
+                """

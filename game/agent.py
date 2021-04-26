@@ -45,6 +45,13 @@ class LearnerAgent(AgentAnalyticsFrameAPI):
         self.target_net.eval()
         self.memory = ReplayMemory(s.REPLAY_MEMORY_SIZE)
         self.current_state = self.get_game_vals()
+        self.ghost_list = []
+        self.pellet_tuple = ()
+        self.power_tuple = ()
+        self.power_active = False
+        self.decision = None
+        self.decision_type = ""
+        self.decision_count = 0
 
     def decide(self):
         state = self.get_game_vals()
@@ -61,9 +68,11 @@ class LearnerAgent(AgentAnalyticsFrameAPI):
                     if output[action.value] > best_decision[1]:
                         best_decision = (action, output[action.value])
                 decision = best_decision[0]
+                self.decision_type = "EXPLOITATION"
                 print("Calculated (exploitation) decision: " + str(decision))
         else:
             decision = random.choice(available_actions)
+            self.decision_type = "EXPLORATION"
             print("Random (exploration) decision: " + str(decision))
 
         self.choose_action(decision)
@@ -110,18 +119,21 @@ class LearnerAgent(AgentAnalyticsFrameAPI):
             toggle_safe_batch()
 
         self.current_state = state
-        #Analytics.update_frame()
-
 
     def choose_action(self, decision):
         if decision is Actions.UP:
+            self.decision = "UP"
             self.api.moveUp()
         elif decision is Actions.DOWN:
+            self.decision = "DOWN"
             self.api.moveDown()
         elif decision is Actions.LEFT:
+            self.decision = "LEFT"
             self.api.moveLeft()
         elif decision is Actions.RIGHT:
+            self.decision = "RIGHT"
             self.api.moveRight()
+        self.decision_count += 1
     
     def get_game_vals(self):
         ghost_list = self.api.getGhostsGridCoords()
@@ -133,6 +145,10 @@ class LearnerAgent(AgentAnalyticsFrameAPI):
                                ghost_list[2][0], ghost_list[2][1], ghost_list[3][0], ghost_list[3][1],
                                pellet_tuple[0], pellet_tuple[1], power_tuple[0], power_tuple[1],
                                1 if power_active else 0])
+        self.ghost_list = ghost_list
+        self.pellet_tuple = pellet_tuple
+        self.power_tuple = power_tuple
+        self.power_active = power_active
         return tensor
 
 # -- -- -- AGENT API FUNCTIONS -- -- -- #
@@ -154,7 +170,22 @@ class LearnerAgent(AgentAnalyticsFrameAPI):
             return None
 
     def get_logic_count(self):
-        return 1
+        return self.decision_count
+
+    def get_ghost_coords(self):
+        return self.ghost_list
+
+    def get_nearest_pellet_coords(self):
+        return self.pellet_tuple
+
+    def get_nearest_power_pellet_coords(self):
+        return self.power_tuple
+
+    def get_power_pellet_active_status(self):
+        return self.power_active
+
+    def get_decision(self):
+        return self.decision, self.decision_type
 
     def set_learning_rate(self, learning_rate):
         pass
@@ -162,12 +193,14 @@ class LearnerAgent(AgentAnalyticsFrameAPI):
     def set_target_score(self, target_score):
         self.api.setTarHighScore(target_score)
 
+    def set_game_start_pos(self, pos_dict):
+        self.api.set_start_pos(pos_dict)
+
     def stop_sim(self):
         pass
 
     def start_sim(self):
         self.api.gameStart()
-
 
 def safe_batch():
     return not is_calc_grad
