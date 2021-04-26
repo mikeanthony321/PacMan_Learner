@@ -207,11 +207,11 @@ class Analytics(QMainWindow):
         if self.timer_sec < 10:
             self.timer_label.setText("%d:0%d" % (self.timer_min, self.timer_sec))
             self.timer2_label.setText("%d:0%d" % (self.timer_min, self.timer_sec))
-            #self.timer3_label.setText("%d:0%d" % (self.timer_min, self.timer_sec))
+            self.timer3_label.setText("%d:0%d" % (self.timer_min, self.timer_sec))
         else:
             self.timer_label.setText("%d:%d" % (self.timer_min, self.timer_sec))
             self.timer2_label.setText("%d:%d" % (self.timer_min, self.timer_sec))
-            #self.timer3_label.setText("%d:%d" % (self.timer_min, self.timer_sec))
+            self.timer3_label.setText("%d:%d" % (self.timer_min, self.timer_sec))
 
     # -- -- -- BUTTON FUNCTIONS -- -- -- #
     def beginButton(self):
@@ -407,7 +407,7 @@ class Analytics(QMainWindow):
         self.tabs.setStyleSheet(QTAB_STYLE)
         self.tabs.addTab(self.main_tab_UI(), "Start")
         self.tabs.addTab(self.explainAI_tab_UI(), "Model Insights")
-        #self.tabs.addTab(self.network_tab_UI(), "Network")
+        self.tabs.addTab(self.network_tab_UI(), "Network")
         #self.tabs.addTab(self.advanced_options_tab_UI(), "Options")
         self.tabs.addTab(self.about_tab_UI(), "About")
         layout.addWidget(self.tabs)
