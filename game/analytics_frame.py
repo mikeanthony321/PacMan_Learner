@@ -170,9 +170,11 @@ class Analytics(QMainWindow):
                     if self.tabs.currentIndex() == 1:
                         self.right_plot.update_plot()
 
+                """
                 if self.tabs.currentIndex() == 2:
                     self.update_network_tab(
                         self.ghosts, self.nearest_pellet, self.nearest_p_pellet, self.p_active, self.decision)
+                """
 
             self.ghosts = self.agent_interface.get_ghost_coords()
             self.nearest_pellet = self.agent_interface.get_nearest_pellet_coords()
@@ -701,6 +703,7 @@ class Analytics(QMainWindow):
         explainAITab.setLayout(explainAI_tab_layout)
         return explainAITab
 
+    """
     def network_tab_UI(self):
         networkTab = QWidget()
         network_tab_layout = QVBoxLayout()
@@ -746,7 +749,6 @@ class Analytics(QMainWindow):
         return networkTab
 
     def update_network_tab(self, ghosts, nearest_pellet, nearest_p_pellet, p_active, decision):
-
         self.input_qlabels[0].setText("{:.0f}".format(ghosts[0].x))
         self.input_qlabels[1].setText("{:.0f}".format(ghosts[0].y))
         self.input_qlabels[2].setText("{:.0f}".format(ghosts[1].x))
@@ -760,7 +762,7 @@ class Analytics(QMainWindow):
         self.input_qlabels[10].setText("{:.0f}".format(nearest_p_pellet[0]))
         self.input_qlabels[11].setText("{:.0f}".format(nearest_p_pellet[1]))
         self.input_qlabels[12].setText(str(p_active))
-
+    """
 
     def advanced_options_tab_UI(self):
         advancedOptionsTab = QWidget()
