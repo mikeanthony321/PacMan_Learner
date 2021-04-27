@@ -157,6 +157,7 @@ class Pacman(GameAgentAPI):
             self.stop_simulation()
         # Check whether the target high score has been reached
         if self.player.score >= self.tar_high_score:
+            Analytics.non_user_stop()
             self.stop_simulation()
 
         self.set_pac_pos()

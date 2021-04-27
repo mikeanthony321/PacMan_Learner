@@ -34,6 +34,10 @@ class Analytics(QMainWindow):
     def get_running_state():
         return Analytics.running_state
 
+    @staticmethod
+    def non_user_stop():
+        Analytics.analytics_instance.stopButton()
+
     def __init__(self, monitor_size, agent_instance):
         super().__init__()
 
