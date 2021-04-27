@@ -1,4 +1,5 @@
 from settings import *
+import random
 
 vec = pygame.math.Vector2
 
@@ -198,8 +199,18 @@ class Player:
     def reset(self):
         self.deaths += 1
         self.stop()
+        # This is only set up to always randomize the spawn, we can add the choice when PAC-25
+        # gets fully implemented
+        self.teleport(self.setRandomSpawnLocation())
         # set to vector to avoid wrong respawn bug
-        self.teleport(vec(13, 23))
+        # self.teleport(vec(13, 23))
+
+    def setRandomSpawnLocation(self):
+        while(True):
+            xPos = random.choice([random.randint(0, 8), random.randint(19, 27)])
+            yPos = random.choice([random.randint(0, 10), random.randint(18, 30)])
+            if GRID[yPos][xPos] == 1:
+                return vec(xPos, yPos)
 
     def teleport(self, pos):
         self.grid_pos = pos

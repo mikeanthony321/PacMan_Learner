@@ -1,6 +1,7 @@
 import sys
 import copy
 import random
+import numpy as np
 from api.game_agent import GameAgentAPI
 from agent import LearnerAgent
 from player import *
@@ -53,6 +54,10 @@ class Pacman(GameAgentAPI):
         self.ghosts.append(Ghost(self, self.screen, False, "Pinky", self.pinky_start, PINKY_SPRITE_POS, self.sprites))
         self.ghosts.append(Ghost(self, self.screen, False, "Clyde", self.clyde_start, CLYDE_SPRITE_POS, self.sprites))
 
+        # self.move_history = []
+        # for i in range(IDLE_HISTORY_LENGTH):
+        #     self.move_history.append(None)
+
     def run(self):
         while self.running:
             if self.app_state == 'title':
@@ -100,7 +105,6 @@ class Pacman(GameAgentAPI):
         self.player.set_alive_status(True)
         self.player.set_game_over_status(False)
         self.ghost_reset()
-        #self.analytics.setRestart(False)
 
     def score_reset(self):
         if self.player.score >= int(HIGH_SCORE):
@@ -147,6 +151,17 @@ class Pacman(GameAgentAPI):
 # -- -- -- GAME FUNCTIONS -- -- -- #
 
     def game_update(self):
+        # Check whether the stop button has been pressed
+        if not Analytics.get_running_state():
+            LearnerAgent.agent_instance.reset_agent()
+            self.stop_simulation()
+        # Check whether the target high score has been reached
+        if self.player.score >= self.tar_high_score:
+            self.stop_simulation()
+
+        self.set_pac_pos()
+        self.check_ghost_pac_collision()
+
         if not self.player.get_game_over_status():
             player_pos = copy.deepcopy(self.player.get_grid_pos())
             self.player.update()
@@ -154,6 +169,11 @@ class Pacman(GameAgentAPI):
             # Alert the AI if a new grid square has been entered
             if (self.player.get_grid_pos() != player_pos) or self.idle_timer >= MAX_IDLE_ALLOWANCE:
                 self.idle_timer = 0
+
+                # for i in range(len(self.move_history) - 1):
+                #     self.move_history[i] = copy.deepcopy(self.move_history[i + 1])
+                # self.move_history[len(self.move_history) - 1] = self.player.get_grid_pos()
+
                 if random.random() < DECISION_FREQUENCY:
                     LearnerAgent.run_decision()
                     Analytics.update_frame()
@@ -176,14 +196,6 @@ class Pacman(GameAgentAPI):
             if self.player.get_alive_status():
                 for i in range(len(self.ghosts)):
                     self.ghosts[i].update()
-
-            self.set_pac_pos()
-
-            self.check_ghost_pac_collision()
-
-        #if self.analytics.getRestart() == True:
-        #    self.reset_level()
-        Analytics.update_frame()
 
     def game_events(self):
         for event in pygame.event.get():
@@ -234,7 +246,6 @@ class Pacman(GameAgentAPI):
 
     def set_pac_pos(self):
         for i in range(len(self.ghosts)):
-            #self.ghosts[i].set_pacman_pos(self.player.get_presence())
             self.ghosts[i].set_pacman_pos(self.player.get_grid_pos())
 
     def check_ghost_pac_collision(self):
@@ -251,6 +262,12 @@ class Pacman(GameAgentAPI):
     def ghost_reset(self):
         for i in range(len(self.ghosts)):
             self.ghosts[i].reset(i)
+
+    def stop_simulation(self):
+        # Does not currently set Pac-man to original spawn, just randomizes so will need to account
+        # for this once we've decided what spawning options we want
+        self.reset_level()
+        self.app_state = "title"
 
 # -- -- -- AGENT API FUNCTIONS -- -- -- #
 
@@ -269,14 +286,15 @@ class Pacman(GameAgentAPI):
         self.clyde_start = pos_dict['clyde']
         self.set_game_objects()
 
-
-    def getAvailableActions(self):
+    def getAvailableActions(self, prev_decision):
         available_actions = []
         player_x, player_y = self.player.get_grid_pos()
-        for action, x, y in [(Actions.UP, 0, -1), (Actions.DOWN, 0, 1), (Actions.LEFT, -1, 0), (Actions.RIGHT, 1, 0)]:
+        for action, x, y, opposite in [(Actions.UP, 0, -1, Actions.DOWN), (Actions.DOWN, 0, 1, Actions.UP),
+                                       (Actions.LEFT, -1, 0, Actions.RIGHT), (Actions.RIGHT, 1, 0, Actions.LEFT)]:
             cell = next((c for c in self.cells.map if c.pos == (player_x + x, player_y + y)), None)
-            if (cell is not None) and (not cell.hasWall):
+            if (cell is not None) and (not cell.hasWall) and (prev_decision is not opposite):
                 available_actions.append(action)
+
         return available_actions
 
     def moveUp(self):
@@ -330,12 +348,17 @@ class Pacman(GameAgentAPI):
         player_in_coin_cell = player_cell is not None and player_cell.hasCoin
         pellet_count = len([c for c in self.cells.map if not c.hasWall and not c.hasCoin])
 
-        reward += Q_MOVE
+        reward += Q_PELLET_PROXIMITY_FACTOR / (np.linalg.norm(np.array(self.getNearestPelletGridCoords()) - np.array([0, 0])) + 1)
+        # for i in range(1, len(self.move_history)):
+        #     if (self.move_history[i] is not None) and (self.move_history[i] == self.move_history[0]):
+        #         reward -= Q_IDLE_PENALTY
         if player_in_coin_cell:
             reward += Q_PELLET_FUNC(pellet_count)
             if len([c for c in self.cells.map if c.hasCoin]) == 1:
                 reward += Q_LEVEL_PASSED
-        if not self.player.get_alive_status():
-            reward += Q_DIED
+        for ghost in self.ghosts:
+            distance = np.linalg.norm(np.array(ghost.get_grid_pos()) - np.array(self.player.get_grid_pos()))
+            reward += (Q_GHOST_PROXIMITY_FACTOR / (distance + 1)) * (1 if ghost.power_pellet_active else -1)
 
+        #print(reward)
         return reward

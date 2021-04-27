@@ -17,9 +17,8 @@ import pyqtgraph as pg
 
 
 class Analytics(QMainWindow):
-    # __metaclass__ = AgentAnalyticsFrameAPI
-
     analytics_instance = None
+    running_state = False
 
     @staticmethod
     def create_analytics_instance(monitor_size, agent_instance):
@@ -30,6 +29,10 @@ class Analytics(QMainWindow):
     def update_frame():
         thread = threading.Thread(target=Analytics.analytics_instance.update)
         thread.start()
+
+    @staticmethod
+    def get_running_state():
+        return Analytics.running_state
 
     def __init__(self, monitor_size, agent_instance):
         super().__init__()
@@ -190,9 +193,6 @@ class Analytics(QMainWindow):
 
 
 
-
-
-
     def showTime(self):
         if self.running:
             self.timer_sec += 1
@@ -217,11 +217,27 @@ class Analytics(QMainWindow):
         if self.tar_high_score is not None and self.learning_rate is not None:
             self.timer.start(1000)
             self.running = True
+            Analytics.running_state = True
             self.agent_interface.start_sim()
             self.help_text_label.setText("")
         else:
             print("Target high score and learning rate must be set before beginning simulation")
             self.help_text_label.setText("Target High Score and Learning Rate must be set before beginning simulation")
+
+    def stopButton(self):
+        if(self.running):
+            self.timer_ms = 0
+            self.timer_sec = 0
+            self.timer_min = 0
+            self.tar_high_score = None
+            self.learning_rate = None
+            self.tar_high_score_label.setText("Target High Score: " + self.tar_high_score_input.text())
+            # todo: This may need to change as Sydney altered learning rate input to be a slider
+            self.learning_rate_label.setText("Learning Rate: " + self.learning_rate_input.text())
+            self.running = False
+            Analytics.running_state = False
+            # todo: We may also want to either clear the table / nn or leave it so they retain last values
+            # until the sim is restarted so the user can click on for information
 
     def highScoreButton(self):
         if self.tar_high_score_input.text() != "":
@@ -513,6 +529,14 @@ class Analytics(QMainWindow):
         self.begin_button.setMinimumSize(130, 30)
         left_layout.addWidget(self.begin_button)
         self.begin_button.clicked.connect(self.beginButton)
+        left_layout.addSpacing(20)
+
+        # Create the Stop button to terminate the simulation
+        self.stop_button = QPushButton('Stop Learning Agent', self.window)
+        self.stop_button.setStyleSheet(BUTTON_STYLE)
+        self.stop_button.setMinimumSize(130, 30)
+        left_layout.addWidget(self.stop_button)
+        self.stop_button.clicked.connect(self.stopButton)
         left_layout.addSpacing(20)
         left_layout.addStretch()
 
