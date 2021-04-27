@@ -22,10 +22,12 @@ EXPERIENCE = namedtuple("Experience",
 
 GAMMA = 0.999
 
-is_calc_grad = False
+is_calc_grad = False  
 
-class LearnerAgent(AgentAnalyticsFrameAPI):
-
+class LearnerAgent(AgentAnalyticsFrameAPI): 
+    # The wonderful DeepLizard Q-Reinforcement course (https://deeplizard.com/learn/video/nyjbcRQ-uQ8) and the 
+    # PyTorch Q-Learning documentation/experiment (https://pytorch.org/tutorials/intermediate/reinforcement_q_learning.html)
+    # were invaluable resources in implementing this learner agent
     agent_instance = None
 
     @staticmethod
@@ -126,7 +128,7 @@ class LearnerAgent(AgentAnalyticsFrameAPI):
             action_batch = torch.cat(batch.action).clone()
             reward_batch = torch.cat(batch.reward).clone()
 
-            state_action_values = self.policy_net(state_batch).gather(1, action_batch).clone() #this line fails to compute gradient
+            state_action_values = self.policy_net(state_batch).gather(1, action_batch).clone()
 
             next_state_values = torch.zeros(s.REPLAY_BATCH_SIZE, device=DEVICE)
             next_state_values[non_final_mask] = self.target_net(non_final_next_states).max(1)[0].detach().clone()
@@ -143,7 +145,7 @@ class LearnerAgent(AgentAnalyticsFrameAPI):
                                       lr=self.init_learning_rate() if self.learning_rate is None else self.learning_rate)
 
             optimizer.zero_grad()
-            loss.backward()   # BUG: this fails after a few runs
+            loss.backward()
             for param in self.policy_net.parameters():
                 param.grad.data.clamp_(-1, 1)
             optimizer.step()
