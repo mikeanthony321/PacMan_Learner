@@ -186,8 +186,8 @@ class Analytics(QMainWindow):
 
             if self.tabs.currentIndex() == 0:
                 self.visualizer.update_diagram(self.neural_network)
-            elif self.tabs.currentIndex() == 2:
-                self.tab_vis.update_diagram(self.neural_network)
+            #elif self.tabs.currentIndex() == 2:
+                #self.tab_vis.update_diagram(self.neural_network)
 
             self.update_table()
 
@@ -441,7 +441,7 @@ class Analytics(QMainWindow):
         self.setup_label = QLabel('Learning Parameters')
         self.setup_label.setStyleSheet(TITLE_STYLE)
         left_layout.addWidget(self.setup_label)
-        left_layout.addSpacing(5)
+        left_layout.addSpacing(1)
 
         # Create dropdown menu
         infobox = CollapsibleBox(subtitle='Information')
@@ -450,11 +450,11 @@ class Analytics(QMainWindow):
         text.setWordWrap(True)
         text.setStyleSheet(TEXT_STYLE)
         text.setAlignment(QtCore.Qt.AlignTop)
-        text.setMinimumSize(400, 40)
+        text.setMinimumSize(500, 120)
         b_layout.addWidget(text)
         infobox.setContentLayout(b_layout)
         left_layout.addWidget(infobox)
-        left_layout.addSpacing(20)
+        left_layout.addSpacing(10)
 
         # Create the Target High Score input box and button
         hlayout1 = QHBoxLayout()
@@ -509,24 +509,28 @@ class Analytics(QMainWindow):
         # Create Options
         options_layout = QVBoxLayout()
         self.start_symm = QRadioButton('Centered Start Position')
-        self.start_symm.setStyleSheet(TEXT_STYLE)
         self.start_symm.toggled.connect(lambda: self.toggle_state(self.start_symm))
+        self.start_symm.setToolTip(starting_locations_tooltip)
+        self.start_symm.setStyleSheet(TEXT_STYLE)
         self.start_default = QRadioButton('Default Start Position')
-        self.start_default.setStyleSheet(TEXT_STYLE)
         self.start_default.toggled.connect(lambda: self.toggle_state(self.start_default))
+        self.start_default.setToolTip(starting_locations_tooltip)
+        self.start_default.setStyleSheet(TEXT_STYLE)
+
 
         options_layout.addWidget(self.start_symm)
         options_layout.addWidget(self.start_default)
         left_layout.addLayout(options_layout)
-        left_layout.addSpacing(20)
+        left_layout.addSpacing(10)
 
         # Create the Button for the Begin button to start the game (sim)
         self.begin_button = QPushButton('Start Learning Agent', self.window)
         self.begin_button.setStyleSheet(BUTTON_STYLE)
         self.begin_button.setMinimumSize(130, 30)
+        self.begin_button.setToolTip(start_button_tooltip)
         left_layout.addWidget(self.begin_button)
         self.begin_button.clicked.connect(self.beginButton)
-        left_layout.addSpacing(20)
+        left_layout.addSpacing(10)
 
         # Create the Stop button to terminate the simulation
         self.stop_button = QPushButton('Stop Learning Agent', self.window)
@@ -534,7 +538,7 @@ class Analytics(QMainWindow):
         self.stop_button.setMinimumSize(130, 30)
         left_layout.addWidget(self.stop_button)
         self.stop_button.clicked.connect(self.stopButton)
-        left_layout.addSpacing(20)
+        left_layout.addSpacing(10)
         left_layout.addStretch()
 
         # Right Panel Title
@@ -648,13 +652,16 @@ class Analytics(QMainWindow):
         self.show_p_pellet_active = QCheckBox("Show Power Pellet Active")
         self.show_p_pellet_active.setStyleSheet(TEXT_STYLE)
         self.show_p_pellet_active.toggled.connect(lambda: self.check_state(self.show_p_pellet_active))
+        self.show_p_pellet_active.setToolTip(plot_active_tooltip)
         self.show_p_pellet_inactive = QCheckBox("Show Power Pellet Inactive")
         self.show_p_pellet_inactive.setStyleSheet(TEXT_STYLE)
         self.show_p_pellet_inactive.toggled.connect(lambda: self.check_state(self.show_p_pellet_inactive))
+        self.show_p_pellet_inactive.setToolTip(plot_inactive_tooltip)
         self.show_p_pellet_inactive.click()
         self.show_rand_decisions = QCheckBox("Show Random Decisions")
         self.show_rand_decisions.setStyleSheet(TEXT_STYLE)
         self.show_rand_decisions.toggled.connect(lambda: self.check_state(self.show_rand_decisions))
+        self.show_rand_decisions.setToolTip(plot_rand_tooltip)
         checkbox_layout.addWidget(self.show_p_pellet_active)
         checkbox_layout.addWidget(self.show_p_pellet_inactive)
         checkbox_layout.addWidget(self.show_rand_decisions)
@@ -794,6 +801,30 @@ class Analytics(QMainWindow):
     def about_tab_UI(self):
         aboutTab = QWidget()
         about_tab_layout = QVBoxLayout()
+
+        about_label = QLabel(about_tab_text)
+        about_label.setWordWrap(True)
+        about_label.setStyleSheet(TEXT_STYLE)
+        about_label.setAlignment(QtCore.Qt.AlignLeft)
+        about_tab_layout.addSpacing(20)
+        about_tab_layout.addWidget(about_label)
+
+        infobox = CollapsibleBox()
+        b_layout = QVBoxLayout()
+        text = QLabel(credits_text)
+        text.setWordWrap(True)
+        text.setStyleSheet(TEXT_STYLE)
+        text.setAlignment(QtCore.Qt.AlignTop)
+        b_layout.addWidget(text)
+        b_layout.addSpacing(2)
+        github_link = HyperlinkLabel()
+        github_link.setText('<a href={0}>{1}</a>'.format('https://github.com/mikeanthony321/PacMan_Learner', 'Project GitHub'))
+        github_link.setStyleSheet(TEXT_STYLE)
+        b_layout.addWidget(github_link)
+        infobox.setContentLayout(b_layout)
+
+        about_tab_layout.addWidget(infobox)
+        about_tab_layout.addStretch()
         aboutTab.setLayout(about_tab_layout)
         return aboutTab
 
@@ -1249,9 +1280,10 @@ class PlotStruct:
             else:
                 plot_points = []
 
-        plot_points.append(self.pac_spot)
         self.plot_item.setData(plot_points)
         self.plot_widget.addItem(self.plot_item)
+
+
 
 
 class CollapsibleBox(QWidget):
@@ -1264,12 +1296,12 @@ class CollapsibleBox(QWidget):
             self.title_label = QLabel(title)
             self.title_label.setStyleSheet(TITLE_STYLE)
             self.hlayout.addWidget(self.title_label)
-            self.hlayout.addSpacing(5)
+            self.hlayout.addSpacing(0)
         elif subtitle is not None:
             self.title_label = QLabel(subtitle)
             self.title_label.setStyleSheet(TEXT_STYLE)
             self.hlayout.addWidget(self.title_label)
-            self.hlayout.addSpacing(5)
+            self.hlayout.addSpacing(0)
 
         self.toggle_button = QToolButton(checkable=True, checked=False)
         self.toggle_button.setStyleSheet(TEXT_STYLE)
@@ -1292,7 +1324,7 @@ class CollapsibleBox(QWidget):
         lay.setSpacing(0)
         lay.setContentsMargins(0, 0, 0, 0)
         self.hlayout.addWidget(self.toggle_button)
-        self.hlayout.addStretch(5)
+        self.hlayout.addStretch(2)
         lay.addLayout(self.hlayout)
         lay.addWidget(self.content_area)
 
@@ -1358,3 +1390,10 @@ class HoverTracker(QtCore.QObject):
         if obj is self.widget and event.type() == QtCore.QEvent.MouseMove:
             self.positionChanged.emit(event.pos())
         return super().eventFilter(obj, event)
+
+class HyperlinkLabel(QLabel):
+    def __init__(self, parent=None):
+        super().__init__()
+        self.setStyleSheet('font-size: 35px')
+        self.setOpenExternalLinks(True)
+        self.setParent(parent)

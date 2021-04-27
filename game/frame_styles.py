@@ -22,10 +22,24 @@ TITLE_STYLE = """
                     color: white;
                     """
 
-TEXT_STYLE = """  
+TEXT_STYLE = """    
+                    QLabel{
                     font: 14px "Consolas";
                     color: white;
                     background: black;
+                    }
+                    
+                    QCheckBox{
+                    font: 14px "Consolas";
+                    color: white;
+                    background: black;
+                    
+                    }
+                    QRadioButton{
+                    font: 14px "Consolas";
+                    color: white;
+                    background: black;
+                    }
                     
                     QToolTip { 
                     background-color: white; 
