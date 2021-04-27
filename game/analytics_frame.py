@@ -232,12 +232,9 @@ class Analytics(QMainWindow):
             self.tar_high_score = None
             self.learning_rate = None
             self.tar_high_score_label.setText("Target High Score: " + self.tar_high_score_input.text())
-            # todo: This may need to change as Sydney altered learning rate input to be a slider
-            self.learning_rate_label.setText("Learning Rate: " + self.learning_rate_input.text())
+            self.learning_rate_label.setText("Learning Rate: ")
             self.running = False
             Analytics.running_state = False
-            # todo: We may also want to either clear the table / nn or leave it so they retain last values
-            # until the sim is restarted so the user can click on for information
 
     def highScoreButton(self):
         if self.tar_high_score_input.text() != "":
