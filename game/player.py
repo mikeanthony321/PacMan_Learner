@@ -17,7 +17,7 @@ def isAlignedY(pixel):
 
 
 class Player:
-    def __init__(self, game, screen, pos, sprite_sheet):
+    def __init__(self, game, screen, pos, respawn_pos, sprite_sheet):
         # Game instance
         self.game = game
 
@@ -26,6 +26,7 @@ class Player:
 
         # 2D vector (x, y) | Pacman's current cell | Pacman's presence cell
         self.grid_pos = pos
+        self.respawn_pos = respawn_pos
         self.presence_pos = self.grid_pos
 
         # 2D vector (x, y) | Pacman's current pixel position (center)
@@ -201,6 +202,8 @@ class Player:
         # This is only set up to always randomize the spawn, we can add the choice when PAC-25
         # gets fully implemented
         self.teleport(self.setRandomSpawnLocation())
+        # set to vector to avoid wrong respawn bug
+        # self.teleport(vec(13, 23))
 
     def setRandomSpawnLocation(self):
         while(True):

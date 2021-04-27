@@ -314,7 +314,6 @@ class Ghost(pygame.sprite.Sprite):
                         return False
                 return False
 
-
     def check_wall_collision(self):
         # Check that the current won't enter a wall
         if GRID[int(self.grid_pos.y + self.direction.y)][int(self.grid_pos.x + self.direction.x)] == 3:

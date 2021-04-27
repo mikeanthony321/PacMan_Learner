@@ -27,7 +27,12 @@ class Pacman(GameAgentAPI):
 
         self.cells = CellMap()
 
-        self.player = Player(self, self.screen, PLAYER_START_POS, self.sprites)
+        self.player_start = PLAYER_START_POS
+        self.player_respawn = PLAYER_RESPAWN_POS
+        self.blinky_start = BLINKY_START_POS
+        self.inky_start = INKY_START_POS
+        self.pinky_start = PINKY_START_POS
+        self.clyde_start = CLYDE_START_POS
         self.tar_high_score = 0
         self.ghosts = []
 
@@ -38,10 +43,20 @@ class Pacman(GameAgentAPI):
 
         self.power_pellet_timer = POWER_PELLET_TIMER
         self.idle_timer = 0
+        self.set_game_objects()
 
-        self.move_history = []
-        for i in range(IDLE_HISTORY_LENGTH):
-            self.move_history.append(None)
+    def set_game_objects(self):
+        self.player = Player(self, self.screen, self.player_start, self.player_respawn, self.sprites)
+        self.ghosts = []
+
+        self.ghosts.append(Ghost(self, self.screen, True, "Blinky", self.blinky_start, BLINKY_SPRITE_POS, self.sprites))
+        self.ghosts.append(Ghost(self, self.screen, False, "Inky", self.inky_start, INKY_SPRITE_POS, self.sprites))
+        self.ghosts.append(Ghost(self, self.screen, False, "Pinky", self.pinky_start, PINKY_SPRITE_POS, self.sprites))
+        self.ghosts.append(Ghost(self, self.screen, False, "Clyde", self.clyde_start, CLYDE_SPRITE_POS, self.sprites))
+
+        # self.move_history = []
+        # for i in range(IDLE_HISTORY_LENGTH):
+        #     self.move_history.append(None)
 
     def run(self):
         while self.running:
@@ -55,7 +70,6 @@ class Pacman(GameAgentAPI):
                 self.game_draw()
             else:
                 self.running = False
-
 
             self.clock.tick(FPS)
 
@@ -139,7 +153,10 @@ class Pacman(GameAgentAPI):
     def game_update(self):
         # Check whether the stop button has been pressed
         if not Analytics.get_running_state():
-            LearnerAgent.reset()
+            LearnerAgent.agent_instance.reset_agent()
+            self.stop_simulation()
+        # Check whether the target high score has been reached
+        if self.player.score >= self.tar_high_score:
             self.stop_simulation()
 
         self.set_pac_pos()
@@ -153,9 +170,9 @@ class Pacman(GameAgentAPI):
             if (self.player.get_grid_pos() != player_pos) or self.idle_timer >= MAX_IDLE_ALLOWANCE:
                 self.idle_timer = 0
 
-                for i in range(len(self.move_history) - 1):
-                    self.move_history[i] = copy.deepcopy(self.move_history[i + 1])
-                self.move_history[len(self.move_history) - 1] = self.player.get_grid_pos()
+                # for i in range(len(self.move_history) - 1):
+                #     self.move_history[i] = copy.deepcopy(self.move_history[i + 1])
+                # self.move_history[len(self.move_history) - 1] = self.player.get_grid_pos()
 
                 if random.random() < DECISION_FREQUENCY:
                     LearnerAgent.run_decision()
@@ -179,6 +196,12 @@ class Pacman(GameAgentAPI):
             if self.player.get_alive_status():
                 for i in range(len(self.ghosts)):
                     self.ghosts[i].update()
+
+    def game_events(self):
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                self.running = False
+
 
     def game_events(self):
         for event in pygame.event.get():
@@ -235,8 +258,7 @@ class Pacman(GameAgentAPI):
     def set_ghost_power_pellet_status(self, status):
         for i in range(len(self.ghosts)):
             self.ghosts[i].set_power_pellet_status(status)
-
-
+            
     def ghost_reset(self):
         for i in range(len(self.ghosts)):
             self.ghosts[i].reset(i)
@@ -254,6 +276,15 @@ class Pacman(GameAgentAPI):
 
     def setTarHighScore(self, score):
         self.tar_high_score = score
+
+    def set_start_pos(self, pos_dict):
+        self.player_start = pos_dict['player_start']
+        self.player_respawn= pos_dict['player_respawn']
+        self.blinky_start = pos_dict['blinky']
+        self.inky_start = pos_dict['inky']
+        self.pinky_start = pos_dict['pinky']
+        self.clyde_start = pos_dict['clyde']
+        self.set_game_objects()
 
     def getAvailableActions(self, prev_decision):
         available_actions = []
@@ -317,16 +348,17 @@ class Pacman(GameAgentAPI):
         player_in_coin_cell = player_cell is not None and player_cell.hasCoin
         pellet_count = len([c for c in self.cells.map if not c.hasWall and not c.hasCoin])
 
-        for i in range(1, len(self.move_history)):
-            if (self.move_history[i] is not None) and (self.move_history[i] == self.move_history[0]):
-                reward -= Q_IDLE_PENALTY
+        reward += Q_PELLET_PROXIMITY_FACTOR / (np.linalg.norm(np.array(self.getNearestPelletGridCoords()) - np.array([0, 0])) + 1)
+        # for i in range(1, len(self.move_history)):
+        #     if (self.move_history[i] is not None) and (self.move_history[i] == self.move_history[0]):
+        #         reward -= Q_IDLE_PENALTY
         if player_in_coin_cell:
             reward += Q_PELLET_FUNC(pellet_count)
             if len([c for c in self.cells.map if c.hasCoin]) == 1:
                 reward += Q_LEVEL_PASSED
         for ghost in self.ghosts:
             distance = np.linalg.norm(np.array(ghost.get_grid_pos()) - np.array(self.player.get_grid_pos()))
-            reward += (Q_PROXIMITY_FACTOR / (distance + 1)) * (1 if ghost.power_pellet_active else -1)
+            reward += (Q_GHOST_PROXIMITY_FACTOR / (distance + 1)) * (1 if ghost.power_pellet_active else -1)
 
         #print(reward)
         return reward
