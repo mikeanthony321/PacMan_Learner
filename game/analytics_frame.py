@@ -195,7 +195,10 @@ class Analytics(QMainWindow):
 
             self.update_table()
 
-
+    def reset_time(self):
+        self.timer.stop()
+        self.timer_label.setText('0:00')
+        self.timer2_label.setText('0:00')
 
     def showTime(self):
         if self.running:
@@ -337,7 +340,7 @@ class Analytics(QMainWindow):
                     'inky': INKY_START_POS,
                     'pinky': PINKY_START_POS,
                     'clyde': CLYDE_START_POS
-                })
+                }, True)
             else:
                 self.agent_interface.set_game_start_pos({
                     'player_start': PLAYER_START_POS,
@@ -346,7 +349,7 @@ class Analytics(QMainWindow):
                     'inky': INKY_START_POS,
                     'pinky': PINKY_START_POS,
                     'clyde': CLYDE_START_POS
-                })
+                }, False)
         if button.text() == "Default Start Position":
             if button.isChecked():
                 self.agent_interface.set_game_start_pos({
@@ -356,7 +359,7 @@ class Analytics(QMainWindow):
                     'inky': INKY_START_POS,
                     'pinky': PINKY_START_POS,
                     'clyde': CLYDE_START_POS
-                })
+                }, False)
             else:
                 self.agent_interface.set_game_start_pos({
                     'player_start': vec(13, 23),
@@ -365,37 +368,7 @@ class Analytics(QMainWindow):
                     'inky': INKY_START_POS,
                     'pinky': PINKY_START_POS,
                     'clyde': CLYDE_START_POS
-                })
-
-    def toggle_p_pellet_active(self):
-        self.up_plot.show_p_active = not self.up_plot.show_p_active
-        self.down_plot.show_p_active = not self.down_plot.show_p_active
-        self.left_plot.show_p_active = not self.left_plot.show_p_active
-        self.right_plot.show_p_active = not self.right_plot.show_p_active
-        self.up_plot.update_plot()
-        self.down_plot.update_plot()
-        self.left_plot.update_plot()
-        self.right_plot.update_plot()
-
-    def toggle_p_pellet_inactive(self):
-        self.up_plot.show_p_inactive = not self.up_plot.show_p_inactive
-        self.down_plot.show_p_inactive = not self.down_plot.show_p_inactive
-        self.left_plot.show_p_inactive = not self.left_plot.show_p_inactive
-        self.right_plot.show_p_inactive = not self.right_plot.show_p_inactive
-        self.up_plot.update_plot()
-        self.down_plot.update_plot()
-        self.left_plot.update_plot()
-        self.right_plot.update_plot()
-
-    def toggle_rand_decisions(self):
-        self.up_plot.show_rand = not self.up_plot.show_rand
-        self.down_plot.show_rand = not self.down_plot.show_rand
-        self.left_plot.show_rand = not self.left_plot.show_rand
-        self.right_plot.show_rand = not self.right_plot.show_rand
-        self.up_plot.update_plot()
-        self.down_plot.update_plot()
-        self.left_plot.update_plot()
-        self.right_plot.update_plot()
+                }, True)
 
     def check_state(self, button):
         if button.text() == "Show Power Pellet Active":
@@ -505,6 +478,7 @@ class Analytics(QMainWindow):
         self.learning_rate_label = QLabel("Learning Rate is not set")
         help_layout.addWidget(self.learning_rate_label)
         self.helpPanelWidget.setLayout(help_layout)
+        self.helpPanelWidget.setFixedWidth(553)
         self.help_text_label = QLabel("")
         help_layout.addWidget(self.help_text_label)
         left_layout.addWidget(self.helpPanelWidget)
@@ -518,6 +492,7 @@ class Analytics(QMainWindow):
         self.start_symm.setStyleSheet(TEXT_STYLE)
         self.start_default = QRadioButton('Default Start Position')
         self.start_default.toggled.connect(lambda: self.toggle_state(self.start_default))
+        self.start_default.click()
         self.start_default.setToolTip(starting_locations_tooltip)
         self.start_default.setStyleSheet(TEXT_STYLE)
 
@@ -623,33 +598,45 @@ class Analytics(QMainWindow):
         up_inner_layout = QHBoxLayout()
         self.up_label = QLabel("UP")
         self.up_label.setStyleSheet(TITLE_STYLE)
+        self.up_label.setAlignment(QtCore.Qt.AlignCenter)
         up_layout.addWidget(self.up_label)
         up_layout.addLayout(up_inner_layout)
+        up_inner_layout.addSpacing(40)
         up_inner_layout.addWidget(self.up_plot.plot_widget)
+        up_inner_layout.addSpacing(40)
 
         down_layout = QVBoxLayout()
         down_inner_layout = QHBoxLayout()
         self.down_label = QLabel("DOWN")
         self.down_label.setStyleSheet(TITLE_STYLE)
+        self.down_label.setAlignment(QtCore.Qt.AlignCenter)
         down_layout.addWidget(self.down_label)
         down_layout.addLayout(down_inner_layout)
+        down_inner_layout.addSpacing(40)
         down_inner_layout.addWidget(self.down_plot.plot_widget)
+        down_inner_layout.addSpacing(40)
 
         left_layout = QVBoxLayout()
         left_inner_layout = QHBoxLayout()
         self.left_label = QLabel("LEFT")
         self.left_label.setStyleSheet(TITLE_STYLE)
+        self.left_label.setAlignment(QtCore.Qt.AlignCenter)
         left_layout.addWidget(self.left_label)
         left_layout.addLayout(left_inner_layout)
+        left_inner_layout.addSpacing(40)
         left_inner_layout.addWidget(self.left_plot.plot_widget)
+        left_inner_layout.addSpacing(40)
 
         right_layout = QVBoxLayout()
         right_inner_layout = QHBoxLayout()
         self.right_label = QLabel("RIGHT")
         self.right_label.setStyleSheet(TITLE_STYLE)
+        self.right_label.setAlignment(QtCore.Qt.AlignCenter)
         right_layout.addWidget(self.right_label)
         right_layout.addLayout(right_inner_layout)
+        right_inner_layout.addSpacing(40)
         right_inner_layout.addWidget(self.right_plot.plot_widget)
+        right_inner_layout.addSpacing(40)
 
         side_panel_layout = QVBoxLayout()
         checkbox_layout = QVBoxLayout()
@@ -732,6 +719,7 @@ class Analytics(QMainWindow):
         main_layout.addSpacing(20)
 
         explainAI_tab_layout.addLayout(main_layout)
+        explainAI_tab_layout.addSpacing(10)
         explainAITab.setLayout(explainAI_tab_layout)
         return explainAITab
 
@@ -1011,16 +999,16 @@ class PlotStruct:
         self.show_p_active = False
         self.avg_display = True
         self.current_display = False
-        self.point_size = 10
+        self.point_size = 8
         self.base_opacity = 90
         self.plot_limit = 120
-        self.decisions_window = 14
+        self.decisions_window = 20
 
         self.pac_spot = {
             'pos': [0, 0],
-            'pen': {'color': (245, 210, 5, 255), 'width': 0},
-            'size': 18,
-            'brush': pg.mkBrush(235, 200, 5, 255)
+            'pen': {'color': (255, 220, 15, 255), 'width': 0},
+            'size': 10,
+            'brush': pg.mkBrush(245, 210, 5, 255)
         }
         self.pellet_brush = pg.mkBrush(220, 220, 220, self.base_opacity)
         self.p_pellet_brush = pg.mkBrush(142, 240, 67, self.base_opacity)
@@ -1054,6 +1042,23 @@ class PlotStruct:
         self.plot_widget = pg.PlotWidget()
         self.plot_widget.setXRange(-30, 30)
         self.plot_widget.setYRange(-30, 30)
+        self.plot_widget.hideButtons()
+        self.plot_widget.showAxis('right')
+        self.plot_widget.showAxis('top')
+        self.plot_widget.showGrid(x=True, y=True, alpha=0.5)
+        self.plot_widget.getAxis('left').setStyle(showValues=False)
+        self.plot_widget.getAxis('bottom').setStyle(showValues=False)
+        self.plot_widget.getAxis('top').setStyle(showValues=False)
+        self.plot_widget.getAxis('right').setStyle(showValues=False)
+        self.plot_widget.getAxis('left').setTickSpacing(levels=[(3, -1.25)])
+        self.plot_widget.getAxis('top').setTickSpacing(levels=[(3, -1.25)])
+        self.plot_widget.getAxis('right').setTickSpacing(levels=[(3, 1.25)])
+        self.plot_widget.getAxis('bottom').setTickSpacing(levels=[(3, 1.25)])
+        self.plot_widget.getAxis('left').setPen(QPen(QColor(0, 0, 210), 1, Qt.SolidLine))
+        self.plot_widget.getAxis('top').setPen(QPen(QColor(0, 0, 210), 1, Qt.SolidLine))
+        self.plot_widget.getAxis('bottom').setPen(QPen(QColor(0, 0, 210), 1, Qt.SolidLine))
+        self.plot_widget.getAxis('right').setPen(QPen(QColor(0, 0, 210), 1, Qt.SolidLine))
+        self.plot_widget.setBackground(QColor(0, 0, 0))
         self.plot_widget.addItem(self.plot_item)
         self.plot_ref = None
 
@@ -1245,17 +1250,17 @@ class PlotStruct:
             if self.show_p_active and self.show_p_inactive and self.show_rand:
                 plot_points.extend(self.active_exploitation_avg_points)
                 plot_points.extend(self.inactive_exploitation_avg_points)
-                plot_points.extend(self.inactive_exploration_points)
-                plot_points.extend(self.active_exploration_points)
+                plot_points.extend(self.inactive_exploration_avg_points)
+                plot_points.extend(self.active_exploration_avg_points)
             elif self.show_p_active and self.show_p_inactive and not self.show_rand:
                 plot_points.extend(self.active_exploitation_avg_points)
                 plot_points.extend(self.inactive_exploitation_avg_points)
             elif self.show_p_active and not self.show_p_inactive and self.show_rand:
                 plot_points.extend(self.active_exploitation_avg_points)
-                plot_points.extend(self.active_exploration_points)
+                plot_points.extend(self.active_exploration_avg_points)
             elif not self.show_p_active and self.show_p_inactive and self.show_rand:
                 plot_points.extend(self.inactive_exploitation_avg_points)
-                plot_points.extend(self.inactive_exploration_points)
+                plot_points.extend(self.inactive_exploration_avg_points)
             elif self.show_p_active and not self.show_p_inactive and not self.show_rand:
                 plot_points.extend(self.active_exploitation_avg_points)
             elif not self.show_p_active and self.show_p_inactive and not self.show_rand:
@@ -1264,26 +1269,27 @@ class PlotStruct:
                 plot_points = []
         elif self.current_display:
             if self.show_p_active and self.show_p_inactive and self.show_rand:
-                plot_points.extend(self.active_exploitation_avg_points)
-                plot_points.extend(self.inactive_exploitation_avg_points)
+                plot_points.extend(self.active_exploitation_points)
+                plot_points.extend(self.inactive_exploitation_points)
                 plot_points.extend(self.inactive_exploration_points)
                 plot_points.extend(self.active_exploration_points)
             elif self.show_p_active and self.show_p_inactive and not self.show_rand:
-                plot_points.extend(self.active_exploitation_avg_points)
-                plot_points.extend(self.inactive_exploitation_avg_points)
+                plot_points.extend(self.active_exploitation_points)
+                plot_points.extend(self.inactive_exploitation_points)
             elif self.show_p_active and not self.show_p_inactive and self.show_rand:
-                plot_points.extend(self.active_exploitation_avg_points)
+                plot_points.extend(self.active_exploitation_points)
                 plot_points.extend(self.active_exploration_points)
             elif not self.show_p_active and self.show_p_inactive and self.show_rand:
-                plot_points.extend(self.inactive_exploitation_avg_points)
+                plot_points.extend(self.inactive_exploitation_points)
                 plot_points.extend(self.inactive_exploration_points)
             elif self.show_p_active and not self.show_p_inactive and not self.show_rand:
-                plot_points.extend(self.active_exploitation_avg_points)
+                plot_points.extend(self.active_exploitation_points)
             elif not self.show_p_active and self.show_p_inactive and not self.show_rand:
-                plot_points.extend(self.inactive_exploitation_avg_points)
+                plot_points.extend(self.inactive_exploitation_points)
             else:
                 plot_points = []
 
+        plot_points.append(self.pac_spot)
         self.plot_item.setData(plot_points)
         self.plot_widget.addItem(self.plot_item)
 

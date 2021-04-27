@@ -35,6 +35,7 @@ class Pacman(GameAgentAPI):
         self.clyde_start = CLYDE_START_POS
         self.tar_high_score = 0
         self.ghosts = []
+        self.centered_start_pos = False
 
         self.ghosts.append(Ghost(self, self.screen, True, "Blinky", vec(12, 11), BLINKY_SPRITE_POS, self.sprites))
         self.ghosts.append(Ghost(self, self.screen, False, "Inky", vec(15, 11), INKY_SPRITE_POS, self.sprites))
@@ -101,7 +102,7 @@ class Pacman(GameAgentAPI):
     def reset_level(self):
         self.cells = CellMap()
         self.score_reset()
-        self.player.reset()
+        self.player.reset(self.centered_start_pos)
         self.player.set_alive_status(True)
         self.player.set_game_over_status(False)
         self.ghost_reset()
@@ -112,7 +113,7 @@ class Pacman(GameAgentAPI):
 
         if self.player.score >= int(self.tar_high_score):
             print("Target High Score Achieved! Score: ", self.player.score)
-
+            Analytics.analytics_instance.help_text_label.setText("Target High Score Achieved! Score: " + str(self.player.score))
         self.player.score = 0
 
     def spawn_coins(self):
@@ -204,11 +205,6 @@ class Pacman(GameAgentAPI):
                 self.running = False
 
 
-    def game_events(self):
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                self.running = False
-
     def game_draw(self):
         self.screen.fill(BLACK)
 
@@ -278,13 +274,14 @@ class Pacman(GameAgentAPI):
     def setTarHighScore(self, score):
         self.tar_high_score = score
 
-    def set_start_pos(self, pos_dict):
+    def set_start_pos(self, pos_dict, centered_start):
         self.player_start = pos_dict['player_start']
         self.player_respawn= pos_dict['player_respawn']
         self.blinky_start = pos_dict['blinky']
         self.inky_start = pos_dict['inky']
         self.pinky_start = pos_dict['pinky']
         self.clyde_start = pos_dict['clyde']
+        self.centered_start_pos = centered_start
         self.set_game_objects()
 
     def getAvailableActions(self, prev_decision):

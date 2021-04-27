@@ -196,12 +196,15 @@ class Player:
                              ((self.grid_pos[0] + self.direction.x) * CELL_W,
                               (self.grid_pos[1] + self.direction.y) * CELL_H + PAD_TOP, CELL_W, CELL_H), 2)
 
-    def reset(self):
+    def reset(self, centered):
         self.deaths += 1
         self.stop()
         # This is only set up to always randomize the spawn, we can add the choice when PAC-25
         # gets fully implemented
-        self.teleport(self.setRandomSpawnLocation())
+        if centered:
+            self.teleport(vec(13, 23))
+        else:
+            self.teleport(self.setRandomSpawnLocation())
         # set to vector to avoid wrong respawn bug
         # self.teleport(vec(13, 23))
 

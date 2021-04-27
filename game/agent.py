@@ -237,8 +237,8 @@ class LearnerAgent(AgentAnalyticsFrameAPI):
     def set_target_score(self, target_score):
         self.api.setTarHighScore(target_score)
 
-    def set_game_start_pos(self, pos_dict):
-        self.api.set_start_pos(pos_dict)
+    def set_game_start_pos(self, pos_dict, centered_start):
+        self.api.set_start_pos(pos_dict, centered_start)
 
     def stop_sim(self):
         pass
